@@ -1,0 +1,65 @@
+{
+  "expo": {
+    "name": "Keto OMAD Tracker",
+    "slug": "keto-omad-tracker",
+    "owner": "tanatos",
+    "version": "1.0.0",
+    "scheme": "ketoomad",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "dark",
+    "backgroundColor": "#0B0D10",
+    "experiments": {
+      "typedRoutes": true
+    },
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.ketoomad.tracker",
+      "infoPlist": {
+        "NSCameraUsageDescription": "Нужен е достъп до камерата, за да разпознае храната и да сканира баркодове."
+      }
+    },
+    "android": {
+      "package": "com.ketoomad.tracker",
+      "versionCode": 1,
+      "permissions": [
+        "CAMERA",
+        "android.permission.CAMERA"
+      ],
+      "adaptiveIcon": {
+        "backgroundColor": "#0B0D10",
+        "foregroundImage": "./assets/android-icon-foreground.png",
+        "backgroundImage": "./assets/android-icon-background.png",
+        "monochromeImage": "./assets/android-icon-monochrome.png"
+      },
+      "predictiveBackGestureEnabled": false
+    },
+    "web": {
+      "favicon": "./assets/favicon.png"
+    },
+    "plugins": [
+      "expo-router",
+      "expo-sqlite",
+      [
+        "expo-secure-store",
+        {}
+      ],
+      "expo-sharing",
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "Нужен е достъп до камерата, за да разпознае храната и да сканира баркодове.",
+          "microphonePermission": false,
+          "recordAudioAndroid": false,
+          "barcodeScannerEnabled": true
+        }
+      ]
+    ],
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "2f732adc-aa9b-4fb5-bfe9-0dd853fb3f94"
+      }
+    }
+  }
+}
