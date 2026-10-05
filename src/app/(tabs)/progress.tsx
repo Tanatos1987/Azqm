@@ -13,12 +13,14 @@ import { useTheme } from '@/theme/ThemeContext';
 import { bmiCategory, bmiOf, healthyWeightRange } from '@/utils/bodyMetrics';
 import { formatDateLabel, formatNumber, shortDate } from '@/utils/date';
 import type { WeightEntry } from '@/types';
+import { useI18n } from '@/i18n';
 
 export default function ProgressScreen() {
   const t = useTheme();
   const db = useSQLiteContext();
   const { profile, updateWeight, saveProfile } = useProfile();
   const { version, bump } = useDataRefresh();
+  const { tr } = useI18n();
   const [weights, setWeights] = useState<WeightEntry[]>([]);
   const [weightDraft, setWeightDraft] = useState('');
 
@@ -44,7 +46,7 @@ export default function ProgressScreen() {
   const saveWeight = async () => {
     const kg = Number(weightDraft.replace(',', '.'));
     if (!(kg >= 30 && kg <= 300)) {
-      Alert.alert('Тегло', 'Въведи тегло в килограми (30–300).');
+      Alert.alert(tr('Тегло', 'Weight'), tr('Въведи тегло в килограми (30–300).', 'Enter your weight in kilograms (30–300).'));
       return;
     }
     await updateWeight(kg);
@@ -52,10 +54,10 @@ export default function ProgressScreen() {
   };
 
   const removeWeight = (w: WeightEntry) =>
-    Alert.alert('Изтриване', `Да изтрия ли записа ${w.weightKg} кг от ${formatDateLabel(w.date)}?`, [
-      { text: 'Отказ', style: 'cancel' },
+    Alert.alert(tr('Изтриване', 'Delete'), tr(`Да изтрия ли записа ${w.weightKg} кг от ${formatDateLabel(w.date)}?`, `Delete the ${w.weightKg} kg entry from ${formatDateLabel(w.date)}?`), [
+      { text: tr('Отказ', 'Cancel'), style: 'cancel' },
       {
-        text: 'Изтрий',
+        text: tr('Изтрий', 'Delete'),
         style: 'destructive',
         onPress: async () => {
           await deleteWeightEntry(db, w.date);
@@ -65,18 +67,25 @@ export default function ProgressScreen() {
     ]);
 
   const recalcGoals = () =>
-    Alert.alert('Преизчисляване', `Да изчисля ли наново дневните цели с текущото тегло ${currentWeight} кг? Ръчно зададените цели ще бъдат заменени.`, [
-      { text: 'Отказ', style: 'cancel' },
-      { text: 'Преизчисли', onPress: () => saveProfile({ ...profile, weightKg: currentWeight }) },
-    ]);
+    Alert.alert(
+      tr('Преизчисляване', 'Recalculate'),
+      tr(
+        `Да изчисля ли наново дневните цели с текущото тегло ${currentWeight} кг? Ръчно зададените цели ще бъдат заменени.`,
+        `Recalculate your daily goals with your current weight of ${currentWeight} kg? Goals you set manually will be replaced.`
+      ),
+      [
+        { text: tr('Отказ', 'Cancel'), style: 'cancel' },
+        { text: tr('Преизчисли', 'Recalculate'), onPress: () => saveProfile({ ...profile, weightKg: currentWeight }) },
+      ]
+    );
 
   return (
     <Screen
-      title="Прогрес"
-      subtitle="Тегло и индекс на телесна маса"
+      title={tr('Прогрес', 'Progress')}
+      subtitle={tr('Тегло и индекс на телесна маса', 'Weight and body mass index')}
       scroll
       right={
-        <IconButton onPress={() => router.push('/profile')} accessibilityLabel="Профил">
+        <IconButton onPress={() => router.push('/profile')} accessibilityLabel={tr('Профил', 'Profile')}>
           <UserIcon size={22} color={t.c.text} />
         </IconButton>
       }
@@ -93,57 +102,57 @@ export default function ProgressScreen() {
               {category.label}
             </Txt>
             <Txt v="small" tone="textMuted" style={{ marginTop: 6 }}>
-              Сега: {formatNumber(currentWeight, 1)} кг
+              {tr('Сега', 'Now')}: {formatNumber(currentWeight, 1)} {tr('кг', 'kg')}
             </Txt>
             {profile.targetWeightKg != null && (
               <Txt v="small" tone="textMuted">
-                Цел: {formatNumber(profile.targetWeightKg, 1)} кг
+                {tr('Цел', 'Goal')}: {formatNumber(profile.targetWeightKg, 1)} {tr('кг', 'kg')}
               </Txt>
             )}
             <Txt v="small" tone="textMuted">
-              Норма: {Math.round(healthyMin)}–{Math.round(healthyMax)} кг
+              {tr('Норма', 'Healthy range')}: {Math.round(healthyMin)}–{Math.round(healthyMax)} {tr('кг', 'kg')}
             </Txt>
             {weights.length > 1 && (
               <Txt v="smallStrong" tone={change <= 0 ? 'success' : 'warning'} style={{ marginTop: 4 }}>
-                {change <= 0 ? '▼' : '▲'} {formatNumber(Math.abs(change), 1)} кг от началото
+                {change <= 0 ? '▼' : '▲'} {formatNumber(Math.abs(change), 1)} {tr('кг от началото', 'kg since the start')}
               </Txt>
             )}
             {toGoal != null && toGoal > 0 && (
               <Txt v="small" tone="textMuted">
-                Остават {formatNumber(toGoal, 1)} кг
+                {tr(`Остават ${formatNumber(toGoal, 1)} кг`, `${formatNumber(toGoal, 1)} kg to go`)}
               </Txt>
             )}
             {toGoal != null && toGoal <= 0 && (
               <Txt v="smallStrong" tone="success">
-                Целта е постигната! 🎉
+                {tr('Целта е постигната! 🎉', 'Goal reached! 🎉')}
               </Txt>
             )}
           </View>
         </Row>
       </Card>
 
-      <SectionHeader title="Запиши днешното тегло" />
+      <SectionHeader title={tr('Запиши днешното тегло', 'Log today’s weight')} />
       <Row gap={10} style={{ marginBottom: 16 }}>
-        <Input value={weightDraft} onChangeText={setWeightDraft} keyboardType="numeric" placeholder={`${currentWeight} кг`} style={{ flex: 1 }} big />
-        <IconButton onPress={saveWeight} size={56} tint={t.c.accent} accessibilityLabel="Запази теглото">
+        <Input value={weightDraft} onChangeText={setWeightDraft} keyboardType="numeric" placeholder={`${currentWeight} ${tr('кг', 'kg')}`} style={{ flex: 1 }} big />
+        <IconButton onPress={saveWeight} size={56} tint={t.c.accent} accessibilityLabel={tr('Запази теглото', 'Save weight')}>
           <CheckIcon size={26} color={t.c.onAccent} />
         </IconButton>
       </Row>
 
-      <SectionHeader title="Графика на теглото" />
+      <SectionHeader title={tr('Графика на теглото', 'Weight chart')} />
       <Card>
         {weights.length > 0 ? (
-          <LineChart key={`w-${weights.length}`} data={weights.slice(-30).map((w) => ({ label: shortDate(w.date), value: w.weightKg }))} color={t.c.info} unit="кг" target={profile.targetWeightKg} />
+          <LineChart key={`w-${weights.length}`} data={weights.slice(-30).map((w) => ({ label: shortDate(w.date), value: w.weightKg }))} color={t.c.info} unit={tr('кг', 'kg')} target={profile.targetWeightKg} />
         ) : (
           <Txt tone="textMuted" center style={{ paddingVertical: 24 }}>
-            Записвай теглото си, за да виждаш графиката.
+            {tr('Записвай теглото си, за да виждаш графиката.', 'Log your weight to see the chart.')}
           </Txt>
         )}
       </Card>
 
       {weights.length > 0 && (
         <>
-          <SectionHeader title="Последни измервания" />
+          <SectionHeader title={tr('Последни измервания', 'Recent measurements')} />
           <Card>
             {weights
               .slice(-8)
@@ -161,7 +170,7 @@ export default function ProgressScreen() {
                       </Txt>
                     ) : null}
                     <Txt v="bodyStrong" style={{ marginRight: 12 }}>
-                      {formatNumber(w.weightKg, 1)} кг
+                      {formatNumber(w.weightKg, 1)} {tr('кг', 'kg')}
                     </Txt>
                     <Pressable onPress={() => removeWeight(w)} hitSlop={10}>
                       <TrashIcon size={20} color={t.c.textFaint} />
@@ -173,7 +182,7 @@ export default function ProgressScreen() {
         </>
       )}
 
-      <Button label="Преизчисли целите по текущото тегло" variant="secondary" onPress={recalcGoals} style={{ marginTop: 6 }} />
+      <Button label={tr('Преизчисли целите по текущото тегло', 'Recalculate goals for current weight')} variant="secondary" onPress={recalcGoals} style={{ marginTop: 6 }} />
     </Screen>
   );
 }

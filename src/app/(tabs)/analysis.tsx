@@ -8,6 +8,7 @@ import { InfoIcon, LeafIcon, WarningIcon } from '@/components/icons';
 import { useSettings } from '@/context/SettingsContext';
 import { useProfile } from '@/context/ProfileContext';
 import { useDataRefresh } from '@/context/DataRefreshContext';
+import { useI18n } from '@/i18n';
 import { getDaySummaries, getEntriesBetween, getFirstEntryDate, getHydrationByDay } from '@/db/queries';
 import { getDiet } from '@/data/diets';
 import { FOODS } from '@/data/foods';
@@ -31,6 +32,7 @@ type Period = '7' | '30' | '90' | 'all';
 export default function AnalysisScreen() {
   const t = useTheme();
   const s = useStyles();
+  const { lang, tr } = useI18n();
   const db = useSQLiteContext();
   const { goals, dietId } = useSettings();
   const { profile } = useProfile();
@@ -61,10 +63,10 @@ export default function AnalysisScreen() {
   }, [load, version]);
 
   const stats = useMemo(() => computePeriodStats(days, hydration), [days, hydration]);
-  const verdicts = useMemo(() => analyzeNutrients(stats.avg, profile, diet, goals.calories), [stats, profile, diet, goals.calories]);
+  const verdicts = useMemo(() => analyzeNutrients(stats.avg, profile, diet, goals.calories), [stats, profile, diet, goals.calories, lang]);
   const checks = useMemo(
     () => macroChecks(stats.avg, profile, diet, goals, profile ? bmrOf(profile) : null),
-    [stats, profile, diet, goals]
+    [stats, profile, diet, goals, lang]
   );
   const usedEntries = useMemo(() => {
     const dates = new Set(stats.avgDays.map((d) => d.date));
@@ -80,10 +82,10 @@ export default function AnalysisScreen() {
     [verdicts]
   );
   // Each lookup scans the whole food database, so compute once per result instead of on every render.
-  const sourcesByKey = useMemo(() => new Map(low.map((v) => [v.key, topSources(v.key, diet, FOODS, 4)])), [low, diet]);
+  const sourcesByKey = useMemo(() => new Map(low.map((v) => [v.key, topSources(v.key, diet, FOODS, 4)])), [low, diet, lang]);
   const contributorsByKey = useMemo(
     () => new Map(high.map((v) => [v.key, topContributors(usedEntries, v.target.maxKey ?? v.key)])),
-    [high, usedEntries]
+    [high, usedEntries, lang]
   );
 
   // Chart: one bar per day for short periods, weekly averages for long ones.
@@ -106,7 +108,7 @@ export default function AnalysisScreen() {
       weeks.push({ label: shortDate(shiftDateKey(range.from, start)), value: vals.length ? vals.reduce((a, b) => a + b, 0) / vals.length : 0 });
     }
     return weeks;
-  }, [days, range]);
+  }, [days, range, lang]);
 
   const avg = stats.avg;
   const carbs = diet.carbBasis === 'net' ? netCarbsOf(avg) : avg.carbs;
@@ -114,83 +116,94 @@ export default function AnalysisScreen() {
   const weekly = profile && avg.kcal > 0 && !diet.noCalories ? weeklyWeightChange(avg.kcal, tdeeOf(profile)) : null;
 
   return (
-    <Screen title="Анализ" subtitle="Средни стойности и какво ти липсва" scroll>
+    <Screen title={tr('Анализ', 'Analysis')} subtitle={tr('Средни стойности и какво ти липсва', 'Averages and what you are missing')} scroll>
       <Segmented<Period>
         value={period}
         onChange={setPeriod}
         style={{ marginBottom: 14 }}
         options={[
-          { label: '7 дни', value: '7' },
-          { label: '30 дни', value: '30' },
-          { label: '90 дни', value: '90' },
-          { label: 'Всичко', value: 'all' },
+          { label: tr('7 дни', '7 days'), value: '7' },
+          { label: tr('30 дни', '30 days'), value: '30' },
+          { label: tr('90 дни', '90 days'), value: '90' },
+          { label: tr('Всичко', 'All'), value: 'all' },
         ]}
       />
 
       {days.length === 0 ? (
         <Card>
-          <EmptyState emoji="📊" title="Още няма данни за този период" text="Записвай храната си няколко дни и тук ще видиш средния прием, дефицитите и излишъците.">
-            <Button label="Добави храна" small onPress={() => router.navigate('/add')} style={{ marginTop: 12 }} />
+          <EmptyState
+            emoji="📊"
+            title={tr('Още няма данни за този период', 'No data for this period yet')}
+            text={tr(
+              'Записвай храната си няколко дни и тук ще видиш средния прием, дефицитите и излишъците.',
+              'Log your food for a few days and you will see your average intake, shortfalls and excesses here.'
+            )}
+          >
+            <Button label={tr('Добави храна', 'Add food')} small onPress={() => router.navigate('/add')} style={{ marginTop: 12 }} />
           </EmptyState>
         </Card>
       ) : (
         <>
           <Card>
             <Txt v="caption" tone="textMuted">
-              Средно калории на ден
+              {tr('Средно калории на ден', 'Average calories per day')}
             </Txt>
             <Row gap={10} style={{ alignItems: 'flex-end' }}>
               <Txt v="display" tone="accent">
                 {formatNumber(avg.kcal)}
               </Txt>
               <Txt v="body" tone="textMuted" style={{ marginBottom: 6 }}>
-                ккал
+                {tr('ккал', 'kcal')}
               </Txt>
             </Row>
             <Txt v="small" tone="textMuted">
-              {stats.avgDays.length} {stats.avgDays.length === 1 ? 'ден' : 'дни'} със записи
-              {stats.todayExcluded ? ' · днешният ден не се брои, докато не приключи' : ''}
+              {stats.avgDays.length}{' '}
+              {stats.avgDays.length === 1 ? tr('ден със записи', 'day with entries') : tr('дни със записи', 'days with entries')}
+              {stats.todayExcluded ? tr(' · днешният ден не се брои, докато не приключи', ' · today is not counted until it is over') : ''}
             </Txt>
             {!diet.noCalories && goals.calories > 0 && (
               <Txt v="smallStrong" style={{ marginTop: 6 }} tone={Math.abs(avg.kcal - goals.calories) / goals.calories < 0.1 ? 'success' : 'warning'}>
                 {avg.kcal >= goals.calories ? '+' : '−'}
-                {formatNumber(Math.abs(avg.kcal - goals.calories))} ккал спрямо целта ({formatNumber(goals.calories)})
+                {formatNumber(Math.abs(avg.kcal - goals.calories))} {tr('ккал спрямо целта', 'kcal vs. goal')} ({formatNumber(goals.calories)})
               </Txt>
             )}
             <Txt v="caption" tone="textMuted" style={{ marginTop: 4 }}>
-              Най-малко {formatNumber(stats.minKcal)} · най-много {formatNumber(stats.maxKcal)} ккал на ден
+              {tr('Най-малко', 'Lowest')} {formatNumber(stats.minKcal)} · {tr('най-много', 'highest')} {formatNumber(stats.maxKcal)} {tr('ккал на ден', 'kcal per day')}
             </Txt>
             <View style={{ marginTop: 14 }}>
               <BarChart data={chart} color={t.c.accent} goal={diet.noCalories ? undefined : goals.calories} />
             </View>
             {weekly != null && (
               <Txt v="small" style={{ marginTop: 10 }}>
-                При този прием теглото ще се променя с около{' '}
+                {tr('При този прием теглото ще се променя с около', 'At this intake your weight will change by about')}{' '}
                 <Txt v="smallStrong" tone={weekly <= 0 ? 'success' : 'warning'}>
                   {weekly > 0 ? '+' : '−'}
-                  {formatNumber(Math.abs(weekly), 2)} кг седмично
+                  {formatNumber(Math.abs(weekly), 2)} {tr('кг седмично', 'kg per week')}
                 </Txt>{' '}
-                (дневен разход ≈ {formatNumber(tdeeOf(profile!))} ккал).
+                ({tr('дневен разход', 'daily expenditure')} ≈ {formatNumber(tdeeOf(profile!))} {tr('ккал', 'kcal')}).
               </Txt>
             )}
           </Card>
 
           <Card>
             <Txt v="h3" style={{ marginBottom: 12 }}>
-              Макронутриенти средно на ден
+              {tr('Макронутриенти средно на ден', 'Average macros per day')}
             </Txt>
             <Row style={{ justifyContent: 'space-between', marginBottom: 14 }}>
-              <MacroStat label="Протеин" value={avg.protein} color={t.c.protein} />
-              <MacroStat label="Мазнини" value={avg.fat} color={t.c.fat} />
-              <MacroStat label={diet.carbBasis === 'net' ? 'Нетни въгл.' : 'Въглехидр.'} value={carbs} color={t.c.carbs} />
-              <MacroStat label="Фибри" value={avg.fiber} color={t.c.fiber} />
+              <MacroStat label={tr('Протеин', 'Protein')} value={avg.protein} color={t.c.protein} />
+              <MacroStat label={tr('Мазнини', 'Fat')} value={avg.fat} color={t.c.fat} />
+              <MacroStat label={diet.carbBasis === 'net' ? tr('Нетни въгл.', 'Net carbs') : tr('Въглехидр.', 'Carbs')} value={carbs} color={t.c.carbs} />
+              <MacroStat label={tr('Фибри', 'Fiber')} value={avg.fiber} color={t.c.fiber} />
             </Row>
             {split && (
               <>
-                <SplitBar label="Ти" p={split.p} f={split.f} c={split.c} />
-                <SplitBar label="Цел" p={diet.split.protein} f={diet.split.fat} c={diet.split.carbs} />
+                <SplitBar label={tr('Ти', 'You')} p={split.p} f={split.f} c={split.c} />
+                <SplitBar label={tr('Цел', 'Goal')} p={diet.split.protein} f={diet.split.fat} c={diet.split.carbs} />
                 <Txt v="caption" tone="textMuted" style={{ marginTop: 6 }}>
-                  Дял от калориите: синьо — протеин, оранжево — мазнини, розово — въглехидрати. Цел: „{diet.name}“.
+                  {tr(
+                    `Дял от калориите: синьо — протеин, оранжево — мазнини, розово — въглехидрати. Цел: „${diet.name}“.`,
+                    `Share of calories: blue — protein, orange — fat, pink — carbs. Goal: “${diet.name}”.`
+                  )}
                 </Txt>
               </>
             )}
@@ -209,19 +222,21 @@ export default function AnalysisScreen() {
             </Card>
           )}
 
-          <SectionHeader title={low.length ? `Нуждаеш се от повече (${low.length})` : 'Нуждаеш се от повече'} />
+          <SectionHeader title={low.length ? tr(`Нуждаеш се от повече (${low.length})`, `You need more (${low.length})`) : tr('Нуждаеш се от повече', 'You need more')} />
           {low.length === 0 ? (
             <Card>
-              <Txt tone="success">Всички следени витамини и минерали са поне 70% от препоръчителното. 👍</Txt>
+              <Txt tone="success">
+                {tr('Всички следени витамини и минерали са поне 70% от препоръчителното. 👍', 'All tracked vitamins and minerals are at least 70% of the recommended amount. 👍')}
+              </Txt>
             </Card>
           ) : (
             low.map((v) => <LowCard key={v.key} v={v} dietName={diet.name} sources={sourcesByKey.get(v.key) ?? []} />)
           )}
 
-          <SectionHeader title={high.length ? `Приемаш твърде много (${high.length})` : 'Приемаш твърде много'} />
+          <SectionHeader title={high.length ? tr(`Приемаш твърде много (${high.length})`, `Too much (${high.length})`) : tr('Приемаш твърде много', 'Too much')} />
           {high.length === 0 ? (
             <Card>
-              <Txt tone="success">Нищо не надвишава горните граници. 👍</Txt>
+              <Txt tone="success">{tr('Нищо не надвишава горните граници. 👍', 'Nothing goes over the upper limits. 👍')}</Txt>
             </Card>
           ) : (
             high.map((v) => <HighCard key={v.key} v={v} contributors={contributorsByKey.get(v.key) ?? []} avgOfMaxKey={v.target.maxKey ? avg[v.target.maxKey] : v.avg} />)
@@ -230,10 +245,10 @@ export default function AnalysisScreen() {
           <Pressable onPress={() => setShowOk((x) => !x)} style={{ marginTop: 8, marginBottom: 10 }} hitSlop={6}>
             <Row>
               <Txt v="h3" style={{ flex: 1 }}>
-                В норма ({ok.length})
+                {tr('В норма', 'On track')} ({ok.length})
               </Txt>
               <Txt v="smallStrong" tone="accent">
-                {showOk ? 'Скрий ▲' : 'Покажи ▼'}
+                {showOk ? tr('Скрий ▲', 'Hide ▲') : tr('Покажи ▼', 'Show ▼')}
               </Txt>
             </Row>
           </Pressable>
@@ -245,7 +260,7 @@ export default function AnalysisScreen() {
                     <Txt v="small">{NUTRIENT_META[v.key].label}</Txt>
                     <Txt v="caption" tone="textMuted">
                       {formatAmount(v.avg, v.key)} {NUTRIENT_META[v.key].unit}
-                      {v.pct != null ? ` · ${Math.round(v.pct * 100)}%` : v.target.max ? ` · до ${formatAmount(v.target.max, v.key)}` : ''}
+                      {v.pct != null ? ` · ${Math.round(v.pct * 100)}%` : v.target.max ? ` · ${tr('до', 'up to')} ${formatAmount(v.target.max, v.key)}` : ''}
                     </Txt>
                   </Row>
                   <Bar value={v.pct ?? v.avg / (v.target.max ?? 1)} max={1} height={6} color={t.c.success} />
@@ -259,11 +274,16 @@ export default function AnalysisScreen() {
               <InfoIcon size={20} color={t.c.textMuted} />
               <View style={{ flex: 1, gap: 6 }}>
                 <Txt v="small" tone="textMuted">
-                  Пълни данни за витамини и минерали има за {Math.round(stats.microCoverage * 100)}% от калориите в периода. Храните от снимка, баркод или ръчно
-                  въвеждане съдържат само калории и макроси, затова реалният прием на микронутриенти може да е по-висок.
+                  {tr(
+                    `Пълни данни за витамини и минерали има за ${Math.round(stats.microCoverage * 100)}% от калориите в периода. Храните от снимка, баркод или ръчно въвеждане съдържат само калории и макроси, затова реалният прием на микронутриенти може да е по-висок.`,
+                    `Full vitamin and mineral data covers ${Math.round(stats.microCoverage * 100)}% of the calories in this period. Foods from a photo, barcode or manual entry only have calories and macros, so your real micronutrient intake may be higher.`
+                  )}
                 </Txt>
                 <Txt v="small" tone="textMuted">
-                  Препоръчителните стойности са за възрастни (RDA/AI и горни граници UL), според пола и възрастта от профила. Това е ориентир, а не медицински съвет.
+                  {tr(
+                    'Препоръчителните стойности са за възрастни (RDA/AI и горни граници UL), според пола и възрастта от профила. Това е ориентир, а не медицински съвет.',
+                    'Recommended values are for adults (RDA/AI and UL upper limits), based on the sex and age in your profile. They are a guide, not medical advice.'
+                  )}
                 </Txt>
               </View>
             </Row>
@@ -275,13 +295,14 @@ export default function AnalysisScreen() {
 }
 
 function MacroStat({ label, value, color }: { label: string; value: number; color: string }) {
+  const { tr } = useI18n();
   return (
     <View style={{ alignItems: 'center', flex: 1 }}>
       <Txt v="h2" color={color}>
         {formatNumber(value)}
       </Txt>
       <Txt v="caption" tone="textMuted">
-        г {label.toLowerCase()}
+        {tr('г', 'g')} {label.toLowerCase()}
       </Txt>
     </View>
   );
@@ -307,6 +328,7 @@ function SplitBar({ label, p, f, c }: { label: string; p: number; f: number; c: 
 
 function LowCard({ v, sources, dietName }: { v: NutrientVerdict; sources: ReturnType<typeof topSources>; dietName: string }) {
   const t = useTheme();
+  const { tr } = useI18n();
   const m = NUTRIENT_META[v.key];
   const pct = v.pct ?? 0;
   return (
@@ -321,7 +343,7 @@ function LowCard({ v, sources, dietName }: { v: NutrientVerdict; sources: Return
       </Row>
       <Bar value={pct} max={1} color={pct < 0.4 ? t.c.danger : t.c.warning} height={8} />
       <Txt v="small" tone="textMuted" style={{ marginTop: 8 }}>
-        Средно {formatAmount(v.avg, v.key)} {m.unit} на ден при препоръка {formatAmount(v.target.min ?? 0, v.key)} {m.unit}.
+        {tr('Средно', 'Average')} {formatAmount(v.avg, v.key)} {m.unit} {tr('на ден при препоръка', 'per day vs. recommended')} {formatAmount(v.target.min ?? 0, v.key)} {m.unit}.
       </Txt>
       <Txt v="small" style={{ marginTop: 6 }}>
         {m.info}
@@ -336,12 +358,13 @@ function LowCard({ v, sources, dietName }: { v: NutrientVerdict; sources: Return
           <Row gap={6}>
             <LeafIcon size={16} color={t.c.success} />
             <Txt v="caption" tone="success" style={{ fontWeight: '700' }}>
-              Добри източници, подходящи за „{dietName}“:
+              {tr(`Добри източници, подходящи за „${dietName}“:`, `Good sources that suit “${dietName}”:`)}
             </Txt>
           </Row>
           {sources.map((src) => (
             <Txt key={src.food.id} v="small" tone="textMuted">
-              • {src.food.name} — {formatAmount(src.amount, v.key)} {m.unit} в {src.portionLabel.endsWith(' г') ? src.portionLabel : `${src.portionLabel} (${formatNumber(src.portionGrams)} г)`}
+              • {src.food.name} — {formatAmount(src.amount, v.key)} {m.unit} {tr('в', 'in')}{' '}
+              {src.portionLabel.endsWith(tr(' г', ' g')) ? src.portionLabel : `${src.portionLabel} (${formatNumber(src.portionGrams)} ${tr('г', 'g')})`}
             </Txt>
           ))}
         </View>
@@ -352,6 +375,7 @@ function LowCard({ v, sources, dietName }: { v: NutrientVerdict; sources: Return
 
 function HighCard({ v, contributors, avgOfMaxKey }: { v: NutrientVerdict; contributors: ReturnType<typeof topContributors>; avgOfMaxKey: number }) {
   const t = useTheme();
+  const { tr } = useI18n();
   const m = NUTRIENT_META[v.key];
   const max = v.target.max ?? 1;
   const maxMeta = NUTRIENT_META[v.target.maxKey ?? v.key];
@@ -367,8 +391,8 @@ function HighCard({ v, contributors, avgOfMaxKey }: { v: NutrientVerdict; contri
       </Row>
       <Bar value={avgOfMaxKey} max={avgOfMaxKey} color={t.c.danger} height={8} marker={max} />
       <Txt v="small" tone="textMuted" style={{ marginTop: 8 }}>
-        Средно {formatAmount(avgOfMaxKey, v.target.maxKey ?? v.key)} {maxMeta.unit} на ден
-        {v.target.maxKey ? ` (${maxMeta.label.toLowerCase()})` : ''} при горна граница {formatAmount(max, v.target.maxKey ?? v.key)} {maxMeta.unit}.
+        {tr('Средно', 'Average')} {formatAmount(avgOfMaxKey, v.target.maxKey ?? v.key)} {maxMeta.unit} {tr('на ден', 'per day')}
+        {v.target.maxKey ? ` (${maxMeta.label.toLowerCase()})` : ''} {tr('при горна граница', 'vs. upper limit')} {formatAmount(max, v.target.maxKey ?? v.key)} {maxMeta.unit}.
       </Txt>
       {v.target.note ? (
         <Txt v="small" style={{ marginTop: 6 }}>
@@ -377,7 +401,7 @@ function HighCard({ v, contributors, avgOfMaxKey }: { v: NutrientVerdict; contri
       ) : null}
       {contributors.length > 0 && (
         <Txt v="small" tone="textMuted" style={{ marginTop: 8 }}>
-          Основно от: {contributors.map((c) => `${c.name} (${Math.round(c.share * 100)}%)`).join(', ')}
+          {tr('Основно от:', 'Mostly from:')} {contributors.map((c) => `${c.name} (${Math.round(c.share * 100)}%)`).join(', ')}
         </Txt>
       )}
     </Card>

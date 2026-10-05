@@ -3,10 +3,12 @@ import { Tabs } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { AddIcon, AnalysisIcon, FastingIcon, ProgressIcon, TodayIcon } from '@/components/icons';
 import { FONT, useTheme } from '@/theme/ThemeContext';
+import { useI18n } from '@/i18n';
 
 export default function TabsLayout() {
   const t = useTheme();
   const insets = useSafeAreaInsets();
+  const { tr } = useI18n();
   return (
     <Tabs
       screenOptions={{
@@ -27,11 +29,11 @@ export default function TabsLayout() {
         sceneStyle: { backgroundColor: t.c.bg },
       }}
     >
-      <Tabs.Screen name="index" options={{ title: 'Днес', tabBarIcon: ({ color }) => <TodayIcon size={26} color={color} /> }} />
-      <Tabs.Screen name="add" options={{ title: 'Добави', tabBarIcon: ({ color }) => <AddIcon size={26} color={color} /> }} />
-      <Tabs.Screen name="analysis" options={{ title: 'Анализ', tabBarIcon: ({ color }) => <AnalysisIcon size={26} color={color} /> }} />
-      <Tabs.Screen name="progress" options={{ title: 'Прогрес', tabBarIcon: ({ color }) => <ProgressIcon size={26} color={color} /> }} />
-      <Tabs.Screen name="fasting" options={{ title: 'Пост', tabBarIcon: ({ color }) => <FastingIcon size={26} color={color} /> }} />
+      <Tabs.Screen name="index" options={{ title: tr('Днес', 'Today'), tabBarIcon: ({ color }) => <TodayIcon size={26} color={color} /> }} />
+      <Tabs.Screen name="add" options={{ title: tr('Добави', 'Add'), tabBarIcon: ({ color }) => <AddIcon size={26} color={color} /> }} />
+      <Tabs.Screen name="analysis" options={{ title: tr('Анализ', 'Analysis'), tabBarIcon: ({ color }) => <AnalysisIcon size={26} color={color} /> }} />
+      <Tabs.Screen name="progress" options={{ title: tr('Прогрес', 'Progress'), tabBarIcon: ({ color }) => <ProgressIcon size={26} color={color} /> }} />
+      <Tabs.Screen name="fasting" options={{ title: tr('Пост', 'Fasting'), tabBarIcon: ({ color }) => <FastingIcon size={26} color={color} /> }} />
     </Tabs>
   );
 }

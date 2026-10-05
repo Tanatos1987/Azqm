@@ -6,6 +6,8 @@ import { MacroLine } from './food/FoodBits';
 import { makeStyles, useTheme } from '@/theme/ThemeContext';
 import type { FoodEntry } from '@/types';
 import { formatNumber, formatTime } from '@/utils/date';
+import { entryDisplayName } from '@/utils/entryName';
+import { useI18n } from '@/i18n';
 
 const SOURCE_ICON = {
   photo: CameraIcon,
@@ -24,6 +26,8 @@ interface FoodEntryRowProps {
 export const FoodEntryRow = React.memo(function FoodEntryRow({ entry, carbBasis, onPress }: FoodEntryRowProps) {
   const t = useTheme();
   const s = useStyles();
+  // Memoized row: the context subscription re-renders it on a language switch.
+  const { tr } = useI18n();
   const SourceIcon = SOURCE_ICON[entry.source] ?? SearchIcon;
   return (
     <Pressable onPress={() => onPress(entry)} style={({ pressed }) => [s.row, pressed && { opacity: 0.85 }]}>
@@ -32,18 +36,18 @@ export const FoodEntryRow = React.memo(function FoodEntryRow({ entry, carbBasis,
       </View>
       <View style={{ flex: 1, gap: 3 }}>
         <Txt v="bodyStrong" numberOfLines={2}>
-          {entry.name}
+          {entryDisplayName(entry)}
         </Txt>
         <Txt v="caption" tone="textMuted">
           {formatTime(entry.timeIso)}
-          {entry.grams ? ` · ${formatNumber(entry.grams)} г` : ''}
+          {entry.grams ? ` · ${formatNumber(entry.grams)} ${tr('г', 'g')}` : ''}
         </Txt>
         <MacroLine n={entry.n} carbBasis={carbBasis} />
       </View>
       <View style={{ alignItems: 'flex-end' }}>
         <Txt v="h3">{formatNumber(entry.n.kcal)}</Txt>
         <Txt v="caption" tone="textMuted">
-          ккал
+          {tr('ккал', 'kcal')}
         </Txt>
       </View>
     </Pressable>

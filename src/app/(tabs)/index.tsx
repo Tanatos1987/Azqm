@@ -21,6 +21,7 @@ import { makeStyles, useTheme } from '@/theme/ThemeContext';
 import type { FoodEntry, HydrationTotals, NutrientKey } from '@/types';
 import { MEALS, entryTimeIso, formatLongDate, formatNumber, shiftDateKey, todayKey } from '@/utils/date';
 import { waterGoalMl } from '@/utils/bodyMetrics';
+import { useI18n } from '@/i18n';
 
 const EMPTY_WATER: HydrationTotals = { waterMl: 0, sodiumMg: 0, potassiumMg: 0, magnesiumMg: 0 };
 const ALERT_KEYS: NutrientKey[] = ['sodium', 'sugar', 'satFat', 'vitA', 'iron', 'zinc', 'selenium', 'calcium'];
@@ -35,6 +36,7 @@ export default function TodayScreen() {
   const { version, bump } = useDataRefresh();
   const { date } = useSelectedDate();
   const toast = useToast();
+  const { lang, tr } = useI18n();
   const fasting = useFasting(30000);
   const diet = getDiet(settings.dietId);
 
@@ -84,7 +86,9 @@ export default function TodayScreen() {
 
   const byMeal = useMemo(
     () => MEALS.map((m) => ({ ...m, items: entries.filter((e) => e.meal === m.key) })).filter((m) => m.items.length > 0),
-    [entries]
+    // lang: the spread snapshots the meal label getter, so recompute on a language switch.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [entries, lang]
   );
 
   const addWater = async (ml: number) => {
@@ -95,7 +99,7 @@ export default function TodayScreen() {
   const copyYesterday = async () => {
     const n = await copyDay(db, shiftDateKey(date, -1), date);
     bump();
-    toast.show(`Копирани ${n} записа от предишния ден`);
+    toast.show(tr(`Копирани ${n} записа от предишния ден`, `Copied ${n} ${n === 1 ? 'entry' : 'entries'} from the previous day`));
   };
 
   const split = totals.kcal > 0 ? { p: (totals.protein * 4) / totals.kcal, f: (totals.fat * 9) / totals.kcal, c: (carbs * 4) / totals.kcal } : null;
@@ -111,7 +115,7 @@ export default function TodayScreen() {
       right={
         <Row gap={10}>
           <DateSwitcher compact />
-          <IconButton onPress={() => router.push('/settings')} accessibilityLabel="Настройки">
+          <IconButton onPress={() => router.push('/settings')} accessibilityLabel={tr('Настройки', 'Settings')}>
             <SettingsIcon size={22} color={t.c.text} />
           </IconButton>
         </Row>
@@ -124,12 +128,12 @@ export default function TodayScreen() {
       <Pressable onPress={() => router.push('/diet')} style={({ pressed }) => [s.dietChip, pressed && { opacity: 0.8 }]}>
         <View style={{ flex: 1 }}>
           <Txt v="caption" tone="textMuted">
-            Хранителен режим
+            {tr('Хранителен режим', 'Diet')}
           </Txt>
           <Txt v="bodyStrong">{diet.name}</Txt>
         </View>
         <Txt v="caption" tone="textMuted">
-          Смени
+          {tr('Смени', 'Change')}
         </Txt>
         <ChevronRightIcon size={18} color={t.c.textMuted} />
       </Pressable>
@@ -137,15 +141,20 @@ export default function TodayScreen() {
       {diet.noCalories ? (
         <Card>
           <Txt v="h3" style={{ marginBottom: 6 }}>
-            Лечебно гладуване
+            {tr('Лечебно гладуване', 'Therapeutic fasting')}
           </Txt>
           <Txt tone="textMuted">
-            {fasting.isFasting ? `В пост от ${formatDuration(fasting.elapsedMs, false)} (цел ${fasting.goalHours} ч).` : 'Таймерът не е пуснат — започни поста от раздел „Пост“.'}
+            {fasting.isFasting
+              ? tr(`В пост от ${formatDuration(fasting.elapsedMs, false)} (цел ${fasting.goalHours} ч).`, `Fasting for ${formatDuration(fasting.elapsedMs, false)} (goal ${fasting.goalHours} h).`)
+              : tr('Таймерът не е пуснат — започни поста от раздел „Пост“.', 'The timer isn’t running — start your fast from the “Fasting” tab.')}
           </Txt>
           <Txt v="small" tone="warning" style={{ marginTop: 10 }}>
-            Пий вода и електролити. При слабост, сърцебиене или замайване прекъсни гладуването.
+            {tr(
+              'Пий вода и електролити. При слабост, сърцебиене или замайване прекъсни гладуването.',
+              'Drink water and take electrolytes. Stop fasting if you feel weak, dizzy or your heart is racing.'
+            )}
           </Txt>
-          <Button label="Към таймера" variant="secondary" small onPress={() => router.navigate('/fasting')} style={{ marginTop: 12, alignSelf: 'flex-start' }} />
+          <Button label={tr('Към таймера', 'Go to timer')} variant="secondary" small onPress={() => router.navigate('/fasting')} style={{ marginTop: 12, alignSelf: 'flex-start' }} />
         </Card>
       ) : (
         <Card>
@@ -155,27 +164,28 @@ export default function TodayScreen() {
                 {formatNumber(totals.kcal)}
               </Txt>
               <Txt v="caption" tone="textMuted">
-                от {formatNumber(goals.calories)} ккал
+                {tr('от', 'of')} {formatNumber(goals.calories)} {tr('ккал', 'kcal')}
               </Txt>
             </ProgressRing>
             <View style={{ flex: 1, gap: 12 }}>
               <View>
                 <Txt v="caption" tone="textMuted">
-                  {remaining >= 0 ? 'Остават' : 'Над целта'}
+                  {remaining >= 0 ? tr('Остават', 'Remaining') : tr('Над целта', 'Over goal')}
                 </Txt>
                 <Txt v="h2" tone={remaining >= 0 ? 'text' : 'warning'}>
-                  {formatNumber(Math.abs(remaining))} ккал
+                  {formatNumber(Math.abs(remaining))} {tr('ккал', 'kcal')}
                 </Txt>
               </View>
-              <MacroBar label="Протеин" value={totals.protein} goal={goals.protein} color={t.c.protein} />
-              <MacroBar label="Мазнини" value={totals.fat} goal={goals.fat} color={t.c.fat} />
-              <MacroBar label={diet.carbBasis === 'net' ? 'Нетни въгл.' : 'Въглехидрати'} value={carbs} goal={goals.carbs} color={t.c.carbs} strictMax={diet.carbCapG != null} />
+              <MacroBar label={tr('Протеин', 'Protein')} value={totals.protein} goal={goals.protein} color={t.c.protein} />
+              <MacroBar label={tr('Мазнини', 'Fat')} value={totals.fat} goal={goals.fat} color={t.c.fat} />
+              <MacroBar label={diet.carbBasis === 'net' ? tr('Нетни въгл.', 'Net carbs') : tr('Въглехидрати', 'Carbs')} value={carbs} goal={goals.carbs} color={t.c.carbs} strictMax={diet.carbCapG != null} />
             </View>
           </Row>
           {split && (
             <Txt v="caption" tone="textMuted" style={{ marginTop: 14 }}>
-              Разпределение днес: Б {Math.round(split.p * 100)}% · М {Math.round(split.f * 100)}% · В {Math.round(split.c * 100)}% (цел {Math.round(diet.split.protein * 100)}/
-              {Math.round(diet.split.fat * 100)}/{Math.round(diet.split.carbs * 100)}) · Фибри {formatNumber(totals.fiber)} г
+              {tr('Разпределение днес: Б', 'Today’s split: P')} {Math.round(split.p * 100)}% · {tr('М', 'F')} {Math.round(split.f * 100)}% · {tr('В', 'C')} {Math.round(split.c * 100)}% (
+              {tr('цел', 'goal')} {Math.round(diet.split.protein * 100)}/{Math.round(diet.split.fat * 100)}/{Math.round(diet.split.carbs * 100)}) · {tr('Фибри', 'Fiber')}{' '}
+              {formatNumber(totals.fiber)} {tr('г', 'g')}
             </Txt>
           )}
         </Card>
@@ -186,17 +196,17 @@ export default function TodayScreen() {
           <Row gap={6}>
             <DropletIcon size={18} color={t.c.water} />
             <Txt v="caption" tone="textMuted">
-              Вода
+              {tr('Вода', 'Water')}
             </Txt>
           </Row>
           <Txt v="h3" style={{ marginTop: 6 }}>
-            {formatNumber(water.waterMl / 1000, 2)} / {formatNumber(waterGoal / 1000, 1)} л
+            {formatNumber(water.waterMl / 1000, 2)} / {formatNumber(waterGoal / 1000, 1)} {tr('л', 'L')}
           </Txt>
           <Bar value={water.waterMl} max={waterGoal} color={t.c.water} height={6} style={{ marginVertical: 8 }} />
           <Pressable onPress={() => addWater(250)} style={s.tileBtn} hitSlop={6}>
             <PlusIcon size={16} color={t.c.water} />
             <Txt v="smallStrong" color={t.c.water}>
-              250 мл
+              250 {tr('мл', 'ml')}
             </Txt>
           </Pressable>
         </Card>
@@ -204,25 +214,27 @@ export default function TodayScreen() {
           <Row gap={6}>
             <FastingIcon size={18} color={t.c.accent} />
             <Txt v="caption" tone="textMuted">
-              Пост
+              {tr('Пост', 'Fasting')}
             </Txt>
           </Row>
           <Txt v="h3" style={{ marginTop: 6 }}>
-            {fasting.isFasting ? formatDuration(fasting.elapsedMs, false) : 'не е пуснат'}
+            {fasting.isFasting ? formatDuration(fasting.elapsedMs, false) : tr('не е пуснат', 'not started')}
           </Txt>
           <Txt v="caption" tone="textMuted" style={{ marginTop: 6 }}>
-            {fasting.isFasting ? `цел ${fasting.goalHours} ч` : `цел ${settings.fastingGoalHours} ч · старт`}
+            {fasting.isFasting ? tr(`цел ${fasting.goalHours} ч`, `goal ${fasting.goalHours} h`) : tr(`цел ${settings.fastingGoalHours} ч · старт`, `goal ${settings.fastingGoalHours} h · start`)}
           </Txt>
         </Card>
         <Card style={s.tile} tight onPress={() => router.navigate('/analysis')}>
           <Txt v="caption" tone="textMuted">
-            Средно 7 дни
+            {tr('Средно 7 дни', '7-day average')}
           </Txt>
           <Txt v="h3" style={{ marginTop: 6 }}>
             {avg7.days ? formatNumber(avg7.kcal) : '—'}
           </Txt>
           <Txt v="caption" tone="textMuted" style={{ marginTop: 6 }}>
-            {avg7.days ? `ккал/ден · ${avg7.days} дни` : 'още няма дни'}
+            {avg7.days
+              ? tr(`ккал/ден · ${avg7.days} дни`, `kcal/day · ${avg7.days} ${avg7.days === 1 ? 'day' : 'days'}`)
+              : tr('още няма дни', 'no days yet')}
           </Txt>
         </Card>
       </Row>
@@ -232,24 +244,28 @@ export default function TodayScreen() {
           <Row gap={8} style={{ marginBottom: 6 }}>
             <WarningIcon size={20} color={t.c.warning} />
             <Txt v="bodyStrong" tone="warning">
-              Днес е твърде много
+              {tr('Днес е твърде много', 'Too much today')}
             </Txt>
           </Row>
           {alerts.map((a) => (
             <Txt key={a.k} v="small">
-              {NUTRIENT_META[a.k].label}: {formatAmount(a.v, a.k)} {NUTRIENT_META[a.k].unit} (граница {formatAmount(a.max, a.k)})
+              {NUTRIENT_META[a.k].label}: {formatAmount(a.v, a.k)} {NUTRIENT_META[a.k].unit} ({tr('граница', 'limit')} {formatAmount(a.max, a.k)})
             </Txt>
           ))}
         </Card>
       )}
 
-      <Button label="Добави храна" icon={<PlusIcon size={22} color={t.c.onAccent} />} onPress={() => router.navigate('/add')} style={{ marginBottom: 14 }} />
+      <Button label={tr('Добави храна', 'Add food')} icon={<PlusIcon size={22} color={t.c.onAccent} />} onPress={() => router.navigate('/add')} style={{ marginBottom: 14 }} />
 
       {entries.length === 0 ? (
         <Card>
-          <EmptyState emoji="🍽️" title="Още няма записи за този ден" text="Добави храна от базата, с баркод или ръчно.">
+          <EmptyState
+            emoji="🍽️"
+            title={tr('Още няма записи за този ден', 'Nothing logged for this day yet')}
+            text={tr('Добави храна от базата, с баркод или ръчно.', 'Add food from the database, by barcode or manually.')}
+          >
             {yesterdayCount > 0 && (
-              <Button label="Копирай храните от предишния ден" variant="secondary" small icon={<CopyIcon size={18} color={t.c.text} />} onPress={copyYesterday} style={{ marginTop: 12 }} />
+              <Button label={tr('Копирай храните от предишния ден', 'Copy foods from the previous day')} variant="secondary" small icon={<CopyIcon size={18} color={t.c.text} />} onPress={copyYesterday} style={{ marginTop: 12 }} />
             )}
           </EmptyState>
         </Card>
@@ -261,7 +277,7 @@ export default function TodayScreen() {
                 {m.emoji} {m.label}
               </Txt>
               <Txt v="smallStrong" tone="textMuted">
-                {formatNumber(m.items.reduce((sum, e) => sum + e.n.kcal, 0))} ккал
+                {formatNumber(m.items.reduce((sum, e) => sum + e.n.kcal, 0))} {tr('ккал', 'kcal')}
               </Txt>
             </Row>
             {m.items.map((e) => (
@@ -273,7 +289,7 @@ export default function TodayScreen() {
 
       {entries.length > 0 && (
         <Txt v="caption" tone="textFaint" center style={{ marginTop: 4 }}>
-          Докосни запис, за да промениш грамажа, да го повториш или изтриеш.
+          {tr('Докосни запис, за да промениш грамажа, да го повториш или изтриеш.', 'Tap an entry to change the amount, log it again or delete it.')}
         </Txt>
       )}
 
@@ -284,6 +300,7 @@ export default function TodayScreen() {
 
 function MacroBar({ label, value, goal, color, strictMax }: { label: string; value: number; goal: number; color: string; strictMax?: boolean }) {
   const t = useTheme();
+  const { tr } = useI18n();
   const over = goal > 0 && value > goal * 1.05;
   return (
     <View>
@@ -292,7 +309,7 @@ function MacroBar({ label, value, goal, color, strictMax }: { label: string; val
           {label}
         </Txt>
         <Txt v="caption" style={{ fontWeight: '700' }} color={over && strictMax ? t.c.warning : undefined}>
-          {formatNumber(value)} / {formatNumber(goal)} г
+          {formatNumber(value)} / {formatNumber(goal)} {tr('г', 'g')}
         </Txt>
       </Row>
       <Bar value={value} max={goal} color={over && strictMax ? t.c.warning : color} height={8} />

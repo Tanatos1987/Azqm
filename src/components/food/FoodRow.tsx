@@ -9,6 +9,7 @@ import { scaleNutrients } from '@/data/nutrients';
 import { makeStyles, useTheme } from '@/theme/ThemeContext';
 import type { FoodItem } from '@/types';
 import { formatNumber } from '@/utils/date';
+import { useI18n } from '@/i18n';
 
 interface FoodRowProps {
   food: FoodItem;
@@ -23,6 +24,8 @@ interface FoodRowProps {
 export const FoodRow = React.memo(function FoodRow({ food, diet, favorite, onPress, onQuickAdd, onToggleFavorite }: FoodRowProps) {
   const t = useTheme();
   const s = useStyles();
+  // Context subscription: re-renders this memoized row when the language changes.
+  const { tr } = useI18n();
   const fitColor = useFitColor();
   const portion = defaultPortion(food);
   const n = scaleNutrients(food.per100, portion.grams);
@@ -41,14 +44,15 @@ export const FoodRow = React.memo(function FoodRow({ food, diet, favorite, onPre
           </Txt>
         </View>
         <Txt v="caption" tone="textMuted" numberOfLines={1}>
-          {portion.label.endsWith(' г') ? portion.label : `${portion.label} (${formatNumber(portion.grams)} г)`} · {formatNumber(n.kcal)} ккал
+          {portion.label.endsWith(' г') || portion.label.endsWith(' g') ? portion.label : `${portion.label} (${formatNumber(portion.grams)} ${tr('г', 'g')})`} ·{' '}
+          {formatNumber(n.kcal)} {tr('ккал', 'kcal')}
         </Txt>
         <MacroLine n={n} carbBasis={diet.carbBasis} />
       </View>
-      <Pressable onPress={() => onToggleFavorite(food.id)} hitSlop={8} style={s.star} accessibilityLabel="Любима">
+      <Pressable onPress={() => onToggleFavorite(food.id)} hitSlop={8} style={s.star} accessibilityLabel={tr('Любима', 'Favorite')}>
         <StarIcon size={22} color={favorite ? t.c.warning : t.c.textFaint} filled={favorite} />
       </Pressable>
-      <Pressable onPress={() => onQuickAdd(food)} hitSlop={6} style={({ pressed }) => [s.add, pressed && { opacity: 0.7 }]} accessibilityLabel="Добави една порция">
+      <Pressable onPress={() => onQuickAdd(food)} hitSlop={6} style={({ pressed }) => [s.add, pressed && { opacity: 0.7 }]} accessibilityLabel={tr('Добави една порция', 'Add one serving')}>
         <PlusIcon size={22} color={t.c.onAccent} />
       </Pressable>
     </Pressable>

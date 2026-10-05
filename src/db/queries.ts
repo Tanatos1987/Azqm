@@ -14,6 +14,7 @@ import type {
 } from '@/types';
 import { emptyNutrients, fillNutrients, NUTRIENT_KEYS } from '@/data/nutrients';
 import { nutrientColumn } from './schema';
+import { tr } from '@/i18n';
 
 const N_COLS = NUTRIENT_KEYS.map(nutrientColumn);
 
@@ -149,6 +150,17 @@ export async function setFavorite(db: SQLiteDatabase, foodId: string, on: boolea
   }
 }
 
+/** Saved portions are usually the app's own "1 порция" / "1 serving" — show those in the current language. */
+function customPortion(label: string, grams: number) {
+  const generic = label === '1 порция' || label === '1 serving';
+  return {
+    get label() {
+      return generic ? tr('1 порция', '1 serving') : label;
+    },
+    grams,
+  };
+}
+
 function mapCustomFood(row: any): FoodItem {
   return {
     id: row.id,
@@ -156,7 +168,7 @@ function mapCustomFood(row: any): FoodItem {
     category: 'custom',
     tags: [],
     aliases: [],
-    portions: row.portion_label && row.portion_grams ? [{ label: row.portion_label, grams: row.portion_grams }] : [],
+    portions: row.portion_label && row.portion_grams ? [customPortion(row.portion_label, row.portion_grams)] : [],
     hasMicros: row.has_micros === 1,
     per100: nutrientsOf(row),
     custom: true,
@@ -327,7 +339,7 @@ export async function exportDatabase(db: SQLiteDatabase): Promise<BackupData> {
 
 /** Replaces all diary data with the backup's rows (unknown columns are skipped). */
 export async function importDatabase(db: SQLiteDatabase, data: BackupData) {
-  if (data?.app !== 'azqm' || !data.tables) throw new Error('Файлът не е резервно копие на Azqm.');
+  if (data?.app !== 'azqm' || !data.tables) throw new Error(tr('Файлът не е резервно копие на Azqm.', "This file isn't an Azqm backup."));
   await db.withTransactionAsync(async () => {
     for (const t of BACKUP_TABLES) {
       await db.runAsync(`DELETE FROM ${t}`);

@@ -10,14 +10,18 @@ import { getDiet } from '@/data/diets';
 import { ACTIVITY_LEVELS, WEIGHT_GOALS, bmiOf } from './bodyMetrics';
 import { buildCsv, buildXlsx, type Cell } from './xlsx';
 import { formatTime, mealLabel, todayKey } from './date';
+import { entryDisplayName } from './entryName';
+import { locale, tr } from '@/i18n';
 
-const SOURCE_LABEL: Record<FoodEntry['source'], string> = {
-  photo: 'Снимка',
-  barcode: 'Баркод',
-  manual: 'Ръчно',
-  database: 'База храни',
-  custom: 'Моя храна',
-};
+/** Sheet names, headers and labels follow the current UI language (JSON backup keys never change). */
+const sourceLabel = (source: FoodEntry['source']): string =>
+  ({
+    photo: tr('Снимка', 'Photo'),
+    barcode: tr('Баркод', 'Barcode'),
+    manual: tr('Ръчно', 'Manual'),
+    database: tr('База храни', 'Food database'),
+    custom: tr('Моя храна', 'My food'),
+  })[source] ?? source;
 
 /** Nutrient columns of the diary export (retinol is internal, so it's left out). */
 const EXPORT_KEYS: NutrientKey[] = (Object.keys(NUTRIENT_META) as NutrientKey[]).filter((k) => k !== 'retinol');
@@ -25,15 +29,24 @@ const EXPORT_KEYS: NutrientKey[] = (Object.keys(NUTRIENT_META) as NutrientKey[])
 const r = (v: number, d = 1) => Math.round(v * 10 ** d) / 10 ** d;
 
 function diaryRows(entries: FoodEntry[]): Cell[][] {
-  const header: Cell[] = ['Дата', 'Час', 'Хранене', 'Храна', 'Източник', 'Грамаж (г)', ...EXPORT_KEYS.map((k) => `${NUTRIENT_META[k].label} (${NUTRIENT_META[k].unit})`), 'Нетни въглехидрати (г)'];
+  const header: Cell[] = [
+    tr('Дата', 'Date'),
+    tr('Час', 'Time'),
+    tr('Хранене', 'Meal'),
+    tr('Храна', 'Food'),
+    tr('Източник', 'Source'),
+    tr('Грамаж (г)', 'Amount (g)'),
+    ...EXPORT_KEYS.map((k) => `${NUTRIENT_META[k].label} (${NUTRIENT_META[k].unit})`),
+    tr('Нетни въглехидрати (г)', 'Net carbs (g)'),
+  ];
   return [
     header,
     ...entries.map((e) => [
       e.date,
       formatTime(e.timeIso),
       mealLabel(e.meal),
-      e.name,
-      SOURCE_LABEL[e.source] ?? e.source,
+      entryDisplayName(e),
+      sourceLabel(e.source),
       e.grams != null ? r(e.grams, 0) : null,
       ...EXPORT_KEYS.map((k) => r(e.n[k], k === 'kcal' ? 0 : 2)),
       r(netCarbsOf(e.n)),
@@ -48,7 +61,7 @@ async function writeAndShare(name: string, content: string | Uint8Array, mimeTyp
   if (await Sharing.isAvailableAsync()) {
     await Sharing.shareAsync(file.uri, { mimeType, dialogTitle });
   } else {
-    throw new Error('Споделянето на файлове не е налично на това устройство.');
+    throw new Error(tr('Споделянето на файлове не е налично на това устройство.', 'File sharing is not available on this device.'));
   }
 }
 
@@ -60,7 +73,7 @@ export interface ExportContext {
 /** Excel workbook: diary, daily totals, weight, water & electrolytes, fasts and profile. */
 export async function exportExcel(db: SQLiteDatabase, { profile, settings }: ExportContext) {
   const entries = await getAllFoodEntries(db);
-  if (entries.length === 0) throw new Error('Дневникът все още е празен.');
+  if (entries.length === 0) throw new Error(tr('Дневникът все още е празен.', 'Your diary is still empty.'));
   const [days, weights, hydration, fasts] = await Promise.all([
     getDaySummaries(db, '0000-01-01', '9999-12-31'),
     getWeightEntries(db),
@@ -72,67 +85,89 @@ export async function exportExcel(db: SQLiteDatabase, { profile, settings }: Exp
   const diet = getDiet(settings.dietId);
 
   const data = buildXlsx([
-    { name: 'Дневник', rows: diaryRows(entries), widths: [11, 7, 10, 34, 11, 10, ...EXPORT_KEYS.map(() => 12), 12] },
+    { name: tr('Дневник', 'Diary'), rows: diaryRows(entries), widths: [11, 7, 10, 34, 11, 10, ...EXPORT_KEYS.map(() => 12), 12] },
     {
-      name: 'По дни',
+      name: tr('По дни', 'By day'),
       widths: [11, 8, 10, 11, 11, 13, 13, 9, 11, 11],
       rows: [
-        ['Дата', 'Записи', 'Калории', 'Протеин (г)', 'Мазнини (г)', 'Въглехидрати (г)', 'Нетни въгл. (г)', 'Фибри (г)', 'Натрий (мг)', 'Вода (мл)'],
+        [
+          tr('Дата', 'Date'),
+          tr('Записи', 'Entries'),
+          tr('Калории', 'Calories'),
+          tr('Протеин (г)', 'Protein (g)'),
+          tr('Мазнини (г)', 'Fat (g)'),
+          tr('Въглехидрати (г)', 'Carbs (g)'),
+          tr('Нетни въгл. (г)', 'Net carbs (g)'),
+          tr('Фибри (г)', 'Fiber (g)'),
+          tr('Натрий (мг)', 'Sodium (mg)'),
+          tr('Вода (мл)', 'Water (ml)'),
+        ],
         ...days.map((d) => [d.date, d.entries, r(d.n.kcal, 0), r(d.n.protein), r(d.n.fat), r(d.n.carbs), r(netCarbsOf(d.n)), r(d.n.fiber), r(d.n.sodium, 0), waterByDay.get(d.date) ?? 0]),
       ],
     },
     {
-      name: 'Тегло',
+      name: tr('Тегло', 'Weight'),
       widths: [11, 11, 8],
-      rows: [['Дата', 'Тегло (кг)', 'BMI'], ...weights.map((w) => [w.date, w.weightKg, profile ? r(bmiOf(w.weightKg, profile.heightCm)) : null])],
+      rows: [[tr('Дата', 'Date'), tr('Тегло (кг)', 'Weight (kg)'), 'BMI'], ...weights.map((w) => [w.date, w.weightKg, profile ? r(bmiOf(w.weightKg, profile.heightCm)) : null])],
     },
     {
-      name: 'Вода и електролити',
+      name: tr('Вода и електролити', 'Water & electrolytes'),
       widths: [11, 7, 10, 11, 10, 12],
-      rows: [['Дата', 'Час', 'Вода (мл)', 'Натрий (мг)', 'Калий (мг)', 'Магнезий (мг)'], ...hydration.map((h) => [h.date, formatTime(h.timeIso), h.waterMl, h.sodiumMg, h.potassiumMg, h.magnesiumMg])],
+      rows: [
+        [tr('Дата', 'Date'), tr('Час', 'Time'), tr('Вода (мл)', 'Water (ml)'), tr('Натрий (мг)', 'Sodium (mg)'), tr('Калий (мг)', 'Potassium (mg)'), tr('Магнезий (мг)', 'Magnesium (mg)')],
+        ...hydration.map((h) => [h.date, formatTime(h.timeIso), h.waterMl, h.sodiumMg, h.potassiumMg, h.magnesiumMg]),
+      ],
     },
     {
-      name: 'Гладувания',
+      name: tr('Гладувания', 'Fasts'),
       widths: [18, 18, 16, 9],
       rows: [
-        ['Начало', 'Край', 'Продължителност (ч)', 'Цел (ч)'],
+        [tr('Начало', 'Start'), tr('Край', 'End'), tr('Продължителност (ч)', 'Duration (h)'), tr('Цел (ч)', 'Goal (h)')],
         ...fasts.map((f) => [
-          new Date(f.startIso).toLocaleString('bg-BG'),
-          f.endIso ? new Date(f.endIso).toLocaleString('bg-BG') : '',
+          new Date(f.startIso).toLocaleString(locale()),
+          f.endIso ? new Date(f.endIso).toLocaleString(locale()) : '',
           f.endIso ? r((new Date(f.endIso).getTime() - new Date(f.startIso).getTime()) / 3600000) : null,
           f.goalHours,
         ]),
       ],
     },
     {
-      name: 'Профил',
+      name: tr('Профил', 'Profile'),
       widths: [26, 30],
       rows: [
-        ['Показател', 'Стойност'],
-        ['Хранителен режим', diet.name],
-        ['Цел калории (ккал)', settings.goals.calories],
-        ['Цел протеин (г)', settings.goals.protein],
-        ['Цел мазнини (г)', settings.goals.fat],
-        [diet.carbBasis === 'net' ? 'Цел нетни въглехидрати (г)' : 'Цел въглехидрати (г)', settings.goals.carbs],
-        ['Пол', profile ? (profile.sex === 'male' ? 'Мъж' : 'Жена') : ''],
-        ['Възраст', profile?.age ?? ''],
-        ['Ръст (см)', profile?.heightCm ?? ''],
-        ['Тегло (кг)', profile?.weightKg ?? ''],
-        ['Целево тегло (кг)', profile?.targetWeightKg ?? ''],
-        ['Активност', ACTIVITY_LEVELS.find((a) => a.value === profile?.activity)?.label ?? ''],
-        ['Цел', WEIGHT_GOALS.find((g) => g.value === profile?.goal)?.label ?? ''],
-        ['Експортирано на', new Date().toLocaleString('bg-BG')],
-        ['Източник на данните за храните', 'USDA FoodData Central (SR Legacy); ястията — по типични рецепти'],
+        [tr('Показател', 'Field'), tr('Стойност', 'Value')],
+        [tr('Хранителен режим', 'Diet'), diet.name],
+        [tr('Цел калории (ккал)', 'Calorie goal (kcal)'), settings.goals.calories],
+        [tr('Цел протеин (г)', 'Protein goal (g)'), settings.goals.protein],
+        [tr('Цел мазнини (г)', 'Fat goal (g)'), settings.goals.fat],
+        [diet.carbBasis === 'net' ? tr('Цел нетни въглехидрати (г)', 'Net carb goal (g)') : tr('Цел въглехидрати (г)', 'Carb goal (g)'), settings.goals.carbs],
+        [tr('Пол', 'Sex'), profile ? (profile.sex === 'male' ? tr('Мъж', 'Male') : tr('Жена', 'Female')) : ''],
+        [tr('Възраст', 'Age'), profile?.age ?? ''],
+        [tr('Ръст (см)', 'Height (cm)'), profile?.heightCm ?? ''],
+        [tr('Тегло (кг)', 'Weight (kg)'), profile?.weightKg ?? ''],
+        [tr('Целево тегло (кг)', 'Target weight (kg)'), profile?.targetWeightKg ?? ''],
+        [tr('Активност', 'Activity'), ACTIVITY_LEVELS.find((a) => a.value === profile?.activity)?.label ?? ''],
+        [tr('Цел', 'Goal'), WEIGHT_GOALS.find((g) => g.value === profile?.goal)?.label ?? ''],
+        [tr('Експортирано на', 'Exported on'), new Date().toLocaleString(locale())],
+        [
+          tr('Източник на данните за храните', 'Food data source'),
+          tr('USDA FoodData Central (SR Legacy); ястията — по типични рецепти', 'USDA FoodData Central (SR Legacy); dishes are based on typical recipes'),
+        ],
       ],
     },
   ]);
-  await writeAndShare(`azqm-dnevnik-${todayKey()}.xlsx`, data, 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', 'Експорт към Excel');
+  await writeAndShare(
+    `${tr('azqm-dnevnik', 'azqm-diary')}-${todayKey()}.xlsx`,
+    data,
+    'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    tr('Експорт към Excel', 'Export to Excel')
+  );
 }
 
 export async function exportCsv(db: SQLiteDatabase) {
   const entries = await getAllFoodEntries(db);
-  if (entries.length === 0) throw new Error('Дневникът все още е празен.');
-  await writeAndShare(`azqm-dnevnik-${todayKey()}.csv`, buildCsv(diaryRows(entries)), 'text/csv', 'Експорт на дневника (CSV)');
+  if (entries.length === 0) throw new Error(tr('Дневникът все още е празен.', 'Your diary is still empty.'));
+  await writeAndShare(`${tr('azqm-dnevnik', 'azqm-diary')}-${todayKey()}.csv`, buildCsv(diaryRows(entries)), 'text/csv', tr('Експорт на дневника (CSV)', 'Export diary (CSV)'));
 }
 
 export interface BackupFile {
@@ -143,7 +178,7 @@ export interface BackupFile {
 
 export async function exportBackup(db: SQLiteDatabase, { profile, settings }: ExportContext) {
   const backup: BackupFile = { db: await exportDatabase(db), settings, profile };
-  await writeAndShare(`azqm-backup-${todayKey()}.json`, JSON.stringify(backup), 'application/json', 'Резервно копие на Azqm');
+  await writeAndShare(`azqm-backup-${todayKey()}.json`, JSON.stringify(backup), 'application/json', tr('Резервно копие на Azqm', 'Azqm backup'));
 }
 
 /** Lets the user pick a backup file; null when cancelled. */
@@ -155,8 +190,8 @@ export async function pickBackup(): Promise<BackupFile | null> {
   try {
     parsed = JSON.parse(text);
   } catch {
-    throw new Error('Файлът не е валиден JSON.');
+    throw new Error(tr('Файлът не е валиден JSON.', 'The file is not valid JSON.'));
   }
-  if (parsed?.db?.app !== 'azqm') throw new Error('Файлът не е резервно копие на Azqm.');
+  if (parsed?.db?.app !== 'azqm') throw new Error(tr('Файлът не е резервно копие на Azqm.', 'The file is not an Azqm backup.'));
   return parsed;
 }

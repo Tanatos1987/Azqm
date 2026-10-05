@@ -7,6 +7,7 @@ import { useProfile } from '@/context/ProfileContext';
 import { useSettings } from '@/context/SettingsContext';
 import { useTween } from '@/hooks/useTween';
 import { getDiet, type DietId } from '@/data/diets';
+import { useI18n, type Lang } from '@/i18n';
 import { makeStyles, useTheme } from '@/theme/ThemeContext';
 import { ACTIVITY_LEVELS, WEIGHT_GOALS, bmiCategory, bmiOf, computeMetrics, healthyWeightRange } from '@/utils/bodyMetrics';
 import type { ActivityLevel, Sex, UserProfile, WeightGoal } from '@/types';
@@ -16,14 +17,17 @@ interface ProfileFormProps {
   onSaved: () => void;
   /** onboarding: ask for the diet between the form and the result */
   askDiet?: boolean;
+  /** onboarding: show the language switch at the top of the first step */
+  askLanguage?: boolean;
 }
 
 const NEUTRAL_BMI = 22;
 
-export function ProfileForm({ initial, onSaved, askDiet }: ProfileFormProps) {
+export function ProfileForm({ initial, onSaved, askDiet, askLanguage }: ProfileFormProps) {
   const t = useTheme();
   const s = useStyles();
-  const { dietId: currentDiet } = useSettings();
+  const { tr } = useI18n();
+  const { dietId: currentDiet, language, update } = useSettings();
   const [step, setStep] = useState<'form' | 'diet' | 'result'>('form');
   const [sex, setSex] = useState<Sex>(initial?.sex ?? 'female');
   const [age, setAge] = useState(initial ? String(initial.age) : '');
@@ -48,11 +52,14 @@ export function ProfileForm({ initial, onSaved, askDiet }: ProfileFormProps) {
   };
 
   const next = () => {
-    if (!(draft.age >= 14 && draft.age <= 100)) return Alert.alert('Възраст', 'Въведи възраст между 14 и 100 години.');
-    if (!(draft.heightCm >= 120 && draft.heightCm <= 230)) return Alert.alert('Ръст', 'Въведи ръст в сантиметри (120–230).');
-    if (!(draft.weightKg >= 30 && draft.weightKg <= 300)) return Alert.alert('Тегло', 'Въведи тегло в килограми (30–300).');
+    if (!(draft.age >= 14 && draft.age <= 100)) return Alert.alert(tr('Възраст', 'Age'), tr('Въведи възраст между 14 и 100 години.', 'Enter an age between 14 and 100.'));
+    if (!(draft.heightCm >= 120 && draft.heightCm <= 230)) return Alert.alert(tr('Ръст', 'Height'), tr('Въведи ръст в сантиметри (120–230).', 'Enter your height in centimetres (120–230).'));
+    if (!(draft.weightKg >= 30 && draft.weightKg <= 300)) return Alert.alert(tr('Тегло', 'Weight'), tr('Въведи тегло в килограми (30–300).', 'Enter your weight in kilograms (30–300).'));
     if (draft.targetWeightKg != null && !(draft.targetWeightKg >= 30 && draft.targetWeightKg <= 300)) {
-      return Alert.alert('Целево тегло', 'Целевото тегло трябва да е между 30 и 300 кг (или остави полето празно).');
+      return Alert.alert(
+        tr('Целево тегло', 'Target weight'),
+        tr('Целевото тегло трябва да е между 30 и 300 кг (или остави полето празно).', 'Target weight must be between 30 and 300 kg (or leave the field empty).')
+      );
     }
     setStep(askDiet ? 'diet' : 'result');
   };
@@ -61,21 +68,21 @@ export function ProfileForm({ initial, onSaved, askDiet }: ProfileFormProps) {
     return (
       <ScrollView contentContainerStyle={{ paddingBottom: 48 }}>
         <Txt v="h2" style={{ marginBottom: 6 }}>
-          Избери хранителен режим
+          {tr('Избери хранителен режим', 'Choose a diet')}
         </Txt>
         <Txt v="small" tone="textMuted" style={{ marginBottom: 14 }}>
-          Можеш да го смениш по всяко време от „Днес“ или „Настройки“.
+          {tr('Можеш да го смениш по всяко време от „Днес“ или „Настройки“.', 'You can change it any time from “Today” or “Settings”.')}
         </Txt>
         <DietPicker
           value={dietId}
-          selectLabel="Избери и продължи"
+          selectLabel={tr('Избери и продължи', 'Select and continue')}
           onSelect={(id) => {
             setDietId(id);
             setStep('result');
           }}
         />
-        <Button label={`Продължи с „${getDiet(dietId).name}“`} onPress={() => setStep('result')} style={{ marginTop: 8 }} />
-        <Button label="Назад" variant="ghost" onPress={() => setStep('form')} />
+        <Button label={tr(`Продължи с „${getDiet(dietId).name}“`, `Continue with “${getDiet(dietId).name}”`)} onPress={() => setStep('result')} style={{ marginTop: 8 }} />
+        <Button label={tr('Назад', 'Back')} variant="ghost" onPress={() => setStep('form')} />
       </ScrollView>
     );
   }
@@ -86,41 +93,61 @@ export function ProfileForm({ initial, onSaved, askDiet }: ProfileFormProps) {
 
   return (
     <ScrollView contentContainerStyle={{ paddingBottom: 48 }} keyboardShouldPersistTaps="handled">
+      {askLanguage && (
+        <Card>
+          <Txt v="label" tone="textMuted" style={{ marginBottom: 8 }}>
+            {tr('Език', 'Language')}
+          </Txt>
+          {/* Option labels stay in their own language in both modes. */}
+          <Segmented<Lang>
+            value={language}
+            onChange={(v) => update({ language: v })}
+            options={[
+              { label: 'Български', value: 'bg' },
+              { label: 'English', value: 'en' },
+            ]}
+          />
+        </Card>
+      )}
+
       <Card>
         <Row gap={12}>
           <BodyFigure bmi={liveBmi} sex={sex} size={150} />
           <View style={{ flex: 1 }}>
             <Txt v="h3" style={{ marginBottom: 6 }}>
-              Твоят профил
+              {tr('Твоят профил', 'Your profile')}
             </Txt>
             <Txt v="small" tone="textMuted">
-              По тези данни изчисляваме базовия метаболизъм, дневния разход на енергия и личните ти цели според избрания режим.
+              {tr(
+                'По тези данни изчисляваме базовия метаболизъм, дневния разход на енергия и личните ти цели според избрания режим.',
+                'We use these details to work out your basal metabolism, daily energy expenditure and personal goals for the chosen diet.'
+              )}
             </Txt>
           </View>
         </Row>
       </Card>
 
       <Txt v="label" tone="textMuted" style={s.label}>
-        Пол
+        {tr('Пол', 'Sex')}
       </Txt>
       <Segmented<Sex>
         value={sex}
         onChange={setSex}
         options={[
-          { label: 'Жена', value: 'female' },
-          { label: 'Мъж', value: 'male' },
+          { label: tr('Жена', 'Female'), value: 'female' },
+          { label: tr('Мъж', 'Male'), value: 'male' },
         ]}
       />
 
       <View style={s.grid}>
-        <NumberField label="Възраст (години)" value={age} onChangeText={setAge} placeholder="35" />
-        <NumberField label="Ръст (см)" value={height} onChangeText={setHeight} placeholder="170" />
-        <NumberField label="Тегло (кг)" value={weight} onChangeText={setWeight} placeholder="75" />
-        <NumberField label="Целево тегло (кг)" value={target} onChangeText={setTarget} placeholder="по избор" />
+        <NumberField label={tr('Възраст (години)', 'Age (years)')} value={age} onChangeText={setAge} placeholder="35" />
+        <NumberField label={tr('Ръст (см)', 'Height (cm)')} value={height} onChangeText={setHeight} placeholder="170" />
+        <NumberField label={tr('Тегло (кг)', 'Weight (kg)')} value={weight} onChangeText={setWeight} placeholder="75" />
+        <NumberField label={tr('Целево тегло (кг)', 'Target weight (kg)')} value={target} onChangeText={setTarget} placeholder={tr('по избор', 'optional')} />
       </View>
 
       <Txt v="label" tone="textMuted" style={s.label}>
-        Ниво на активност
+        {tr('Ниво на активност', 'Activity level')}
       </Txt>
       {ACTIVITY_LEVELS.map((a) => {
         const active = a.value === activity;
@@ -138,11 +165,11 @@ export function ProfileForm({ initial, onSaved, askDiet }: ProfileFormProps) {
       })}
 
       <Txt v="label" tone="textMuted" style={s.label}>
-        Цел
+        {tr('Цел', 'Goal')}
       </Txt>
       <Segmented<WeightGoal> value={goal} onChange={setGoal} options={WEIGHT_GOALS.map((g) => ({ label: g.label, value: g.value }))} />
 
-      <Button label={askDiet ? 'Напред' : 'Изчисли'} onPress={next} style={{ marginTop: 24 }} />
+      <Button label={askDiet ? tr('Напред', 'Next') : tr('Изчисли', 'Calculate')} onPress={next} style={{ marginTop: 24 }} />
     </ScrollView>
   );
 }
@@ -150,6 +177,7 @@ export function ProfileForm({ initial, onSaved, askDiet }: ProfileFormProps) {
 function ProfileResult({ profile, dietId, saveDiet, onBack, onSaved }: { profile: UserProfile; dietId: DietId; saveDiet?: boolean; onBack: () => void; onSaved: () => void }) {
   const t = useTheme();
   const s = useStyles();
+  const { tr } = useI18n();
   const { saveProfile } = useProfile();
   const [saving, setSaving] = useState(false);
   const diet = getDiet(dietId);
@@ -173,6 +201,8 @@ function ProfileResult({ profile, dietId, saveDiet, onBack, onSaved }: { profile
   const bmiText = useTween(shownBmi, 1400, NEUTRAL_BMI);
   const category = bmiCategory(shownBmi);
   const toneColor = { info: t.c.info, success: t.c.success, warning: t.c.warning, danger: t.c.danger }[category.tone];
+  const kcal = tr('ккал', 'kcal');
+  const g = tr('г', 'g');
 
   const save = async () => {
     setSaving(true);
@@ -193,8 +223,8 @@ function ProfileResult({ profile, dietId, saveDiet, onBack, onSaved }: { profile
             onChange={setPhase}
             style={{ alignSelf: 'stretch', marginBottom: 8 }}
             options={[
-              { label: `Сега · ${profile.weightKg} кг`, value: 'now' },
-              { label: `Цел · ${Math.round(goalWeight!)} кг`, value: 'goal' },
+              { label: tr(`Сега · ${profile.weightKg} кг`, `Now · ${profile.weightKg} kg`), value: 'now' },
+              { label: tr(`Цел · ${Math.round(goalWeight!)} кг`, `Goal · ${Math.round(goalWeight!)} kg`), value: 'goal' },
             ]}
           />
         )}
@@ -204,33 +234,38 @@ function ProfileResult({ profile, dietId, saveDiet, onBack, onSaved }: { profile
           {category.label}
         </Txt>
         <Txt v="small" tone="textMuted" center style={{ marginTop: 6 }}>
-          Здравословно тегло за ръст {profile.heightCm} см: {Math.round(healthyMin)}–{Math.round(healthyMax)} кг
+          {tr(
+            `Здравословно тегло за ръст ${profile.heightCm} см: ${Math.round(healthyMin)}–${Math.round(healthyMax)} кг`,
+            `Healthy weight for ${profile.heightCm} cm: ${Math.round(healthyMin)}–${Math.round(healthyMax)} kg`
+          )}
         </Txt>
       </Card>
 
       <Txt v="label" tone="textMuted" style={{ marginBottom: 8 }}>
-        Режим: {diet.name}
+        {tr('Режим', 'Diet')}: {diet.name}
       </Txt>
       <View style={s.statsRow}>
-        <Stat label="Базов метаболизъм" value={metrics.bmr} unit="ккал" />
-        <Stat label="Дневен разход" value={metrics.tdee} unit="ккал" />
-        <Stat label="Дневна цел" value={metrics.goals.calories} unit="ккал" highlight />
+        <Stat label={tr('Базов метаболизъм', 'Basal metabolism')} value={metrics.bmr} unit={kcal} />
+        <Stat label={tr('Дневен разход', 'Daily expenditure')} value={metrics.tdee} unit={kcal} />
+        <Stat label={tr('Дневна цел', 'Daily goal')} value={metrics.goals.calories} unit={kcal} highlight />
       </View>
       {!diet.noCalories && (
         <View style={s.statsRow}>
-          <Stat label="Протеин" value={metrics.goals.protein} unit="г" color={t.c.protein} />
-          <Stat label="Мазнини" value={metrics.goals.fat} unit="г" color={t.c.fat} />
-          <Stat label={diet.carbBasis === 'net' ? 'Нетни въгл.' : 'Въглехидрати'} value={metrics.goals.carbs} unit="г" color={t.c.carbs} />
+          <Stat label={tr('Протеин', 'Protein')} value={metrics.goals.protein} unit={g} color={t.c.protein} />
+          <Stat label={tr('Мазнини', 'Fat')} value={metrics.goals.fat} unit={g} color={t.c.fat} />
+          <Stat label={diet.carbBasis === 'net' ? tr('Нетни въгл.', 'Net carbs') : tr('Въглехидрати', 'Carbs')} value={metrics.goals.carbs} unit={g} color={t.c.carbs} />
         </View>
       )}
       <Txt v="caption" tone="textMuted" style={{ marginTop: 4 }}>
-        Базов метаболизъм по формулата на Mifflin-St Jeor × коефициент на активност = дневен разход. Макросите следват разпределението на режима. Можеш да ги
-        промениш ръчно в „Настройки“.
+        {tr(
+          'Базов метаболизъм по формулата на Mifflin-St Jeor × коефициент на активност = дневен разход. Макросите следват разпределението на режима. Можеш да ги промениш ръчно в „Настройки“.',
+          'Basal metabolism (Mifflin-St Jeor formula) × activity factor = daily expenditure. Macros follow the diet’s split. You can change them manually in “Settings”.'
+        )}
       </Txt>
 
       <Row gap={12} style={{ marginTop: 20 }}>
-        <Button label="Назад" variant="secondary" onPress={onBack} flex />
-        <Button label={saving ? 'Запазване…' : 'Запази'} onPress={save} disabled={saving} flex />
+        <Button label={tr('Назад', 'Back')} variant="secondary" onPress={onBack} flex />
+        <Button label={saving ? tr('Запазване…', 'Saving…') : tr('Запази', 'Save')} onPress={save} disabled={saving} flex />
       </Row>
     </ScrollView>
   );

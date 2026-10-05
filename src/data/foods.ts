@@ -63,8 +63,7 @@ function parsePortions(raw: string, rawEn: string): Portion[] {
   });
 }
 
-/** Built-in foods carry both names; 
-ame follows the app language. */
+/** Built-in foods carry both names; `name` follows the app language. */
 export const FOODS: FoodItem[] = FOOD_DATA.map(([id, nameBg, nameEn, category, tags, aliases, portions, portionsEn, full, values]) => {
   const per100 = {} as Nutrients;
   NUTRIENT_KEYS.forEach((k, i) => (per100[k] = values[i] ?? 0));

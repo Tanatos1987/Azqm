@@ -12,9 +12,11 @@ import { fillNutrients } from '@/data/nutrients';
 import { useTheme } from '@/theme/ThemeContext';
 import type { FoodItem } from '@/types';
 import { mealForNow } from '@/utils/date';
+import { useI18n } from '@/i18n';
 
 export function PhotoCapture() {
   const t = useTheme();
+  const { tr } = useI18n();
   const { apiKey, visionProvider, visionModel, hasApiKey } = useSettings();
   const { logEntry } = useLogFood();
   const [permission, requestPermission] = useCameraPermissions();
@@ -25,12 +27,14 @@ export function PhotoCapture() {
   if (!hasApiKey) {
     return (
       <Card style={{ marginTop: 12, gap: 12 }}>
-        <Txt v="h3">Разпознаване по снимка</Txt>
+        <Txt v="h3">{tr('Разпознаване по снимка', 'Photo recognition')}</Txt>
         <Txt tone="textMuted">
-          Тази функция изпраща снимката към изкуствен интелект (Google Gemini или OpenAI) и иска личен API ключ. Без ключ използвай търсенето в базата — тя работи
-          без интернет.
+          {tr(
+            'Тази функция изпраща снимката към изкуствен интелект (Google Gemini или OpenAI) и иска личен API ключ. Без ключ използвай търсенето в базата — тя работи без интернет.',
+            'This feature sends the photo to an AI (Google Gemini or OpenAI) and needs your own API key. Without a key, use the database search — it works offline.',
+          )}
         </Txt>
-        <Button label="Добави API ключ в Настройки" onPress={() => router.push('/settings')} />
+        <Button label={tr('Добави API ключ в Настройки', 'Add an API key in Settings')} onPress={() => router.push('/settings')} />
       </Card>
     );
   }
@@ -40,8 +44,8 @@ export function PhotoCapture() {
   if (!permission.granted) {
     return (
       <Card style={{ marginTop: 12, alignItems: 'center', gap: 12 }}>
-        <Txt center>Нужен е достъп до камерата, за да снимаш храната.</Txt>
-        <Button label="Разреши достъп" onPress={requestPermission} />
+        <Txt center>{tr('Нужен е достъп до камерата, за да снимаш храната.', 'Camera access is needed to photograph your food.')}</Txt>
+        <Button label={tr('Разреши достъп', 'Allow access')} onPress={requestPermission} />
       </Card>
     );
   }
@@ -62,14 +66,14 @@ export function PhotoCapture() {
           category: 'custom',
           tags: [],
           aliases: [],
-          portions: [{ label: 'по снимката', grams }],
+          portions: [{ label: tr('по снимката', 'from the photo'), grams }],
           hasMicros: false,
           per100: fillNutrients({ kcal: a.calories * f, protein: a.protein * f, fat: a.fat * f, carbs: a.carbs * f, fiber: a.fiber * f }),
           custom: true,
         },
       });
     } catch (err: any) {
-      Alert.alert('Грешка при анализа', err?.message ?? String(err));
+      Alert.alert(tr('Грешка при анализа', 'Analysis failed'), err?.message ?? String(err));
     } finally {
       setAnalyzing(false);
     }
@@ -83,17 +87,17 @@ export function PhotoCapture() {
             food={result.food}
             initialGrams={result.grams}
             initialMeal={mealForNow()}
-            primaryLabel="Добави"
+            primaryLabel={tr('Добави', 'Add')}
             hideFit
             onSubmit={async ({ grams, meal, n }) => {
               await logEntry({ meal, name: result.food.name, source: 'photo', grams, foodId: null, hasMicros: false, n });
               setResult(null);
             }}
           >
-            <Button label="Нова снимка" variant="secondary" onPress={() => setResult(null)} style={{ marginTop: 10 }} />
+            <Button label={tr('Нова снимка', 'New photo')} variant="secondary" onPress={() => setResult(null)} style={{ marginTop: 10 }} />
           </AmountEditor>
           <Txt v="caption" tone="textFaint" style={{ marginTop: 12 }}>
-            Оценката по снимка е приблизителна — провери грамажа.
+            {tr('Оценката по снимка е приблизителна — провери грамажа.', 'The photo estimate is approximate — check the amount.')}
           </Txt>
         </Card>
       </ScrollView>
@@ -107,11 +111,11 @@ export function PhotoCapture() {
         <View style={[styles.overlay, { backgroundColor: t.c.overlay }]}>
           <ActivityIndicator color="#fff" size="large" />
           <Txt v="bodyStrong" color="#FFFFFF">
-            Анализирам снимката…
+            {tr('Анализирам снимката…', 'Analyzing the photo…')}
           </Txt>
         </View>
       ) : (
-        <Pressable style={[styles.shutter, { backgroundColor: t.c.accent }]} onPress={takePicture} accessibilityLabel="Снимай">
+        <Pressable style={[styles.shutter, { backgroundColor: t.c.accent }]} onPress={takePicture} accessibilityLabel={tr('Снимай', 'Take photo')}>
           <CameraIcon size={30} color={t.c.onAccent} />
         </Pressable>
       )}

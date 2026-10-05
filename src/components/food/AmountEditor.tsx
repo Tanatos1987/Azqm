@@ -11,6 +11,7 @@ import { ANALYZED_NUTRIENTS, NUTRIENT_META, formatAmount, netCarbsOf, nutrientTa
 import { makeStyles, useTheme } from '@/theme/ThemeContext';
 import type { FoodItem, MealType, Nutrients } from '@/types';
 import { MEALS, formatNumber } from '@/utils/date';
+import { tr, useI18n } from '@/i18n';
 
 export interface AmountResult {
   grams: number;
@@ -40,6 +41,7 @@ function stepFor(grams: number, food: FoodItem): number {
 export function AmountEditor({ food, initialGrams, initialMeal, primaryLabel, onSubmit, children, hideFit }: AmountEditorProps) {
   const t = useTheme();
   const s = useStyles();
+  useI18n();
   const { dietId } = useSettings();
   const { profile } = useProfile();
   const diet = getDiet(dietId);
@@ -69,7 +71,7 @@ export function AmountEditor({ food, initialGrams, initialMeal, primaryLabel, on
       <Txt v="h2">{food.name}</Txt>
       <Row style={{ marginTop: 6, marginBottom: 14, flexWrap: 'wrap' }}>
         <Txt v="small" tone="textMuted">
-          {categoryLabel(food.category)} · {formatNumber(food.per100.kcal)} ккал / 100 г
+          {categoryLabel(food.category)} · {formatNumber(food.per100.kcal)} {tr('ккал / 100 г', 'kcal / 100 g')}
         </Txt>
       </Row>
       {!hideFit && (
@@ -85,7 +87,7 @@ export function AmountEditor({ food, initialGrams, initialMeal, primaryLabel, on
         <View style={{ alignItems: 'center' }}>
           <Input big value={gramsText} onChangeText={setGramsText} keyboardType="numeric" selectTextOnFocus style={s.gramsInput} maxLength={5} />
           <Txt v="caption" tone="textMuted" style={{ marginTop: 4 }}>
-            грама
+            {tr('грама', 'grams')}
           </Txt>
         </View>
         <Pressable style={s.stepBtn} onPress={() => setGrams(grams + step)} hitSlop={6}>
@@ -95,12 +97,17 @@ export function AmountEditor({ food, initialGrams, initialMeal, primaryLabel, on
 
       <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={s.chips} keyboardShouldPersistTaps="handled">
         {portionOptions(food).map((p) => (
-          <Chip key={`${p.label}-${p.grams}`} label={p.label.endsWith(' г') ? p.label : `${p.label} · ${formatNumber(p.grams)} г`} active={Math.round(grams) === Math.round(p.grams)} onPress={() => setGrams(p.grams)} />
+          <Chip
+            key={`${p.label}-${p.grams}`}
+            label={p.label.endsWith(' г') || p.label.endsWith(' g') ? p.label : `${p.label} · ${formatNumber(p.grams)} ${tr('г', 'g')}`}
+            active={Math.round(grams) === Math.round(p.grams)}
+            onPress={() => setGrams(p.grams)}
+          />
         ))}
       </ScrollView>
 
       <Txt v="label" tone="textMuted" style={{ marginBottom: 8 }}>
-        Хранене
+        {tr('Хранене', 'Meal')}
       </Txt>
       <Row gap={8} style={{ flexWrap: 'wrap', marginBottom: 18 }}>
         {MEALS.map((m) => (
@@ -114,14 +121,14 @@ export function AmountEditor({ food, initialGrams, initialMeal, primaryLabel, on
             {formatNumber(n.kcal)}
           </Txt>
           <Txt v="caption" tone="textMuted">
-            ккал
+            {tr('ккал', 'kcal')}
           </Txt>
         </View>
         <View style={{ flex: 1, gap: 8 }}>
-          <MacroRow label="Протеин" value={n.protein} color={t.c.protein} />
-          <MacroRow label="Мазнини" value={n.fat} color={t.c.fat} />
-          <MacroRow label={diet.carbBasis === 'net' ? 'Нетни въгл.' : 'Въглехидрати'} value={carbs} color={t.c.carbs} />
-          <MacroRow label="Фибри" value={n.fiber} color={t.c.fiber} />
+          <MacroRow label={tr('Протеин', 'Protein')} value={n.protein} color={t.c.protein} />
+          <MacroRow label={tr('Мазнини', 'Fat')} value={n.fat} color={t.c.fat} />
+          <MacroRow label={diet.carbBasis === 'net' ? tr('Нетни въгл.', 'Net carbs') : tr('Въглехидрати', 'Carbs')} value={carbs} color={t.c.carbs} />
+          <MacroRow label={tr('Фибри', 'Fiber')} value={n.fiber} color={t.c.fiber} />
         </View>
       </View>
 
@@ -129,7 +136,7 @@ export function AmountEditor({ food, initialGrams, initialMeal, primaryLabel, on
         <>
           <Pressable onPress={() => setShowMicros((v) => !v)} style={{ paddingVertical: 12 }} hitSlop={6}>
             <Txt v="smallStrong" tone="accent">
-              {showMicros ? 'Скрий витамините и минералите ▲' : 'Витамини и минерали в порцията ▼'}
+              {showMicros ? tr('Скрий витамините и минералите ▲', 'Hide vitamins and minerals ▲') : tr('Витамини и минерали в порцията ▼', 'Vitamins and minerals in this portion ▼')}
             </Txt>
           </Pressable>
           {showMicros && (
@@ -146,19 +153,22 @@ export function AmountEditor({ food, initialGrams, initialMeal, primaryLabel, on
                 </View>
               ))}
               <Txt v="caption" tone="textFaint">
-                % от препоръчителния дневен прием. Стойностите са средни (USDA) и варират според продукта.
+                {tr(
+                  '% от препоръчителния дневен прием. Стойностите са средни (USDA) и варират според продукта.',
+                  '% of the recommended daily intake. Values are averages (USDA) and vary by product.',
+                )}
               </Txt>
             </View>
           )}
         </>
       ) : (
         <Txt v="caption" tone="textFaint" style={{ marginVertical: 10 }}>
-          За тази храна няма пълни данни за витамини и минерали.
+          {tr('За тази храна няма пълни данни за витамини и минерали.', 'No full vitamin and mineral data for this food.')}
         </Txt>
       )}
 
       <Button
-        label={`${primaryLabel} · ${formatNumber(n.kcal)} ккал`}
+        label={`${primaryLabel} · ${formatNumber(n.kcal)} ${tr('ккал', 'kcal')}`}
         onPress={() => grams > 0 && onSubmit({ grams, meal, n })}
         disabled={grams <= 0}
         style={{ marginTop: 10 }}
@@ -175,7 +185,9 @@ function MacroRow({ label, value, color }: { label: string; value: number; color
         <View style={{ width: 10, height: 10, borderRadius: 5, backgroundColor: color }} />
         <Txt v="small">{label}</Txt>
       </Row>
-      <Txt v="smallStrong">{formatNumber(value, value < 10 ? 1 : 0)} г</Txt>
+      <Txt v="smallStrong">
+        {formatNumber(value, value < 10 ? 1 : 0)} {tr('г', 'g')}
+      </Txt>
     </Row>
   );
 }

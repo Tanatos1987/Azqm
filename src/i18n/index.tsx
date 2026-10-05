@@ -13,6 +13,10 @@ export type Lang = 'bg' | 'en';
 
 let current: Lang = 'bg';
 
+function setLang(lang: Lang) {
+  current = lang;
+}
+
 export function getLang(): Lang {
   return current;
 }
@@ -45,7 +49,8 @@ interface I18nValue {
 const I18nContext = createContext<I18nValue>({ lang: 'bg', tr });
 
 export function I18nProvider({ lang, children }: { lang: Lang; children: React.ReactNode }) {
-  current = lang;
+  // Set during render on purpose: children render right after and their tr() calls must already see the new language.
+  setLang(lang);
   const value = useMemo<I18nValue>(() => ({ lang, tr }), [lang]);
   return <I18nContext.Provider value={value}>{children}</I18nContext.Provider>;
 }

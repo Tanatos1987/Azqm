@@ -12,6 +12,7 @@ import { FOOD_CATEGORIES, defaultPortion, searchFoods } from '@/data/foods';
 import { makeStyles, useTheme } from '@/theme/ThemeContext';
 import type { FoodCategory, FoodItem } from '@/types';
 import { mealForNow } from '@/utils/date';
+import { useI18n } from '@/i18n';
 
 type ListMode = 'all' | 'favorites' | 'recent' | FoodCategory;
 
@@ -20,6 +21,7 @@ const isCategory = (m: ListMode): m is FoodCategory => m !== 'all' && m !== 'fav
 export function FoodSearch({ onManual }: { onManual: () => void }) {
   const t = useTheme();
   const s = useStyles();
+  const { lang, tr } = useI18n();
   const lib = useFoodLibrary();
   const { dietId } = useSettings();
   const diet = getDiet(dietId);
@@ -48,7 +50,9 @@ export function FoodSearch({ onManual }: { onManual: () => void }) {
       list = searchFoods('', all, { category: isCategory(mode) ? mode : null, boost, limit: 2000 });
     }
     return onlyFit ? list.filter((f) => f.custom || diet.fit(f) !== 'avoid') : list;
-  }, [query, mode, all, favorites, recent, getFood, boost, onlyFit, diet]);
+    // lang: the alphabetical order follows the displayed name.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [query, mode, all, favorites, recent, getFood, boost, onlyFit, diet, lang]);
 
   const quickAdd = useCallback((f: FoodItem) => logFood(f, defaultPortion(f).grams, mealForNow()), [logFood]);
   const { toggleFavorite } = lib;
@@ -60,9 +64,9 @@ export function FoodSearch({ onManual }: { onManual: () => void }) {
   );
 
   const modes: { key: ListMode; label: string }[] = [
-    { key: 'recent', label: '🕑 Последни' },
-    { key: 'favorites', label: '⭐ Любими' },
-    { key: 'all', label: 'Всички' },
+    { key: 'recent', label: `🕑 ${tr('Последни', 'Recent')}` },
+    { key: 'favorites', label: `⭐ ${tr('Любими', 'Favorites')}` },
+    { key: 'all', label: tr('Всички', 'All') },
     ...FOOD_CATEGORIES.filter((c) => c.key !== 'custom' || lib.custom.length > 0).map((c) => ({ key: c.key as ListMode, label: `${c.emoji} ${c.label}` })),
   ];
 
@@ -73,7 +77,7 @@ export function FoodSearch({ onManual }: { onManual: () => void }) {
         <Input
           value={query}
           onChangeText={setQuery}
-          placeholder="Търси: сирене, яйце, баница…"
+          placeholder={tr('Търси: сирене, яйце, баница…', 'Search: cheese, egg, banitsa…')}
           autoCorrect={false}
           returnKeyType="search"
           style={s.searchInput}
@@ -86,7 +90,7 @@ export function FoodSearch({ onManual }: { onManual: () => void }) {
       </View>
 
       <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ flexGrow: 0 }} contentContainerStyle={s.chips} keyboardShouldPersistTaps="handled">
-        <Chip label={onlyFit ? '✓ Подходящи' : 'Подходящи'} active={onlyFit} onPress={() => setOnlyFit((v) => !v)} color={t.c.success} />
+        <Chip label={onlyFit ? `✓ ${tr('Подходящи', 'Suitable')}` : tr('Подходящи', 'Suitable')} active={onlyFit} onPress={() => setOnlyFit((v) => !v)} color={t.c.success} />
         {modes.map((m) => (
           <Chip key={m.key} label={m.label} active={mode === m.key} onPress={() => setMode(m.key)} />
         ))}
@@ -104,23 +108,36 @@ export function FoodSearch({ onManual }: { onManual: () => void }) {
         ListHeaderComponent={
           !query && mode === 'all' ? (
             <Txt v="caption" tone="textMuted" style={{ marginBottom: 10 }}>
-              {all.length} храни · „+“ добавя една порция веднага, докосване на реда — избор на количество. Цветната точка показва дали храната е подходяща за режима.
+              {all.length}{' '}
+              {tr(
+                'храни · „+“ добавя една порция веднага, докосване на реда — избор на количество. Цветната точка показва дали храната е подходяща за режима.',
+                'foods · “+” adds one serving right away, tap a row to choose the amount. The colored dot shows whether the food suits your diet.',
+              )}
             </Txt>
           ) : null
         }
         ListEmptyComponent={
           <EmptyState
             emoji={mode === 'favorites' ? '⭐' : mode === 'recent' ? '🕑' : '🔎'}
-            title={mode === 'favorites' && !query ? 'Още нямаш любими храни' : mode === 'recent' && !query ? 'Още няма записани храни' : 'Нищо не е намерено'}
+            title={
+              mode === 'favorites' && !query
+                ? tr('Още нямаш любими храни', 'No favorite foods yet')
+                : mode === 'recent' && !query
+                  ? tr('Още няма записани храни', 'No foods logged yet')
+                  : tr('Нищо не е намерено', 'Nothing found')
+            }
             text={
               mode === 'favorites' && !query
-                ? 'Натисни звездичката до храна, за да я добавиш тук.'
-                : 'Опитай с друга дума или въведи храната ръчно — можеш да я запазиш като „Моя храна“.'
+                ? tr('Натисни звездичката до храна, за да я добавиш тук.', 'Tap the star next to a food to add it here.')
+                : tr(
+                    'Опитай с друга дума или въведи храната ръчно — можеш да я запазиш като „Моя храна“.',
+                    'Try another word or enter the food manually — you can save it to “My foods”.',
+                  )
             }
           >
             <Pressable onPress={onManual} style={{ marginTop: 10 }}>
               <Txt v="bodyStrong" tone="accent">
-                Въведи ръчно →
+                {tr('Въведи ръчно →', 'Enter manually →')}
               </Txt>
             </Pressable>
           </EmptyState>
@@ -133,7 +150,7 @@ export function FoodSearch({ onManual }: { onManual: () => void }) {
             food={selected}
             initialGrams={defaultPortion(selected).grams}
             initialMeal={mealForNow()}
-            primaryLabel="Добави"
+            primaryLabel={tr('Добави', 'Add')}
             hideFit={selected.custom}
             onSubmit={async ({ grams, meal }) => {
               await logFood(selected, grams, meal);

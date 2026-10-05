@@ -1,4 +1,5 @@
 import type { MealType } from '@/types';
+import { locale, tr } from '@/i18n';
 
 export function todayKey(d: Date = new Date()): string {
   const y = d.getFullYear();
@@ -13,7 +14,7 @@ export function dateOf(dateKey: string): Date {
 }
 
 export function formatTime(iso: string): string {
-  return new Date(iso).toLocaleTimeString('bg-BG', { hour: '2-digit', minute: '2-digit' });
+  return new Date(iso).toLocaleTimeString(locale(), { hour: '2-digit', minute: '2-digit' });
 }
 
 export function shiftDateKey(dateKey: string, deltaDays: number): string {
@@ -27,10 +28,13 @@ export function daysBetween(fromKey: string, toKey: string): number {
 }
 
 const WEEKDAYS = ['Нд', 'Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб'];
+const WEEKDAYS_EN = ['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'];
 const WEEKDAYS_LONG = ['неделя', 'понеделник', 'вторник', 'сряда', 'четвъртък', 'петък', 'събота'];
+const WEEKDAYS_LONG_EN = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
 
 export function weekdayShort(dateKey: string): string {
-  return WEEKDAYS[dateOf(dateKey).getDay()];
+  const i = dateOf(dateKey).getDay();
+  return tr(WEEKDAYS[i], WEEKDAYS_EN[i]);
 }
 
 export function shortDate(dateKey: string): string {
@@ -40,23 +44,32 @@ export function shortDate(dateKey: string): string {
 
 export function formatDateLabel(dateKey: string): string {
   const today = todayKey();
-  if (dateKey === today) return 'Днес';
-  if (dateKey === shiftDateKey(today, -1)) return 'Вчера';
-  if (dateKey === shiftDateKey(today, 1)) return 'Утре';
-  return dateOf(dateKey).toLocaleDateString('bg-BG', { day: 'numeric', month: 'long' });
+  if (dateKey === today) return tr('Днес', 'Today');
+  if (dateKey === shiftDateKey(today, -1)) return tr('Вчера', 'Yesterday');
+  if (dateKey === shiftDateKey(today, 1)) return tr('Утре', 'Tomorrow');
+  return dateOf(dateKey).toLocaleDateString(locale(), { day: 'numeric', month: 'long' });
 }
 
 export function formatLongDate(dateKey: string): string {
   const d = dateOf(dateKey);
-  return `${WEEKDAYS_LONG[d.getDay()]}, ${d.toLocaleDateString('bg-BG', { day: 'numeric', month: 'long', year: 'numeric' })}`;
+  const day = d.getDay();
+  return `${tr(WEEKDAYS_LONG[day], WEEKDAYS_LONG_EN[day])}, ${d.toLocaleDateString(locale(), { day: 'numeric', month: 'long', year: 'numeric' })}`;
 }
 
-export const MEALS: { key: MealType; label: string; emoji: string }[] = [
-  { key: 'breakfast', label: 'Закуска', emoji: '🌅' },
-  { key: 'lunch', label: 'Обяд', emoji: '☀️' },
-  { key: 'dinner', label: 'Вечеря', emoji: '🌙' },
-  { key: 'snack', label: 'Междинно', emoji: '🍏' },
-];
+export const MEALS: { key: MealType; readonly label: string; emoji: string }[] = (
+  [
+    ['breakfast', 'Закуска', 'Breakfast', '🌅'],
+    ['lunch', 'Обяд', 'Lunch', '☀️'],
+    ['dinner', 'Вечеря', 'Dinner', '🌙'],
+    ['snack', 'Междинно', 'Snack', '🍏'],
+  ] as const
+).map(([key, bg, en, emoji]) => ({
+  key,
+  emoji,
+  get label() {
+    return tr(bg, en);
+  },
+}));
 
 export function mealLabel(meal: MealType): string {
   return MEALS.find((m) => m.key === meal)?.label ?? meal;
@@ -80,5 +93,5 @@ export function entryTimeIso(dateKey: string): string {
 }
 
 export function formatNumber(n: number, decimals = 0): string {
-  return n.toLocaleString('bg-BG', { maximumFractionDigits: decimals, minimumFractionDigits: 0 });
+  return n.toLocaleString(locale(), { maximumFractionDigits: decimals, minimumFractionDigits: 0 });
 }

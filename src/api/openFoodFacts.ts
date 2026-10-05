@@ -1,3 +1,4 @@
+import { getLang, tr } from '@/i18n';
 import type { OffLookupResult } from '@/types';
 
 /**
@@ -7,7 +8,7 @@ import type { OffLookupResult } from '@/types';
 export async function lookupBarcode(code: string): Promise<OffLookupResult | null> {
   const res = await fetch(`https://world.openfoodfacts.org/api/v2/product/${encodeURIComponent(code)}.json`);
   if (!res.ok) {
-    throw new Error(`OpenFoodFacts грешка (${res.status})`);
+    throw new Error(tr(`OpenFoodFacts грешка (${res.status})`, `OpenFoodFacts error (${res.status})`));
   }
   const json = await res.json();
   if (json?.status !== 1 || !json?.product) {
@@ -22,7 +23,8 @@ export async function lookupBarcode(code: string): Promise<OffLookupResult | nul
   const kcal = n['energy-kcal_100g'] != null ? num(n['energy-kcal_100g']) : num(n['energy_100g']) / 4.184;
 
   return {
-    name: p.product_name_bg || p.product_name || p.generic_name || `Продукт ${code}`,
+    // Prefer the product name in the app language, then OFF's main name.
+    name: (getLang() === 'en' ? p.product_name_en : p.product_name_bg) || p.product_name || p.generic_name || tr(`Продукт ${code}`, `Product ${code}`),
     per100: {
       kcal,
       protein: num(n['proteins_100g']),

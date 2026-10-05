@@ -5,16 +5,18 @@ import { ChevronLeftIcon, ChevronRightIcon } from '@/components/icons';
 import { useSelectedDate } from '@/context/SelectedDateContext';
 import { makeStyles, useTheme } from '@/theme/ThemeContext';
 import { formatDateLabel, shiftDateKey, todayKey } from '@/utils/date';
+import { useI18n } from '@/i18n';
 
 /** ◀ Днес ▶ — changes the diary day shared by "Днес" and "Добави". */
 export function DateSwitcher({ compact }: { compact?: boolean }) {
   const t = useTheme();
   const s = useStyles();
   const { date, setDate } = useSelectedDate();
+  const { tr } = useI18n();
   const isToday = date === todayKey();
   return (
     <View style={s.wrap}>
-      <Pressable onPress={() => setDate(shiftDateKey(date, -1))} hitSlop={10} style={s.btn} accessibilityLabel="Предишен ден">
+      <Pressable onPress={() => setDate(shiftDateKey(date, -1))} hitSlop={10} style={s.btn} accessibilityLabel={tr('Предишен ден', 'Previous day')}>
         <ChevronLeftIcon size={22} color={t.c.text} />
       </Pressable>
       <Pressable onPress={() => setDate(todayKey())} hitSlop={6} style={{ minWidth: compact ? 70 : 110, alignItems: 'center' }}>
@@ -22,7 +24,7 @@ export function DateSwitcher({ compact }: { compact?: boolean }) {
           {formatDateLabel(date)}
         </Txt>
       </Pressable>
-      <Pressable onPress={() => setDate(shiftDateKey(date, 1))} hitSlop={10} style={s.btn} accessibilityLabel="Следващ ден">
+      <Pressable onPress={() => setDate(shiftDateKey(date, 1))} hitSlop={10} style={s.btn} accessibilityLabel={tr('Следващ ден', 'Next day')}>
         <ChevronRightIcon size={22} color={t.c.text} />
       </Pressable>
     </View>

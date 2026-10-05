@@ -11,9 +11,11 @@ import { useLogFood } from '@/hooks/useLogFood';
 import { useTheme } from '@/theme/ThemeContext';
 import type { FoodItem } from '@/types';
 import { mealForNow } from '@/utils/date';
+import { useI18n } from '@/i18n';
 
 export function BarcodeScan() {
   const t = useTheme();
+  const { tr } = useI18n();
   const db = useSQLiteContext();
   const { logEntry } = useLogFood();
   const [permission, requestPermission] = useCameraPermissions();
@@ -28,8 +30,8 @@ export function BarcodeScan() {
   if (!permission.granted) {
     return (
       <Card style={{ marginTop: 12, alignItems: 'center', gap: 12 }}>
-        <Txt center>Нужен е достъп до камерата, за да сканираш баркода на опаковката.</Txt>
-        <Button label="Разреши достъп" onPress={requestPermission} />
+        <Txt center>{tr('Нужен е достъп до камерата, за да сканираш баркода на опаковката.', 'Camera access is needed to scan the barcode on the package.')}</Txt>
+        <Button label={tr('Разреши достъп', 'Allow access')} onPress={requestPermission} />
       </Card>
     );
   }
@@ -53,7 +55,10 @@ export function BarcodeScan() {
       }
       const found = await lookupBarcode(data);
       if (!found) {
-        Alert.alert('Продуктът не е намерен', `Баркод ${data} го няма в OpenFoodFacts. Въведи храната ръчно.`);
+        Alert.alert(
+          tr('Продуктът не е намерен', 'Product not found'),
+          tr(`Баркод ${data} го няма в OpenFoodFacts. Въведи храната ръчно.`, `Barcode ${data} isn't in OpenFoodFacts. Enter the food manually.`),
+        );
         setScannedCode(null);
         return;
       }
@@ -63,13 +68,13 @@ export function BarcodeScan() {
         category: 'custom',
         tags: [],
         aliases: [],
-        portions: found.servingGrams ? [{ label: '1 порция', grams: found.servingGrams }] : [],
+        portions: found.servingGrams ? [{ label: tr('1 порция', '1 serving'), grams: found.servingGrams }] : [],
         hasMicros: false,
         per100: fillNutrients(found.per100),
         custom: true,
       });
     } catch (err: any) {
-      Alert.alert('Грешка', `${err?.message ?? err}. Провери връзката с интернет.`);
+      Alert.alert(tr('Грешка', 'Error'), `${err?.message ?? err}. ${tr('Провери връзката с интернет.', 'Check your internet connection.')}`);
       setScannedCode(null);
     } finally {
       setLoading(false);
@@ -84,7 +89,7 @@ export function BarcodeScan() {
             food={product}
             initialGrams={product.portions[0]?.grams ?? 100}
             initialMeal={mealForNow()}
-            primaryLabel="Добави"
+            primaryLabel={tr('Добави', 'Add')}
             hideFit
             onSubmit={async ({ grams, meal, n }) => {
               await saveCustomFood(db, { id: product.id, name: product.name, per100: product.per100, portion: product.portions[0] ?? null });
@@ -92,10 +97,13 @@ export function BarcodeScan() {
               reset();
             }}
           >
-            <Button label="Сканирай друг продукт" variant="secondary" onPress={reset} style={{ marginTop: 10 }} />
+            <Button label={tr('Сканирай друг продукт', 'Scan another product')} variant="secondary" onPress={reset} style={{ marginTop: 10 }} />
           </AmountEditor>
           <Txt v="caption" tone="textFaint" style={{ marginTop: 12 }}>
-            Данни: OpenFoodFacts (по етикета). Продуктът се запазва в „Мои храни“ и следващия път ще се зарежда и без интернет.
+            {tr(
+              'Данни: OpenFoodFacts (по етикета). Продуктът се запазва в „Мои храни“ и следващия път ще се зарежда и без интернет.',
+              'Data: OpenFoodFacts (from the label). The product is saved to “My foods” and will load offline next time.',
+            )}
           </Txt>
         </Card>
       </ScrollView>
@@ -114,7 +122,7 @@ export function BarcodeScan() {
       <View style={[styles.hint, { backgroundColor: t.c.overlay }]}>
         {loading ? <ActivityIndicator color="#fff" /> : null}
         <Txt v="bodyStrong" color="#FFFFFF" center>
-          {loading ? 'Търся продукта…' : 'Насочи камерата към баркода'}
+          {loading ? tr('Търся продукта…', 'Looking up the product…') : tr('Насочи камерата към баркода', 'Point the camera at the barcode')}
         </Txt>
       </View>
     </View>

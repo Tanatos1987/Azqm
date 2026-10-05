@@ -4,6 +4,7 @@ import { useDataRefresh } from '@/context/DataRefreshContext';
 import { useSettings } from '@/context/SettingsContext';
 import { endFast, getActiveFast, setFastGoal, startFast } from '@/db/queries';
 import type { FastRecord } from '@/types';
+import { tr } from '@/i18n';
 
 /** The running fast (stored in SQLite, so it survives restarts) plus a ticking clock. */
 export function useFasting(tickMs = 1000) {
@@ -71,16 +72,26 @@ export function formatDuration(ms: number, withSeconds = true): string {
   const m = Math.floor((totalSeconds % 3600) / 60);
   const s = totalSeconds % 60;
   const pad = (n: number) => String(n).padStart(2, '0');
-  return withSeconds ? `${pad(h)}:${pad(m)}:${pad(s)}` : `${h} ч ${pad(m)} мин`;
+  return withSeconds ? `${pad(h)}:${pad(m)}:${pad(s)}` : tr(`${h} ч ${pad(m)} мин`, `${h} h ${pad(m)} min`);
 }
 
 /** Commonly described stages of a fast (approximate — they vary from person to person). */
-export const FAST_STAGES: { hours: number; title: string; text: string }[] = [
-  { hours: 0, title: 'Храносмилане', text: 'Тялото използва енергията от последното хранене.' },
-  { hours: 8, title: 'Спад на инсулина', text: 'Кръвната захар и инсулинът се понижават, започва използване на гликогена.' },
-  { hours: 12, title: 'Изгаряне на мазнини', text: 'Гликогенът намалява и делът на изгорените мазнини расте.' },
-  { hours: 16, title: 'Начало на кетоза', text: 'Черният дроб образува повече кетони.' },
-  { hours: 24, title: 'Дълбока кетоза', text: 'Кетоните са важен източник на енергия; засилва се автофагията.' },
-  { hours: 48, title: 'Продължително гладуване', text: 'Следи електролитите и самочувствието; над 48 ч — само с лекар.' },
-  { hours: 72, title: '3 дни', text: 'Прекъсни внимателно: бульон, зеленчуци, малки порции.' },
-];
+export const FAST_STAGES: { hours: number; readonly title: string; readonly text: string }[] = (
+  [
+    [0, 'Храносмилане', 'Digestion', 'Тялото използва енергията от последното хранене.', 'Your body runs on energy from your last meal.'],
+    [8, 'Спад на инсулина', 'Insulin drops', 'Кръвната захар и инсулинът се понижават, започва използване на гликогена.', 'Blood sugar and insulin fall, and your body starts using glycogen.'],
+    [12, 'Изгаряне на мазнини', 'Fat burning', 'Гликогенът намалява и делът на изгорените мазнини расте.', 'Glycogen runs low and a growing share of energy comes from fat.'],
+    [16, 'Начало на кетоза', 'Ketosis begins', 'Черният дроб образува повече кетони.', 'Your liver makes more ketones.'],
+    [24, 'Дълбока кетоза', 'Deep ketosis', 'Кетоните са важен източник на енергия; засилва се автофагията.', 'Ketones are a major energy source; autophagy ramps up.'],
+    [48, 'Продължително гладуване', 'Extended fast', 'Следи електролитите и самочувствието; над 48 ч — само с лекар.', 'Watch your electrolytes and how you feel; beyond 48 h — only with a doctor.'],
+    [72, '3 дни', '3 days', 'Прекъсни внимателно: бульон, зеленчуци, малки порции.', 'Break the fast gently: broth, vegetables, small portions.'],
+  ] as const
+).map(([hours, titleBg, titleEn, textBg, textEn]) => ({
+  hours,
+  get title() {
+    return tr(titleBg, titleEn);
+  },
+  get text() {
+    return tr(textBg, textEn);
+  },
+}));

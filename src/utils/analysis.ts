@@ -2,7 +2,9 @@ import type { DaySummary, FoodEntry, FoodItem, HydrationTotals, NutrientKey, Nut
 import { ANALYZED_NUTRIENTS, addNutrients, emptyNutrients, netCarbsOf, nutrientTarget, type NutrientTarget } from '@/data/nutrients';
 import type { Diet } from '@/data/diets';
 import { defaultPortion } from '@/data/foods';
+import { locale, tr } from '@/i18n';
 import { todayKey } from './date';
+import { entryDisplayName } from './entryName';
 
 export interface PeriodStats {
   /** days with at least one entry, oldest first */
@@ -85,18 +87,44 @@ export function macroChecks(avg: Nutrients, profile: UserProfile | null, diet: D
   const out: MacroCheck[] = [];
   if (diet.noCalories) return out;
   if (bmr && avg.kcal > 0 && avg.kcal < bmr * 0.85) {
-    out.push({ kind: 'warning', text: `Средният прием (${Math.round(avg.kcal)} ккал) е под базовия метаболизъм (${Math.round(bmr)} ккал). Дълго така може да забави метаболизма и да стопи мускули.` });
+    out.push({
+      kind: 'warning',
+      text: tr(
+        `Средният прием (${Math.round(avg.kcal)} ккал) е под базовия метаболизъм (${Math.round(bmr)} ккал). Дълго така може да забави метаболизма и да стопи мускули.`,
+        `Your average intake (${Math.round(avg.kcal)} kcal) is below your basal metabolic rate (${Math.round(bmr)} kcal). Over time this can slow your metabolism and cost muscle.`
+      ),
+    });
   }
   if (profile && avg.kcal > 0) {
     const perKg = avg.protein / profile.weightKg;
-    if (perKg < 0.8) out.push({ kind: 'warning', text: `Протеинът е ${perKg.toFixed(1)} г/кг — под минимума от 0,8 г на кг телесно тегло.` });
+    if (perKg < 0.8) {
+      out.push({
+        kind: 'warning',
+        text: tr(
+          `Протеинът е ${perKg.toLocaleString(locale(), { minimumFractionDigits: 1, maximumFractionDigits: 1 })} г/кг — под минимума от 0,8 г на кг телесно тегло.`,
+          `Protein is ${perKg.toLocaleString(locale(), { minimumFractionDigits: 1, maximumFractionDigits: 1 })} g/kg — below the minimum of 0.8 g per kg of body weight.`
+        ),
+      });
+    }
   }
   const carbs = diet.carbBasis === 'net' ? netCarbsOf(avg) : avg.carbs;
   if (diet.carbCapG != null && carbs > diet.carbCapG * 1.2) {
-    out.push({ kind: 'warning', text: `Средно ${Math.round(carbs)} г нетни въглехидрати — над границата от ${diet.carbCapG} г за режима „${diet.name}“.` });
+    out.push({
+      kind: 'warning',
+      text: tr(
+        `Средно ${Math.round(carbs)} г нетни въглехидрати — над границата от ${diet.carbCapG} г за режима „${diet.name}“.`,
+        `On average ${Math.round(carbs)} g net carbs — above the ${diet.carbCapG} g limit for the “${diet.name}” diet.`
+      ),
+    });
   }
   if (goals.calories > 0 && avg.kcal > goals.calories * 1.1) {
-    out.push({ kind: 'info', text: `Средно приемаш с ${Math.round(avg.kcal - goals.calories)} ккал повече от дневната цел.` });
+    out.push({
+      kind: 'info',
+      text: tr(
+        `Средно приемаш с ${Math.round(avg.kcal - goals.calories)} ккал повече от дневната цел.`,
+        `On average you eat ${Math.round(avg.kcal - goals.calories)} kcal more than your daily goal.`
+      ),
+    });
   }
   return out;
 }
@@ -148,7 +176,8 @@ export function topContributors(entries: FoodEntry[], key: NutrientKey, count = 
   for (const e of entries) {
     const v = e.n[key];
     if (v <= 0) continue;
-    byName.set(e.name, (byName.get(e.name) ?? 0) + v);
+    const name = entryDisplayName(e);
+    byName.set(name, (byName.get(name) ?? 0) + v);
     total += v;
   }
   if (total <= 0) return [];

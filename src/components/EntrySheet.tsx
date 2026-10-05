@@ -12,6 +12,8 @@ import { NUTRIENT_KEYS } from '@/data/nutrients';
 import { useTheme } from '@/theme/ThemeContext';
 import type { FoodEntry, FoodItem, Nutrients } from '@/types';
 import { entryTimeIso, todayKey } from '@/utils/date';
+import { entryDisplayName } from '@/utils/entryName';
+import { useI18n } from '@/i18n';
 
 /** Edit an existing diary entry: change grams or meal, log it again, or delete it. */
 export function EntrySheet({ entry, onClose }: { entry: FoodEntry | null; onClose: () => void }) {
@@ -20,6 +22,7 @@ export function EntrySheet({ entry, onClose }: { entry: FoodEntry | null; onClos
   const { bump } = useDataRefresh();
   const toast = useToast();
   const { getFood } = useFoodLibrary();
+  const { lang, tr } = useI18n();
 
   // The original food when it's still known; otherwise rebuild per-100 g values from the entry itself.
   const food = useMemo<FoodItem | null>(() => {
@@ -35,20 +38,22 @@ export function EntrySheet({ entry, onClose }: { entry: FoodEntry | null; onClos
       category: 'custom',
       tags: [],
       aliases: [],
-      portions: [{ label: entry.grams ? 'записано' : '1 порция', grams }],
+      portions: [{ label: entry.grams ? tr('записано', 'logged') : tr('1 порция', '1 serving'), grams }],
       hasMicros: entry.hasMicros,
       per100,
       custom: true,
     };
-  }, [entry, getFood]);
+    // lang: the fallback portion label is translated.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [entry, getFood, lang]);
 
   if (!entry || !food) return <Sheet visible={false} onClose={onClose}>{null}</Sheet>;
 
   const remove = () =>
-    Alert.alert('Изтриване', `Да изтрия ли „${entry.name}“?`, [
-      { text: 'Отказ', style: 'cancel' },
+    Alert.alert(tr('Изтриване', 'Delete'), tr(`Да изтрия ли „${entryDisplayName(entry)}“?`, `Delete “${entryDisplayName(entry)}”?`), [
+      { text: tr('Отказ', 'Cancel'), style: 'cancel' },
       {
-        text: 'Изтрий',
+        text: tr('Изтрий', 'Delete'),
         style: 'destructive',
         onPress: async () => {
           await deleteFoodEntry(db, entry.id);
@@ -63,7 +68,7 @@ export function EntrySheet({ entry, onClose }: { entry: FoodEntry | null; onClos
     const { id: _id, ...rest } = entry;
     await insertFoodEntry(db, { ...rest, date, timeIso: entryTimeIso(date) });
     bump();
-    toast.show(`Добавено отново за днес: ${entry.name}`);
+    toast.show(tr(`Добавено отново за днес: ${entryDisplayName(entry)}`, `Logged again for today: ${entryDisplayName(entry)}`));
     onClose();
   };
 
@@ -73,7 +78,7 @@ export function EntrySheet({ entry, onClose }: { entry: FoodEntry | null; onClos
         food={food}
         initialGrams={entry.grams && entry.grams > 0 ? entry.grams : 100}
         initialMeal={entry.meal}
-        primaryLabel="Запази"
+        primaryLabel={tr('Запази', 'Save')}
         hideFit={food.custom}
         onSubmit={async ({ grams, meal, n }) => {
           await updateFoodEntry(db, entry.id, { grams: entry.grams == null && grams === 100 ? null : grams, meal, n });
@@ -81,8 +86,8 @@ export function EntrySheet({ entry, onClose }: { entry: FoodEntry | null; onClos
           onClose();
         }}
       >
-        <Button label="Добави отново за днес" variant="secondary" icon={<CopyIcon size={20} color={t.c.text} />} onPress={again} style={{ marginTop: 10 }} />
-        <Button label="Изтрий записа" variant="danger" icon={<TrashIcon size={20} color={t.c.danger} />} onPress={remove} style={{ marginTop: 10 }} />
+        <Button label={tr('Добави отново за днес', 'Log again for today')} variant="secondary" icon={<CopyIcon size={20} color={t.c.text} />} onPress={again} style={{ marginTop: 10 }} />
+        <Button label={tr('Изтрий записа', 'Delete entry')} variant="danger" icon={<TrashIcon size={20} color={t.c.danger} />} onPress={remove} style={{ marginTop: 10 }} />
       </AmountEditor>
     </Sheet>
   );

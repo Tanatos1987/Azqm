@@ -13,6 +13,9 @@ Running log of what has been built and decided, so work can continue across sess
   - Export: xlsx (own writer on fflate, `src/utils/xlsx.ts`), CSV, JSON backup + restore.
 
 - **Azqm 1.0.1 (2026-10-05)** — tab switching lag fixed (`freezeOnBlur` on tabs, memoized Анализ food suggestions, stable FoodRow callbacks). CI also builds `Azqm.aab` for Google Play; `google-play/` holds the store listing (bg/en), 512 icon, 1024×500 feature graphic, privacy policy and a step-by-step Play Console guide (Data safety answers, content rating, closed test 12 testers × 14 days for personal accounts). Blocked RECORD_AUDIO / storage / SYSTEM_ALERT_WINDOW permissions.
+- **Azqm 1.1.0 (2026-10-05)** — Bulgarian/English UI. `src/i18n`: inline pairs `tr('бг', 'en')` (no key table), language in a module variable set by `<I18nProvider>` (from `settings.language`), so `tr()` also works in plain modules; components call `useI18n()` to re-render, memos list `lang` in deps; module-level labels are getters. Fresh installs pick the language from the phone locale, old installs stay Bulgarian. Switch in Settings → Appearance and on the first onboarding step.
+  - Foods: English names/portions/aliases in `data-src/foodmap-en/*.json` (keyed by id; build fails if a food has no English name). `FoodItem.name` is a language getter, `nameBg`/`nameEn` also present; search indexes both languages. Diary entries keep storing the Bulgarian name in the DB and are displayed via `entryDisplayName()` (`src/utils/entryName.ts`) by `food_id`.
+  - Vision prompt, Open Food Facts name, Excel/CSV headers follow the language; JSON backup format unchanged.
 
 ## Decisions
 - No camera-based offline recognition yet — exact grams from a photo aren't reliable offline. Photo mode needs the user's own Gemini/OpenAI key.
