@@ -71,9 +71,20 @@ export default function AnalysisScreen() {
     return entries.filter((e) => dates.has(e.date));
   }, [entries, stats]);
 
-  const low = verdicts.filter((v) => v.status === 'low').sort((a, b) => (a.pct ?? 1) - (b.pct ?? 1));
-  const high = verdicts.filter((v) => v.status === 'high');
-  const ok = verdicts.filter((v) => v.status === 'ok');
+  const { low, high, ok } = useMemo(
+    () => ({
+      low: verdicts.filter((v) => v.status === 'low').sort((a, b) => (a.pct ?? 1) - (b.pct ?? 1)),
+      high: verdicts.filter((v) => v.status === 'high'),
+      ok: verdicts.filter((v) => v.status === 'ok'),
+    }),
+    [verdicts]
+  );
+  // Each lookup scans the whole food database, so compute once per result instead of on every render.
+  const sourcesByKey = useMemo(() => new Map(low.map((v) => [v.key, topSources(v.key, diet, FOODS, 4)])), [low, diet]);
+  const contributorsByKey = useMemo(
+    () => new Map(high.map((v) => [v.key, topContributors(usedEntries, v.target.maxKey ?? v.key)])),
+    [high, usedEntries]
+  );
 
   // Chart: one bar per day for short periods, weekly averages for long ones.
   const chart = useMemo(() => {
@@ -204,7 +215,7 @@ export default function AnalysisScreen() {
               <Txt tone="success">Всички следени витамини и минерали са поне 70% от препоръчителното. 👍</Txt>
             </Card>
           ) : (
-            low.map((v) => <LowCard key={v.key} v={v} dietName={diet.name} sources={topSources(v.key, diet, FOODS, 4)} />)
+            low.map((v) => <LowCard key={v.key} v={v} dietName={diet.name} sources={sourcesByKey.get(v.key) ?? []} />)
           )}
 
           <SectionHeader title={high.length ? `Приемаш твърде много (${high.length})` : 'Приемаш твърде много'} />
@@ -213,7 +224,7 @@ export default function AnalysisScreen() {
               <Txt tone="success">Нищо не надвишава горните граници. 👍</Txt>
             </Card>
           ) : (
-            high.map((v) => <HighCard key={v.key} v={v} contributors={topContributors(usedEntries, v.target.maxKey ?? v.key)} avgOfMaxKey={v.target.maxKey ? avg[v.target.maxKey] : v.avg} />)
+            high.map((v) => <HighCard key={v.key} v={v} contributors={contributorsByKey.get(v.key) ?? []} avgOfMaxKey={v.target.maxKey ? avg[v.target.maxKey] : v.avg} />)
           )}
 
           <Pressable onPress={() => setShowOk((x) => !x)} style={{ marginTop: 8, marginBottom: 10 }} hitSlop={6}>

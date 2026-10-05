@@ -51,6 +51,13 @@ export function FoodSearch({ onManual }: { onManual: () => void }) {
   }, [query, mode, all, favorites, recent, getFood, boost, onlyFit, diet]);
 
   const quickAdd = useCallback((f: FoodItem) => logFood(f, defaultPortion(f).grams, mealForNow()), [logFood]);
+  const { toggleFavorite } = lib;
+  const renderItem = useCallback(
+    ({ item }: { item: FoodItem }) => (
+      <FoodRow food={item} diet={diet} favorite={favorites.has(item.id)} onPress={setSelected} onQuickAdd={quickAdd} onToggleFavorite={toggleFavorite} />
+    ),
+    [diet, favorites, quickAdd, toggleFavorite]
+  );
 
   const modes: { key: ListMode; label: string }[] = [
     { key: 'recent', label: '🕑 Последни' },
@@ -93,16 +100,7 @@ export function FoodSearch({ onManual }: { onManual: () => void }) {
         initialNumToRender={12}
         windowSize={9}
         contentContainerStyle={{ paddingBottom: 120 }}
-        renderItem={({ item }) => (
-          <FoodRow
-            food={item}
-            diet={diet}
-            favorite={favorites.has(item.id)}
-            onPress={() => setSelected(item)}
-            onQuickAdd={() => quickAdd(item)}
-            onToggleFavorite={() => lib.toggleFavorite(item.id)}
-          />
-        )}
+        renderItem={renderItem}
         ListHeaderComponent={
           !query && mode === 'all' ? (
             <Txt v="caption" tone="textMuted" style={{ marginBottom: 10 }}>

@@ -14,9 +14,10 @@ interface FoodRowProps {
   food: FoodItem;
   diet: Diet;
   favorite: boolean;
-  onPress: () => void;
-  onQuickAdd: () => void;
-  onToggleFavorite: () => void;
+  // Callbacks receive the food so the list can pass stable functions and React.memo can skip unchanged rows.
+  onPress: (food: FoodItem) => void;
+  onQuickAdd: (food: FoodItem) => void;
+  onToggleFavorite: (id: string) => void;
 }
 
 export const FoodRow = React.memo(function FoodRow({ food, diet, favorite, onPress, onQuickAdd, onToggleFavorite }: FoodRowProps) {
@@ -28,7 +29,7 @@ export const FoodRow = React.memo(function FoodRow({ food, diet, favorite, onPre
   const fit = diet.fit(food);
 
   return (
-    <Pressable onPress={onPress} style={({ pressed }) => [s.row, pressed && { opacity: 0.85 }]}>
+    <Pressable onPress={() => onPress(food)} style={({ pressed }) => [s.row, pressed && { opacity: 0.85 }]}>
       <View style={s.emoji}>
         <Text style={{ fontSize: 22 }}>{categoryEmoji(food.category)}</Text>
       </View>
@@ -44,10 +45,10 @@ export const FoodRow = React.memo(function FoodRow({ food, diet, favorite, onPre
         </Txt>
         <MacroLine n={n} carbBasis={diet.carbBasis} />
       </View>
-      <Pressable onPress={onToggleFavorite} hitSlop={8} style={s.star} accessibilityLabel="Любима">
+      <Pressable onPress={() => onToggleFavorite(food.id)} hitSlop={8} style={s.star} accessibilityLabel="Любима">
         <StarIcon size={22} color={favorite ? t.c.warning : t.c.textFaint} filled={favorite} />
       </Pressable>
-      <Pressable onPress={onQuickAdd} hitSlop={6} style={({ pressed }) => [s.add, pressed && { opacity: 0.7 }]} accessibilityLabel="Добави една порция">
+      <Pressable onPress={() => onQuickAdd(food)} hitSlop={6} style={({ pressed }) => [s.add, pressed && { opacity: 0.7 }]} accessibilityLabel="Добави една порция">
         <PlusIcon size={22} color={t.c.onAccent} />
       </Pressable>
     </Pressable>

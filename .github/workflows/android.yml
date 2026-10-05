@@ -1,7 +1,7 @@
-name: Android APK
+name: Android APK + AAB
 
-# Every push to main builds a signed APK (downloadable from the run's artifacts).
-# Pushing a tag like v1.0.0 additionally publishes it as a GitHub Release with Azqm.apk attached.
+# Every push to main builds a signed APK and a Google Play bundle (AAB), downloadable from the run's artifacts.
+# Pushing a tag like v1.0.0 additionally publishes them as a GitHub Release with Azqm.apk and Azqm.aab attached.
 on:
   push:
     branches: [main]
@@ -57,12 +57,14 @@ jobs:
           echo "$KEYSTORE_B64" | base64 --decode > "$RUNNER_TEMP/azqm-release.p12"
           keytool -list -keystore "$RUNNER_TEMP/azqm-release.p12" -storetype PKCS12 -storepass "$KS_PASS" | grep -i -E "azqm|entries"
 
-      - name: Build the release APK
+      # APK for direct install, AAB (Android App Bundle) for Google Play. The same key signs both;
+      # on Play it is the upload key and Google re-signs the app (Play App Signing).
+      - name: Build the release APK and AAB
         working-directory: android
         env:
           KS_PASS: ${{ secrets.AZQM_KEYSTORE_PASSWORD }}
         run: |
-          ./gradlew assembleRelease --no-daemon \
+          ./gradlew assembleRelease bundleRelease --no-daemon \
             -PreactNativeArchitectures=arm64-v8a,armeabi-v7a \
             -Pandroid.injected.signing.store.file="$RUNNER_TEMP/azqm-release.p12" \
             -Pandroid.injected.signing.store.password="$KS_PASS" \
@@ -75,8 +77,13 @@ jobs:
           BUILD_TOOLS=$(ls -d "$ANDROID_HOME"/build-tools/* | sort -V | tail -n 1)
           "$BUILD_TOOLS/apksigner" verify --print-certs "$APK" | tee signer.txt
           grep -q "CN=Azqm" signer.txt
+          AAB=android/app/build/outputs/bundle/release/app-release.aab
+          jarsigner -verify -verbose:summary -certs "$AAB" | tee aab-signer.txt
+          grep -q "jar verified" aab-signer.txt
+          grep -q "CN=Azqm" aab-signer.txt
           mkdir -p dist-apk
           cp "$APK" dist-apk/Azqm.apk
+          cp "$AAB" dist-apk/Azqm.aab
           ls -lh dist-apk
 
       - uses: actions/upload-artifact@v4
@@ -84,13 +91,18 @@ jobs:
           name: Azqm-apk
           path: dist-apk/Azqm.apk
 
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Azqm-aab-google-play
+          path: dist-apk/Azqm.aab
+
       - name: Publish the GitHub release
         if: startsWith(github.ref, 'refs/tags/v')
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           if gh release view "$GITHUB_REF_NAME" > /dev/null 2>&1; then
-            gh release upload "$GITHUB_REF_NAME" dist-apk/Azqm.apk --clobber
+            gh release upload "$GITHUB_REF_NAME" dist-apk/Azqm.apk dist-apk/Azqm.aab --clobber
           else
-            gh release create "$GITHUB_REF_NAME" dist-apk/Azqm.apk --title "Azqm $GITHUB_REF_NAME" --notes-file RELEASE_NOTES.md
+            gh release create "$GITHUB_REF_NAME" dist-apk/Azqm.apk dist-apk/Azqm.aab --title "Azqm $GITHUB_REF_NAME" --notes-file RELEASE_NOTES.md
           fi

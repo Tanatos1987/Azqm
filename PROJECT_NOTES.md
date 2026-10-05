@@ -12,6 +12,8 @@ Running log of what has been built and decided, so work can continue across sess
   - DB `azqm.db` (schema v1): food_entries with `n_<nutrient>` columns + meal, custom_foods, favorites, weight_entries, hydration_entries, fasts. Missing nutrient columns are added automatically on start.
   - Export: xlsx (own writer on fflate, `src/utils/xlsx.ts`), CSV, JSON backup + restore.
 
+- **Azqm 1.0.1 (2026-10-05)** — tab switching lag fixed (`freezeOnBlur` on tabs, memoized Анализ food suggestions, stable FoodRow callbacks). CI also builds `Azqm.aab` for Google Play; `google-play/` holds the store listing (bg/en), 512 icon, 1024×500 feature graphic, privacy policy and a step-by-step Play Console guide (Data safety answers, content rating, closed test 12 testers × 14 days for personal accounts). Blocked RECORD_AUDIO / storage / SYSTEM_ALERT_WINDOW permissions.
+
 ## Decisions
 - No camera-based offline recognition yet — exact grams from a photo aren't reliable offline. Photo mode needs the user's own Gemini/OpenAI key.
 - No icon font / vector-icons package: icons are hand-drawn SVG (`src/components/icons.tsx`).

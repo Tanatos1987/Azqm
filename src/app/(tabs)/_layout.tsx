@@ -11,6 +11,9 @@ export default function TabsLayout() {
     <Tabs
       screenOptions={{
         headerShown: false,
+        // Hidden tabs stay mounted; freezing them stops background re-renders (the fasting clock ticks every second,
+        // and every data change would otherwise refetch and redraw all visited tabs), which made switching feel sluggish.
+        freezeOnBlur: true,
         tabBarActiveTintColor: t.c.accent,
         tabBarInactiveTintColor: t.c.textMuted,
         tabBarStyle: {
