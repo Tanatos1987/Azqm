@@ -10,27 +10,35 @@ import { ProfileProvider, useProfile } from '@/context/ProfileContext';
 import { SelectedDateProvider } from '@/context/SelectedDateContext';
 import { ToastProvider } from '@/context/ToastContext';
 import { ThemeProvider, useTheme } from '@/theme/ThemeContext';
+import { I18nProvider } from '@/i18n';
 
 export default function RootLayout() {
   return (
     <SafeAreaProvider>
       <SQLiteProvider databaseName="azqm.db" onInit={migrateDbIfNeeded}>
         <SettingsProvider>
-          <ThemeProvider>
-            <DataRefreshProvider>
-              <ProfileProvider>
-                <SelectedDateProvider>
-                  <ToastProvider>
-                    <RootNavigator />
-                  </ToastProvider>
-                </SelectedDateProvider>
-              </ProfileProvider>
-            </DataRefreshProvider>
-          </ThemeProvider>
+          <LanguageGate>
+            <ThemeProvider>
+              <DataRefreshProvider>
+                <ProfileProvider>
+                  <SelectedDateProvider>
+                    <ToastProvider>
+                      <RootNavigator />
+                    </ToastProvider>
+                  </SelectedDateProvider>
+                </ProfileProvider>
+              </DataRefreshProvider>
+            </ThemeProvider>
+          </LanguageGate>
         </SettingsProvider>
       </SQLiteProvider>
     </SafeAreaProvider>
   );
+}
+
+function LanguageGate({ children }: { children: React.ReactNode }) {
+  const { language } = useSettings();
+  return <I18nProvider lang={language}>{children}</I18nProvider>;
 }
 
 function RootNavigator() {
@@ -44,7 +52,13 @@ function RootNavigator() {
   return (
     <>
       <StatusBar style={t.dark ? 'light' : 'dark'} />
-      <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: t.c.bg }, animation: 'slide_from_right' }}>
+      <Stack
+        screenOptions={{
+          headerShown: false,
+          contentStyle: { backgroundColor: t.c.bg },
+          animation: 'slide_from_right',
+        }}
+      >
         <Stack.Protected guard={hasProfile}>
           <Stack.Screen name="(tabs)" />
           <Stack.Screen name="settings" />

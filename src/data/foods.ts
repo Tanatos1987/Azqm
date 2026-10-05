@@ -6,27 +6,36 @@
  */
 import type { FoodCategory, FoodItem, FoodTag, Nutrients, Portion } from '@/types';
 import { FOOD_DATA, NUTRIENT_KEYS } from './foods.generated';
+import { locale, tr } from '@/i18n';
 
-export const FOOD_CATEGORIES: { key: FoodCategory; label: string; emoji: string }[] = [
-  { key: 'meat', label: 'Месо', emoji: '🥩' },
-  { key: 'deli', label: 'Колбаси', emoji: '🥓' },
-  { key: 'fish', label: 'Риба', emoji: '🐟' },
-  { key: 'eggs', label: 'Яйца', emoji: '🥚' },
-  { key: 'dairy', label: 'Млечни', emoji: '🥛' },
-  { key: 'cheese', label: 'Сирена', emoji: '🧀' },
-  { key: 'fats', label: 'Мазнини', emoji: '🧈' },
-  { key: 'vegetables', label: 'Зеленчуци', emoji: '🥦' },
-  { key: 'fruits', label: 'Плодове', emoji: '🍎' },
-  { key: 'nuts', label: 'Ядки', emoji: '🥜' },
-  { key: 'legumes', label: 'Бобови', emoji: '🌱' },
-  { key: 'grains', label: 'Хляб и зърнени', emoji: '🍞' },
-  { key: 'sweets', label: 'Сладки', emoji: '🍫' },
-  { key: 'sauces', label: 'Сосове', emoji: '🧂' },
-  { key: 'drinks', label: 'Напитки', emoji: '☕' },
-  { key: 'alcohol', label: 'Алкохол', emoji: '🍷' },
-  { key: 'dishes', label: 'Ястия', emoji: '🍲' },
-  { key: 'custom', label: 'Мои храни', emoji: '⭐' },
-];
+export const FOOD_CATEGORIES: { key: FoodCategory; readonly label: string; emoji: string }[] = (
+  [
+    ['meat', 'Месо', 'Meat', '🥩'],
+    ['deli', 'Колбаси', 'Deli meats', '🥓'],
+    ['fish', 'Риба', 'Fish', '🐟'],
+    ['eggs', 'Яйца', 'Eggs', '🥚'],
+    ['dairy', 'Млечни', 'Dairy', '🥛'],
+    ['cheese', 'Сирена', 'Cheese', '🧀'],
+    ['fats', 'Мазнини', 'Fats', '🧈'],
+    ['vegetables', 'Зеленчуци', 'Vegetables', '🥦'],
+    ['fruits', 'Плодове', 'Fruit', '🍎'],
+    ['nuts', 'Ядки', 'Nuts', '🥜'],
+    ['legumes', 'Бобови', 'Legumes', '🌱'],
+    ['grains', 'Хляб и зърнени', 'Bread & grains', '🍞'],
+    ['sweets', 'Сладки', 'Sweets', '🍫'],
+    ['sauces', 'Сосове', 'Sauces', '🧂'],
+    ['drinks', 'Напитки', 'Drinks', '☕'],
+    ['alcohol', 'Алкохол', 'Alcohol', '🍷'],
+    ['dishes', 'Ястия', 'Dishes', '🍲'],
+    ['custom', 'Мои храни', 'My foods', '⭐'],
+  ] as const
+).map(([key, bg, en, emoji]) => ({
+  key,
+  emoji,
+  get label() {
+    return tr(bg, en);
+  },
+}));
 
 const CATEGORY_BY_KEY = new Map(FOOD_CATEGORIES.map((c) => [c.key, c]));
 
@@ -38,29 +47,42 @@ export function categoryEmoji(key: FoodCategory): string {
   return CATEGORY_BY_KEY.get(key)?.emoji ?? '🍽️';
 }
 
-function parsePortions(raw: string): Portion[] {
+function parsePortions(raw: string, rawEn: string): Portion[] {
   if (!raw) return [];
-  return raw.split('|').map((p) => {
+  const en = rawEn.split('|');
+  return raw.split('|').map((p, idx) => {
     const i = p.lastIndexOf(':');
-    return { label: p.slice(0, i), grams: Number(p.slice(i + 1)) };
+    const bg = p.slice(0, i);
+    const enLabel = en[idx] || bg;
+    return {
+      grams: Number(p.slice(i + 1)),
+      get label() {
+        return tr(bg, enLabel);
+      },
+    };
   });
 }
 
-export const FOODS: FoodItem[] = FOOD_DATA.map(([id, name, category, tags, aliases, portions, full, values]) => {
+/** Built-in foods carry both names; 
+ame follows the app language. */
+export const FOODS: FoodItem[] = FOOD_DATA.map(([id, nameBg, nameEn, category, tags, aliases, portions, portionsEn, full, values]) => {
   const per100 = {} as Nutrients;
   NUTRIENT_KEYS.forEach((k, i) => (per100[k] = values[i] ?? 0));
   return {
     id,
-    name,
+    get name() {
+      return tr(nameBg, nameEn);
+    },
+    nameBg,
+    nameEn,
     category: category as FoodCategory,
     tags: (tags ? tags.split(',') : []) as FoodTag[],
     aliases: aliases ? aliases.split('|') : [],
-    portions: parsePortions(portions),
+    portions: parsePortions(portions, portionsEn),
     hasMicros: full === 1,
     per100,
   };
 });
-
 const FOODS_BY_ID = new Map(FOODS.map((f) => [f.id, f]));
 
 export function getFoodById(id: string): FoodItem | undefined {
@@ -130,7 +152,7 @@ const SEARCH_TEXT = new WeakMap<FoodItem, string>();
 function searchTextOf(f: FoodItem): string {
   let t = SEARCH_TEXT.get(f);
   if (!t) {
-    t = normalize([f.name, ...f.aliases].join(' '));
+    t = normalize([f.nameBg ?? f.name, ...f.aliases].join(' '));
     SEARCH_TEXT.set(f, t);
   }
   return t;
@@ -180,17 +202,17 @@ export function searchFoods(
     score += (boost?.(f) ?? 0) - f.name.length / 60;
     scored.push({ f, score });
   }
-  scored.sort((a, b) => b.score - a.score || a.f.name.localeCompare(b.f.name, 'bg'));
+  scored.sort((a, b) => b.score - a.score || a.f.name.localeCompare(b.f.name, locale()));
   return scored.slice(0, limit).map((s) => s.f);
 }
 
 /** Portions to offer for a food: its own household portions first, then common gram amounts. */
 export function portionOptions(food: FoodItem): Portion[] {
   const grams = new Set(food.portions.map((p) => p.grams));
-  const generic = [50, 100, 150, 200, 250].filter((g) => !grams.has(g)).map((g) => ({ label: `${g} г`, grams: g }));
+  const generic = [50, 100, 150, 200, 250].filter((g) => !grams.has(g)).map((g) => ({ label: tr(`${g} г`, `${g} g`), grams: g }));
   return [...food.portions, ...generic];
 }
 
 export function defaultPortion(food: FoodItem): Portion {
-  return food.portions[0] ?? { label: '100 г', grams: 100 };
+  return food.portions[0] ?? { label: tr('100 г', '100 g'), grams: 100 };
 }

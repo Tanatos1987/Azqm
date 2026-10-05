@@ -59,7 +59,11 @@ export interface Portion {
 
 export interface FoodItem {
   id: string;
+  /** in the current app language for built-in foods */
   name: string;
+  /** built-in foods only — both names, for search and for storing diary entries */
+  nameBg?: string;
+  nameEn?: string;
   category: FoodCategory;
   tags: FoodTag[];
   aliases: string[];

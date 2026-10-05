@@ -4,6 +4,7 @@ import * as SecureStore from 'expo-secure-store';
 import type { DailyGoals, VisionProvider } from '@/types';
 import type { DietId } from '@/data/diets';
 import type { TextScaleKey, ThemePref } from '@/theme/ThemeContext';
+import { deviceLang, type Lang } from '@/i18n';
 
 const SETTINGS_KEY = 'azqm_settings_v1';
 // expo-secure-store, not AsyncStorage: this is a credential, not app state.
@@ -14,6 +15,7 @@ export interface AppSettings {
   goals: DailyGoals;
   themePref: ThemePref;
   textScale: TextScaleKey;
+  language: Lang;
   fastingGoalHours: number;
   visionProvider: VisionProvider;
   visionModel: string;
@@ -28,6 +30,7 @@ const DEFAULTS: AppSettings = {
   goals: { calories: 1800, protein: 110, fat: 140, carbs: 25 },
   themePref: 'system',
   textScale: 'normal',
+  language: 'bg',
   fastingGoalHours: 16,
   visionProvider: 'gemini',
   visionModel: defaultModelFor('gemini'),
@@ -56,7 +59,12 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
       try {
         const [stored, storedKey] = await Promise.all([AsyncStorage.getItem(SETTINGS_KEY), SecureStore.getItemAsync(API_KEY_STORE_KEY)]);
         if (stored) {
+          // Installs from before 1.1.0 have no language saved — they keep Bulgarian.
           const next = { ...DEFAULTS, ...JSON.parse(stored) };
+          latest.current = next;
+          setSettings(next);
+        } else {
+          const next = { ...DEFAULTS, language: deviceLang() };
           latest.current = next;
           setSettings(next);
         }
@@ -94,6 +102,6 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
 
 export function useSettings(): SettingsContextValue {
   const ctx = useContext(SettingsContext);
-  if (!ctx) throw new Error('useSettings трябва да се използва вътре в <SettingsProvider>.');
+  if (!ctx) throw new Error('useSettings must be used inside <SettingsProvider>.');
   return ctx;
 }
