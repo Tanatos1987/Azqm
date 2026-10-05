@@ -1,23 +1,26 @@
 import type { SQLiteDatabase } from 'expo-sqlite';
 import type {
-  DailyCalories,
+  DaySummary,
+  FastRecord,
   FoodEntry,
-  NewFoodEntry,
+  FoodItem,
   HydrationEntry,
-  NewHydrationEntry,
-  MacroTotals,
   HydrationTotals,
-  Micronutrients,
+  MealType,
+  NewFoodEntry,
+  NewHydrationEntry,
+  Nutrients,
   WeightEntry,
 } from '@/types';
-import { EMPTY_MICROS, fillMicros, MICRONUTRIENTS } from '@/data/micronutrients';
+import { emptyNutrients, fillNutrients, NUTRIENT_KEYS } from '@/data/nutrients';
+import { nutrientColumn } from './schema';
 
-const MICRO_COLUMNS = MICRONUTRIENTS.map((m) => m.column);
+const N_COLS = NUTRIENT_KEYS.map(nutrientColumn);
 
-function mapMicros(row: any): Micronutrients {
-  const micros = { ...EMPTY_MICROS };
-  for (const m of MICRONUTRIENTS) micros[m.key] = row?.[m.column] ?? 0;
-  return micros;
+function nutrientsOf(row: any): Nutrients {
+  const n = emptyNutrients();
+  for (const k of NUTRIENT_KEYS) n[k] = row?.[nutrientColumn(k)] ?? 0;
+  return n;
 }
 
 function mapFoodRow(row: any): FoodEntry {
@@ -25,67 +28,169 @@ function mapFoodRow(row: any): FoodEntry {
     id: row.id,
     date: row.date,
     timeIso: row.time_iso,
+    meal: (row.meal as MealType) ?? 'snack',
     name: row.name,
     source: row.source,
     grams: row.grams,
-    calories: row.calories,
-    protein: row.protein,
-    fat: row.fat,
-    carbs: row.carbs,
-    fiber: row.fiber,
-    netCarbs: row.net_carbs,
-    micros: mapMicros(row),
     foodId: row.food_id ?? null,
+    hasMicros: row.has_micros === 1,
+    n: nutrientsOf(row),
   };
 }
 
-export async function insertFoodEntry(db: SQLiteDatabase, entry: NewFoodEntry) {
-  const micros = fillMicros(entry.micros);
-  const columns = ['date', 'time_iso', 'name', 'source', 'grams', 'calories', 'protein', 'fat', 'carbs', 'fiber', 'net_carbs', 'food_id', ...MICRO_COLUMNS];
-  await db.runAsync(
-    `INSERT INTO food_entries (${columns.join(', ')}) VALUES (${columns.map(() => '?').join(', ')})`,
+// ---- diary -------------------------------------------------------------------------
+
+/** Returns the new row id (used for "Отмени"). */
+export async function insertFoodEntry(db: SQLiteDatabase, entry: NewFoodEntry): Promise<number> {
+  const n = fillNutrients(entry.n);
+  const cols = ['date', 'time_iso', 'meal', 'name', 'source', 'grams', 'food_id', 'has_micros', ...N_COLS];
+  const res = await db.runAsync(
+    `INSERT INTO food_entries (${cols.join(', ')}) VALUES (${cols.map(() => '?').join(', ')})`,
     entry.date,
     entry.timeIso,
+    entry.meal,
     entry.name,
     entry.source,
     entry.grams,
-    entry.calories,
-    entry.protein,
-    entry.fat,
-    entry.carbs,
-    entry.fiber,
-    entry.netCarbs,
     entry.foodId ?? null,
-    ...MICRONUTRIENTS.map((m) => micros[m.key])
+    entry.hasMicros ? 1 : 0,
+    ...NUTRIENT_KEYS.map((k) => n[k])
+  );
+  return res.lastInsertRowId;
+}
+
+export async function updateFoodEntry(db: SQLiteDatabase, id: number, patch: { grams: number | null; meal: MealType; n: Nutrients }) {
+  await db.runAsync(
+    `UPDATE food_entries SET grams = ?, meal = ?, ${N_COLS.map((c) => `${c} = ?`).join(', ')} WHERE id = ?`,
+    patch.grams,
+    patch.meal,
+    ...NUTRIENT_KEYS.map((k) => patch.n[k]),
+    id
   );
 }
 
-export async function getDailyMicros(db: SQLiteDatabase, date: string): Promise<Micronutrients> {
-  const sums = MICRONUTRIENTS.map((m) => `COALESCE(SUM(${m.column}), 0) as ${m.column}`).join(', ');
-  const row = await db.getFirstAsync<any>(`SELECT ${sums} FROM food_entries WHERE date = ?`, date);
-  return mapMicros(row);
+export async function deleteFoodEntry(db: SQLiteDatabase, id: number) {
+  await db.runAsync('DELETE FROM food_entries WHERE id = ?', id);
 }
 
-/** Per-day totals for every date in [fromDate, toDate] that has entries. */
-export async function getDailyCaloriesRange(db: SQLiteDatabase, fromDate: string, toDate: string): Promise<DailyCalories[]> {
+export async function getEntriesForDate(db: SQLiteDatabase, date: string): Promise<FoodEntry[]> {
+  const rows = await db.getAllAsync('SELECT * FROM food_entries WHERE date = ? ORDER BY time_iso ASC', date);
+  return rows.map(mapFoodRow);
+}
+
+export async function getEntriesBetween(db: SQLiteDatabase, from: string, to: string): Promise<FoodEntry[]> {
+  const rows = await db.getAllAsync('SELECT * FROM food_entries WHERE date BETWEEN ? AND ? ORDER BY date ASC, time_iso ASC', from, to);
+  return rows.map(mapFoodRow);
+}
+
+export async function getAllFoodEntries(db: SQLiteDatabase): Promise<FoodEntry[]> {
+  const rows = await db.getAllAsync('SELECT * FROM food_entries ORDER BY date ASC, time_iso ASC');
+  return rows.map(mapFoodRow);
+}
+
+/** One row per day that has entries in [from, to]. */
+export async function getDaySummaries(db: SQLiteDatabase, from: string, to: string): Promise<DaySummary[]> {
+  const sums = N_COLS.map((c) => `COALESCE(SUM(${c}), 0) AS ${c}`).join(', ');
   const rows = await db.getAllAsync<any>(
-    `SELECT date, SUM(calories) as calories, SUM(net_carbs) as net_carbs
+    `SELECT date, COUNT(*) AS entries, COALESCE(SUM(CASE WHEN has_micros = 1 THEN n_kcal ELSE 0 END), 0) AS kcal_micros, ${sums}
      FROM food_entries WHERE date BETWEEN ? AND ? GROUP BY date ORDER BY date ASC`,
-    fromDate,
-    toDate
+    from,
+    to
   );
-  return rows.map((r) => ({ date: r.date, calories: r.calories ?? 0, netCarbs: r.net_carbs ?? 0 }));
+  return rows.map((r) => ({ date: r.date, entries: r.entries, kcalWithMicros: r.kcal_micros, n: nutrientsOf(r) }));
 }
 
-/** Most recently logged food-database ids, newest first. */
+export async function getFirstEntryDate(db: SQLiteDatabase): Promise<string | null> {
+  const row = await db.getFirstAsync<{ d: string | null }>('SELECT MIN(date) AS d FROM food_entries');
+  return row?.d ?? null;
+}
+
+/** Copies every entry of `fromDate` to `toDate` (keeps meals, sets the time to now). */
+export async function copyDay(db: SQLiteDatabase, fromDate: string, toDate: string): Promise<number> {
+  const cols = ['meal', 'name', 'source', 'grams', 'food_id', 'has_micros', ...N_COLS].join(', ');
+  const res = await db.runAsync(
+    `INSERT INTO food_entries (date, time_iso, ${cols}) SELECT ?, ?, ${cols} FROM food_entries WHERE date = ?`,
+    toDate,
+    new Date().toISOString(),
+    fromDate
+  );
+  return res.changes;
+}
+
 export async function getRecentFoodIds(db: SQLiteDatabase, limit: number): Promise<string[]> {
   const rows = await db.getAllAsync<{ food_id: string }>(
-    `SELECT food_id FROM food_entries WHERE food_id IS NOT NULL
-     GROUP BY food_id ORDER BY MAX(time_iso) DESC LIMIT ?`,
+    `SELECT food_id FROM food_entries WHERE food_id IS NOT NULL GROUP BY food_id ORDER BY MAX(time_iso) DESC LIMIT ?`,
     limit
   );
   return rows.map((r) => r.food_id);
 }
+
+/** food id → number of times logged in the last 90 days */
+export async function getFoodUseCounts(db: SQLiteDatabase, sinceDate: string): Promise<Map<string, number>> {
+  const rows = await db.getAllAsync<{ food_id: string; c: number }>(
+    `SELECT food_id, COUNT(*) AS c FROM food_entries WHERE food_id IS NOT NULL AND date >= ? GROUP BY food_id`,
+    sinceDate
+  );
+  return new Map(rows.map((r) => [r.food_id, r.c]));
+}
+
+// ---- favorites & custom foods --------------------------------------------------------
+
+export async function getFavoriteIds(db: SQLiteDatabase): Promise<string[]> {
+  const rows = await db.getAllAsync<{ food_id: string }>('SELECT food_id FROM favorites ORDER BY created_iso DESC');
+  return rows.map((r) => r.food_id);
+}
+
+export async function setFavorite(db: SQLiteDatabase, foodId: string, on: boolean) {
+  if (on) {
+    await db.runAsync('INSERT OR REPLACE INTO favorites (food_id, created_iso) VALUES (?, ?)', foodId, new Date().toISOString());
+  } else {
+    await db.runAsync('DELETE FROM favorites WHERE food_id = ?', foodId);
+  }
+}
+
+function mapCustomFood(row: any): FoodItem {
+  return {
+    id: row.id,
+    name: row.name,
+    category: 'custom',
+    tags: [],
+    aliases: [],
+    portions: row.portion_label && row.portion_grams ? [{ label: row.portion_label, grams: row.portion_grams }] : [],
+    hasMicros: row.has_micros === 1,
+    per100: nutrientsOf(row),
+    custom: true,
+  };
+}
+
+export async function getCustomFoods(db: SQLiteDatabase): Promise<FoodItem[]> {
+  const rows = await db.getAllAsync('SELECT * FROM custom_foods ORDER BY name COLLATE NOCASE');
+  return rows.map(mapCustomFood);
+}
+
+export async function saveCustomFood(db: SQLiteDatabase, food: { id?: string; name: string; per100: Partial<Nutrients>; portion?: { label: string; grams: number } | null; hasMicros?: boolean }): Promise<string> {
+  const id = food.id ?? `c-${Date.now().toString(36)}`;
+  const n = fillNutrients(food.per100);
+  const cols = ['id', 'name', 'portion_label', 'portion_grams', 'has_micros', 'created_iso', ...N_COLS];
+  await db.runAsync(
+    `INSERT OR REPLACE INTO custom_foods (${cols.join(', ')}) VALUES (${cols.map(() => '?').join(', ')})`,
+    id,
+    food.name,
+    food.portion?.label ?? null,
+    food.portion?.grams ?? null,
+    food.hasMicros ? 1 : 0,
+    new Date().toISOString(),
+    ...NUTRIENT_KEYS.map((k) => n[k])
+  );
+  return id;
+}
+
+export async function deleteCustomFood(db: SQLiteDatabase, id: string) {
+  await db.runAsync('DELETE FROM custom_foods WHERE id = ?', id);
+  await db.runAsync('DELETE FROM favorites WHERE food_id = ?', id);
+}
+
+// ---- weight -------------------------------------------------------------------------
 
 export async function upsertWeightEntry(db: SQLiteDatabase, date: string, weightKg: number) {
   await db.runAsync(
@@ -106,41 +211,7 @@ export async function deleteWeightEntry(db: SQLiteDatabase, date: string) {
   await db.runAsync('DELETE FROM weight_entries WHERE date = ?', date);
 }
 
-export async function deleteFoodEntry(db: SQLiteDatabase, id: number) {
-  await db.runAsync('DELETE FROM food_entries WHERE id = ?', id);
-}
-
-export async function getEntriesForDate(db: SQLiteDatabase, date: string): Promise<FoodEntry[]> {
-  const rows = await db.getAllAsync('SELECT * FROM food_entries WHERE date = ? ORDER BY time_iso DESC', date);
-  return rows.map(mapFoodRow);
-}
-
-export async function getDailyTotals(db: SQLiteDatabase, date: string): Promise<MacroTotals> {
-  const row = await db.getFirstAsync<any>(
-    `SELECT
-       COALESCE(SUM(calories), 0) as calories,
-       COALESCE(SUM(protein), 0) as protein,
-       COALESCE(SUM(fat), 0) as fat,
-       COALESCE(SUM(carbs), 0) as carbs,
-       COALESCE(SUM(fiber), 0) as fiber,
-       COALESCE(SUM(net_carbs), 0) as net_carbs
-     FROM food_entries WHERE date = ?`,
-    date
-  );
-  return {
-    calories: row?.calories ?? 0,
-    protein: row?.protein ?? 0,
-    fat: row?.fat ?? 0,
-    carbs: row?.carbs ?? 0,
-    fiber: row?.fiber ?? 0,
-    netCarbs: row?.net_carbs ?? 0,
-  };
-}
-
-export async function getAllFoodEntries(db: SQLiteDatabase): Promise<FoodEntry[]> {
-  const rows = await db.getAllAsync('SELECT * FROM food_entries ORDER BY date ASC, time_iso ASC');
-  return rows.map(mapFoodRow);
-}
+// ---- hydration ----------------------------------------------------------------------
 
 function mapHydrationRow(row: any): HydrationEntry {
   return {
@@ -154,10 +225,9 @@ function mapHydrationRow(row: any): HydrationEntry {
   };
 }
 
-export async function insertHydrationEntry(db: SQLiteDatabase, entry: NewHydrationEntry) {
-  await db.runAsync(
-    `INSERT INTO hydration_entries (date, time_iso, water_ml, sodium_mg, potassium_mg, magnesium_mg)
-     VALUES (?, ?, ?, ?, ?, ?)`,
+export async function insertHydrationEntry(db: SQLiteDatabase, entry: NewHydrationEntry): Promise<number> {
+  const res = await db.runAsync(
+    `INSERT INTO hydration_entries (date, time_iso, water_ml, sodium_mg, potassium_mg, magnesium_mg) VALUES (?, ?, ?, ?, ?, ?)`,
     entry.date,
     entry.timeIso,
     entry.waterMl,
@@ -165,20 +235,17 @@ export async function insertHydrationEntry(db: SQLiteDatabase, entry: NewHydrati
     entry.potassiumMg,
     entry.magnesiumMg
   );
+  return res.lastInsertRowId;
 }
 
-export async function getHydrationForDate(db: SQLiteDatabase, date: string): Promise<HydrationEntry[]> {
-  const rows = await db.getAllAsync('SELECT * FROM hydration_entries WHERE date = ? ORDER BY time_iso DESC', date);
-  return rows.map(mapHydrationRow);
+export async function deleteHydrationEntry(db: SQLiteDatabase, id: number) {
+  await db.runAsync('DELETE FROM hydration_entries WHERE id = ?', id);
 }
 
 export async function getHydrationTotals(db: SQLiteDatabase, date: string): Promise<HydrationTotals> {
   const row = await db.getFirstAsync<any>(
-    `SELECT
-       COALESCE(SUM(water_ml), 0) as water_ml,
-       COALESCE(SUM(sodium_mg), 0) as sodium_mg,
-       COALESCE(SUM(potassium_mg), 0) as potassium_mg,
-       COALESCE(SUM(magnesium_mg), 0) as magnesium_mg
+    `SELECT COALESCE(SUM(water_ml), 0) AS water_ml, COALESCE(SUM(sodium_mg), 0) AS sodium_mg,
+            COALESCE(SUM(potassium_mg), 0) AS potassium_mg, COALESCE(SUM(magnesium_mg), 0) AS magnesium_mg
      FROM hydration_entries WHERE date = ?`,
     date
   );
@@ -188,4 +255,100 @@ export async function getHydrationTotals(db: SQLiteDatabase, date: string): Prom
     potassiumMg: row?.potassium_mg ?? 0,
     magnesiumMg: row?.magnesium_mg ?? 0,
   };
+}
+
+/** Electrolyte supplements per day in [from, to] (they count towards the nutrient analysis). */
+export async function getHydrationByDay(db: SQLiteDatabase, from: string, to: string): Promise<Map<string, HydrationTotals>> {
+  const rows = await db.getAllAsync<any>(
+    `SELECT date, SUM(water_ml) AS water_ml, SUM(sodium_mg) AS sodium_mg, SUM(potassium_mg) AS potassium_mg, SUM(magnesium_mg) AS magnesium_mg
+     FROM hydration_entries WHERE date BETWEEN ? AND ? GROUP BY date`,
+    from,
+    to
+  );
+  return new Map(
+    rows.map((r) => [r.date, { waterMl: r.water_ml ?? 0, sodiumMg: r.sodium_mg ?? 0, potassiumMg: r.potassium_mg ?? 0, magnesiumMg: r.magnesium_mg ?? 0 }])
+  );
+}
+
+export async function getAllHydration(db: SQLiteDatabase): Promise<HydrationEntry[]> {
+  const rows = await db.getAllAsync('SELECT * FROM hydration_entries ORDER BY date ASC, time_iso ASC');
+  return rows.map(mapHydrationRow);
+}
+
+// ---- fasting ------------------------------------------------------------------------
+
+function mapFast(row: any): FastRecord {
+  return { id: row.id, startIso: row.start_iso, endIso: row.end_iso ?? null, goalHours: row.goal_hours };
+}
+
+export async function getActiveFast(db: SQLiteDatabase): Promise<FastRecord | null> {
+  const row = await db.getFirstAsync('SELECT * FROM fasts WHERE end_iso IS NULL ORDER BY start_iso DESC LIMIT 1');
+  return row ? mapFast(row) : null;
+}
+
+export async function startFast(db: SQLiteDatabase, goalHours: number, startIso = new Date().toISOString()) {
+  await db.runAsync('UPDATE fasts SET end_iso = ? WHERE end_iso IS NULL', startIso);
+  await db.runAsync('INSERT INTO fasts (start_iso, end_iso, goal_hours) VALUES (?, NULL, ?)', startIso, goalHours);
+}
+
+export async function endFast(db: SQLiteDatabase, id: number) {
+  await db.runAsync('UPDATE fasts SET end_iso = ? WHERE id = ?', new Date().toISOString(), id);
+}
+
+export async function setFastGoal(db: SQLiteDatabase, id: number, goalHours: number) {
+  await db.runAsync('UPDATE fasts SET goal_hours = ? WHERE id = ?', goalHours, id);
+}
+
+export async function getFasts(db: SQLiteDatabase, limit = 50): Promise<FastRecord[]> {
+  const rows = await db.getAllAsync('SELECT * FROM fasts WHERE end_iso IS NOT NULL ORDER BY start_iso DESC LIMIT ?', limit);
+  return rows.map(mapFast);
+}
+
+export async function deleteFast(db: SQLiteDatabase, id: number) {
+  await db.runAsync('DELETE FROM fasts WHERE id = ?', id);
+}
+
+// ---- backup -------------------------------------------------------------------------
+
+export interface BackupData {
+  app: 'azqm';
+  version: 1;
+  exportedIso: string;
+  tables: Record<string, Record<string, unknown>[]>;
+}
+
+const BACKUP_TABLES = ['food_entries', 'custom_foods', 'favorites', 'weight_entries', 'hydration_entries', 'fasts'] as const;
+
+export async function exportDatabase(db: SQLiteDatabase): Promise<BackupData> {
+  const tables: BackupData['tables'] = {};
+  for (const t of BACKUP_TABLES) tables[t] = await db.getAllAsync<Record<string, unknown>>(`SELECT * FROM ${t}`);
+  return { app: 'azqm', version: 1, exportedIso: new Date().toISOString(), tables };
+}
+
+/** Replaces all diary data with the backup's rows (unknown columns are skipped). */
+export async function importDatabase(db: SQLiteDatabase, data: BackupData) {
+  if (data?.app !== 'azqm' || !data.tables) throw new Error('Файлът не е резервно копие на Azqm.');
+  await db.withTransactionAsync(async () => {
+    for (const t of BACKUP_TABLES) {
+      await db.runAsync(`DELETE FROM ${t}`);
+      const rows = data.tables[t] ?? [];
+      if (rows.length === 0) continue;
+      const info = await db.getAllAsync<{ name: string }>(`PRAGMA table_info(${t})`);
+      const known = new Set(info.map((c) => c.name));
+      for (const row of rows) {
+        const cols = Object.keys(row).filter((c) => known.has(c));
+        if (cols.length === 0) continue;
+        await db.runAsync(
+          `INSERT INTO ${t} (${cols.join(', ')}) VALUES (${cols.map(() => '?').join(', ')})`,
+          ...cols.map((c) => row[c] as string | number | null)
+        );
+      }
+    }
+  });
+}
+
+export async function wipeDatabase(db: SQLiteDatabase) {
+  await db.withTransactionAsync(async () => {
+    for (const t of BACKUP_TABLES) await db.runAsync(`DELETE FROM ${t}`);
+  });
 }

@@ -2,6 +2,7 @@ import React from 'react';
 import { View } from 'react-native';
 import Svg, { Circle } from 'react-native-svg';
 import { useTween } from '@/hooks/useTween';
+import { useTheme } from '@/theme/ThemeContext';
 
 interface ProgressRingProps {
   size?: number;
@@ -12,14 +13,8 @@ interface ProgressRingProps {
   children?: React.ReactNode;
 }
 
-export function ProgressRing({
-  size = 120,
-  strokeWidth = 10,
-  progress,
-  color,
-  trackColor = '#262B33',
-  children,
-}: ProgressRingProps) {
+export function ProgressRing({ size = 120, strokeWidth = 10, progress, color, trackColor, children }: ProgressRingProps) {
+  const t = useTheme();
   const radius = (size - strokeWidth) / 2;
   const circumference = 2 * Math.PI * radius;
   const clamped = useTween(Math.max(0, Math.min(progress, 1)), 900, 0);
@@ -29,7 +24,7 @@ export function ProgressRing({
   return (
     <View style={{ width: size, height: size, alignItems: 'center', justifyContent: 'center' }}>
       <Svg width={size} height={size}>
-        <Circle cx={center} cy={center} r={radius} stroke={trackColor} strokeWidth={strokeWidth} fill="none" />
+        <Circle cx={center} cy={center} r={radius} stroke={trackColor ?? t.c.track} strokeWidth={strokeWidth} fill="none" />
         <Circle
           cx={center}
           cy={center}

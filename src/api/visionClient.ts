@@ -1,5 +1,4 @@
 import type { VisionAnalysisResult, VisionProvider } from '@/types';
-import { netCarbsOf } from '@/utils/nutrition';
 
 interface AnalyzeParams {
   provider: VisionProvider;
@@ -8,7 +7,7 @@ interface AnalyzeParams {
   base64Image: string; // raw base64, no "data:image/...;base64," prefix
 }
 
-const SYSTEM_PROMPT = `Ти си опитен нутриционист, специализиран в кето хранене. Анализирай снимката на храна
+const SYSTEM_PROMPT = `Ти си опитен нутриционист. Анализирай снимката на храна
 и върни ЕДИНСТВЕНО валиден JSON обект, без markdown форматиране и без обяснения, с точно следните полета:
 {
   "foodName": string,       // кратко име на разпознатата храна на български
@@ -110,16 +109,13 @@ function parseVisionResult(raw: string): VisionAnalysisResult {
     data = JSON.parse(match[0]);
   }
   const num = (v: any) => (typeof v === 'number' && Number.isFinite(v) ? v : Number(v) || 0);
-  const carbs = num(data.carbs);
-  const fiber = num(data.fiber);
   return {
     foodName: typeof data.foodName === 'string' && data.foodName.trim() ? data.foodName : 'Неразпозната храна',
     estimatedGrams: num(data.estimatedGrams),
     calories: num(data.calories),
     protein: num(data.protein),
     fat: num(data.fat),
-    carbs,
-    fiber,
-    netCarbs: netCarbsOf(carbs, fiber),
+    carbs: num(data.carbs),
+    fiber: num(data.fiber),
   };
 }

@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 import Svg, { Line, Rect } from 'react-native-svg';
-import { colors } from '@/theme/colors';
+import { Txt } from '@/components/ui';
 import { useTween } from '@/hooks/useTween';
+import { useTheme } from '@/theme/ThemeContext';
 import type { ChartPoint } from './LineChart';
 
 interface BarChartProps {
@@ -12,29 +13,34 @@ interface BarChartProps {
   goal?: number;
   overColor?: string;
   height?: number;
+  /** show the value above each bar (only when there are few bars) */
+  showValues?: boolean;
 }
 
-const PAD = { top: 18, bottom: 22 };
+const PAD = { top: 22, bottom: 24 };
 
-export function BarChart({ data, color, goal, overColor = colors.warning, height = 170 }: BarChartProps) {
+export function BarChart({ data, color, goal, overColor, height = 180, showValues = true }: BarChartProps) {
+  const t = useTheme();
   const [width, setWidth] = useState(0);
   const grow = useTween(1, 900, 0);
 
-  const max = Math.max(...data.map((d) => d.value), goal ?? 0, 1) * 1.1;
+  const max = Math.max(...data.map((d) => d.value), goal ?? 0, 1) * 1.12;
   const plotH = height - PAD.top - PAD.bottom;
   const slot = data.length > 0 ? width / data.length : 0;
-  const barW = Math.min(slot * 0.55, 28);
+  const barW = Math.max(Math.min(slot * 0.6, 30), 2);
   const yOf = (v: number) => PAD.top + plotH - (v / max) * plotH;
+  const labelEvery = Math.max(1, Math.ceil(data.length / 8));
+  const values = showValues && data.length <= 10;
 
   return (
     <View onLayout={(e) => setWidth(e.nativeEvent.layout.width)} style={{ height }}>
       {width > 0 && (
         <>
           <Svg width={width} height={height}>
-            <Line x1={0} x2={width} y1={PAD.top + plotH} y2={PAD.top + plotH} stroke={colors.border} strokeWidth={1} />
+            <Line x1={0} x2={width} y1={PAD.top + plotH} y2={PAD.top + plotH} stroke={t.c.border} strokeWidth={1} />
             {data.map((d, i) => {
               const h = (d.value / max) * plotH * grow;
-              const over = goal != null && d.value > goal;
+              const over = goal != null && goal > 0 && d.value > goal * 1.05;
               return (
                 <Rect
                   key={i}
@@ -42,23 +48,27 @@ export function BarChart({ data, color, goal, overColor = colors.warning, height
                   y={PAD.top + plotH - h}
                   width={barW}
                   height={Math.max(h, 0)}
-                  rx={6}
-                  fill={d.value === 0 ? colors.surfaceAlt : over ? overColor : color}
+                  rx={Math.min(7, barW / 2)}
+                  fill={d.value === 0 ? t.c.surfaceAlt : over ? overColor ?? t.c.warning : color}
                 />
               );
             })}
-            {goal != null && (
-              <Line x1={0} x2={width} y1={yOf(goal)} y2={yOf(goal)} stroke={colors.text} strokeOpacity={0.5} strokeWidth={1.5} strokeDasharray="6 5" />
+            {goal != null && goal > 0 && (
+              <Line x1={0} x2={width} y1={yOf(goal)} y2={yOf(goal)} stroke={t.c.text} strokeOpacity={0.45} strokeWidth={1.5} strokeDasharray="6 5" />
             )}
           </Svg>
           {data.map((d, i) => (
             <React.Fragment key={i}>
-              {d.value > 0 && (
-                <Text style={[styles.valueLabel, { left: i * slot, width: slot, top: Math.max(yOf(d.value * grow) - 15, 0) }]}>
+              {values && d.value > 0 && (
+                <Txt v="caption" tone="textMuted" style={[styles.valueLabel, { left: i * slot - 6, width: slot + 12, top: Math.max(yOf(d.value * grow) - 19, 0) }]}>
                   {Math.round(d.value)}
-                </Text>
+                </Txt>
               )}
-              <Text style={[styles.xLabel, { left: i * slot, width: slot, top: height - 16 }]}>{d.label}</Text>
+              {(i % labelEvery === 0 || i === data.length - 1) && (
+                <Txt v="caption" tone="textFaint" style={[styles.xLabel, { left: i * slot - 14, width: slot + 28, top: height - 19 }]}>
+                  {d.label}
+                </Txt>
+              )}
             </React.Fragment>
           ))}
         </>
@@ -68,6 +78,6 @@ export function BarChart({ data, color, goal, overColor = colors.warning, height
 }
 
 const styles = StyleSheet.create({
-  valueLabel: { position: 'absolute', textAlign: 'center', color: colors.textMuted, fontSize: 9 },
-  xLabel: { position: 'absolute', textAlign: 'center', color: colors.textMuted, fontSize: 10 },
+  valueLabel: { position: 'absolute', textAlign: 'center' },
+  xLabel: { position: 'absolute', textAlign: 'center' },
 });

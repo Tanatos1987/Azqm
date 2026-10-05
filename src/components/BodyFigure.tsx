@@ -2,8 +2,8 @@ import React, { useEffect, useState } from 'react';
 import { Animated, Easing } from 'react-native';
 import Svg, { Circle, Ellipse, G, Path } from 'react-native-svg';
 import type { Sex } from '@/types';
-import { colors } from '@/theme/colors';
 import { useTween } from '@/hooks/useTween';
+import { useTheme } from '@/theme/ThemeContext';
 
 const SKIN = '#F2C6A0';
 const BLUSH = '#F47C7C';
@@ -11,7 +11,6 @@ const PANTS = '#334155';
 const SHOES = '#1F2937';
 const FACE = '#2B2118';
 const HAIR: Record<Sex, string> = { male: '#3B2A20', female: '#6B3F24' };
-const CLOTHES: Record<Sex, string> = { male: colors.protein, female: colors.carbs };
 
 /** BMI 16 → 0 (very slim) … BMI 40 → 1 (very heavy). */
 function fatnessOf(bmi: number): number {
@@ -32,6 +31,8 @@ interface BodyFigureProps {
  * the shape tweens to the new value, and the whole figure gently "breathes".
  */
 export function BodyFigure({ bmi, sex, size = 240, fromBmi }: BodyFigureProps) {
+  const t = useTheme();
+  const CLOTHES: Record<Sex, string> = { male: t.c.protein, female: t.c.carbs };
   const shownBmi = useTween(bmi, 1400, fromBmi);
   const f = fatnessOf(shownBmi);
   const [breath] = useState(() => new Animated.Value(0));
@@ -93,7 +94,7 @@ export function BodyFigure({ bmi, sex, size = 240, fromBmi }: BodyFigureProps) {
   return (
     <Animated.View style={{ width: (size * 2) / 3, height: size, transform: [{ scale }] }}>
       <Svg width="100%" height="100%" viewBox="0 0 200 300">
-        <Ellipse cx={cx} cy={272} rx={40 + f * 30} ry={6} fill="#000" opacity={0.3} />
+        <Ellipse cx={cx} cy={272} rx={40 + f * 30} ry={6} fill="#000" opacity={t.dark ? 0.3 : 0.12} />
 
         {!isMale && <Path d={longHair} fill={HAIR.female} />}
 

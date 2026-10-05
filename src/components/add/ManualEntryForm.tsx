@@ -1,133 +1,122 @@
 import React, { useState } from 'react';
-import { Alert, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { Alert, Pressable, ScrollView, View } from 'react-native';
 import { useSQLiteContext } from 'expo-sqlite';
-import { colors } from '@/theme/colors';
+import { Button, Card, Chip, Input, Row, Txt } from '@/components/ui';
+import { CheckIcon } from '@/components/icons';
+import { useLogFood } from '@/hooks/useLogFood';
+import { saveCustomFood } from '@/db/queries';
 import { useDataRefresh } from '@/context/DataRefreshContext';
-import { insertFoodEntry } from '@/db/queries';
-import { netCarbsOf } from '@/utils/nutrition';
-import { todayKey } from '@/utils/date';
-import { CheckIcon } from '../icons';
+import { makeStyles, useTheme } from '@/theme/ThemeContext';
+import type { MealType } from '@/types';
+import { MEALS, mealForNow } from '@/utils/date';
 
-const FIELDS: { key: 'calories' | 'protein' | 'fat' | 'carbs' | 'fiber'; label: string }[] = [
-  { key: 'calories', label: 'Калории' },
+const FIELDS = [
+  { key: 'kcal', label: 'Калории (ккал)' },
   { key: 'protein', label: 'Протеин (г)' },
   { key: 'fat', label: 'Мазнини (г)' },
-  { key: 'carbs', label: 'Общо въглехидрати (г)' },
+  { key: 'carbs', label: 'Въглехидрати общо (г)' },
   { key: 'fiber', label: 'Фибри (г)' },
-];
+] as const;
+
+type FieldKey = (typeof FIELDS)[number]['key'];
+const EMPTY: Record<FieldKey, string> = { kcal: '', protein: '', fat: '', carbs: '', fiber: '' };
 
 export function ManualEntryForm() {
+  const t = useTheme();
+  const s = useStyles();
   const db = useSQLiteContext();
   const { bump } = useDataRefresh();
+  const { logEntry } = useLogFood();
   const [name, setName] = useState('');
   const [grams, setGrams] = useState('');
-  const [values, setValues] = useState<Record<string, string>>({
-    calories: '',
-    protein: '',
-    fat: '',
-    carbs: '',
-    fiber: '',
-  });
+  const [per100, setPer100] = useState(false);
+  const [values, setValues] = useState(EMPTY);
+  const [meal, setMeal] = useState<MealType>(mealForNow());
+  const [saveAsFood, setSaveAsFood] = useState(true);
 
-  const setField = (key: string, v: string) => setValues((prev) => ({ ...prev, [key]: v }));
-
-  const reset = () => {
-    setName('');
-    setGrams('');
-    setValues({ calories: '', protein: '', fat: '', carbs: '', fiber: '' });
-  };
+  const num = (v: string) => Math.max(Number(v.replace(',', '.')) || 0, 0);
+  const gramsNum = num(grams);
 
   const save = async () => {
-    if (!name.trim()) {
-      Alert.alert('Липсва име', 'Въведи име на храната.');
-      return;
+    if (!name.trim()) return Alert.alert('Липсва име', 'Въведи име на храната.');
+    if (per100 && gramsNum <= 0) return Alert.alert('Грамаж', 'Въведи изядения грамаж — стойностите са за 100 г.');
+    // What the user typed is either per portion or per 100 g; derive the other.
+    const typed = { kcal: num(values.kcal), protein: num(values.protein), fat: num(values.fat), carbs: num(values.carbs), fiber: num(values.fiber) };
+    const factorToPortion = per100 ? gramsNum / 100 : 1;
+    const portion = Object.fromEntries(Object.entries(typed).map(([k, v]) => [k, v * factorToPortion]));
+    await logEntry({ meal, name: name.trim(), source: 'manual', grams: gramsNum > 0 ? gramsNum : null, foodId: null, hasMicros: false, n: portion });
+    if (saveAsFood && gramsNum > 0) {
+      const toPer100 = per100 ? 1 : 100 / gramsNum;
+      await saveCustomFood(db, {
+        name: name.trim(),
+        per100: Object.fromEntries(Object.entries(typed).map(([k, v]) => [k, v * toPer100])),
+        portion: { label: '1 порция', grams: gramsNum },
+      });
+      bump();
     }
-    const num = (v: string) => Number(v.replace(',', '.')) || 0;
-    const carbs = num(values.carbs);
-    const fiber = num(values.fiber);
-    await insertFoodEntry(db, {
-      date: todayKey(),
-      timeIso: new Date().toISOString(),
-      name: name.trim(),
-      source: 'manual',
-      grams: grams ? num(grams) : null,
-      calories: num(values.calories),
-      protein: num(values.protein),
-      fat: num(values.fat),
-      carbs,
-      fiber,
-      netCarbs: netCarbsOf(carbs, fiber),
-    });
-    bump();
-    Alert.alert('Добавено', `${name.trim()} е записано в дневника.`);
-    reset();
+    setName('');
+    setGrams('');
+    setValues(EMPTY);
   };
 
   return (
-    <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-      <ScrollView contentContainerStyle={styles.form} keyboardShouldPersistTaps="handled">
-        <Text style={styles.label}>Име на храната</Text>
-        <TextInput
-          style={styles.input}
-          value={name}
-          onChangeText={setName}
-          placeholder="напр. Пилешко бутче на скара"
-          placeholderTextColor={colors.textMuted}
-        />
+    <ScrollView contentContainerStyle={{ paddingBottom: 140, paddingTop: 12 }} keyboardShouldPersistTaps="handled">
+      <Card>
+        <Txt v="label" tone="textMuted" style={s.label}>
+          Име на храната
+        </Txt>
+        <Input value={name} onChangeText={setName} placeholder="напр. Домашна мусака" />
 
-        <Text style={styles.label}>Грамаж (г, по избор)</Text>
-        <TextInput
-          style={styles.input}
-          value={grams}
-          onChangeText={setGrams}
-          keyboardType="numeric"
-          placeholder="напр. 200"
-          placeholderTextColor={colors.textMuted}
-        />
+        <Txt v="label" tone="textMuted" style={s.label}>
+          Изядено количество (г)
+        </Txt>
+        <Input value={grams} onChangeText={setGrams} keyboardType="numeric" placeholder="напр. 250" />
 
-        {FIELDS.map((f) => (
-          <View key={f.key}>
-            <Text style={styles.label}>{f.label}</Text>
-            <TextInput
-              style={styles.input}
-              value={values[f.key]}
-              onChangeText={(v) => setField(f.key, v)}
-              keyboardType="numeric"
-              placeholder="0"
-              placeholderTextColor={colors.textMuted}
-            />
-          </View>
-        ))}
+        <Txt v="label" tone="textMuted" style={s.label}>
+          Стойностите са за
+        </Txt>
+        <Row gap={8}>
+          <Chip label="цялата порция" active={!per100} onPress={() => setPer100(false)} />
+          <Chip label="100 г (от етикета)" active={per100} onPress={() => setPer100(true)} />
+        </Row>
 
-        <Pressable style={styles.saveBtn} onPress={save}>
-          <CheckIcon size={18} color={colors.bg} />
-          <Text style={styles.saveBtnText}>Запази в дневника</Text>
+        <View style={s.grid}>
+          {FIELDS.map((f) => (
+            <View key={f.key} style={s.field}>
+              <Txt v="caption" tone="textMuted" style={{ marginBottom: 6 }}>
+                {f.label}
+              </Txt>
+              <Input value={values[f.key]} onChangeText={(v) => setValues((p) => ({ ...p, [f.key]: v }))} keyboardType="numeric" placeholder="0" />
+            </View>
+          ))}
+        </View>
+
+        <Txt v="label" tone="textMuted" style={s.label}>
+          Хранене
+        </Txt>
+        <Row gap={8} style={{ flexWrap: 'wrap' }}>
+          {MEALS.map((m) => (
+            <Chip key={m.key} label={`${m.emoji} ${m.label}`} active={meal === m.key} onPress={() => setMeal(m.key)} />
+          ))}
+        </Row>
+
+        <Pressable style={s.check} onPress={() => setSaveAsFood((v) => !v)}>
+          <View style={[s.box, saveAsFood && { backgroundColor: t.c.accent, borderColor: t.c.accent }]}>{saveAsFood && <CheckIcon size={16} color={t.c.onAccent} />}</View>
+          <Txt v="small" style={{ flex: 1 }}>
+            Запази в „Мои храни“, за да я добавям с едно докосване следващия път (нужен е грамаж)
+          </Txt>
         </Pressable>
-      </ScrollView>
-    </KeyboardAvoidingView>
+
+        <Button label="Запиши в дневника" onPress={save} icon={<CheckIcon size={20} color={t.c.onAccent} />} style={{ marginTop: 18 }} />
+      </Card>
+    </ScrollView>
   );
 }
 
-const styles = StyleSheet.create({
-  form: { paddingBottom: 40, gap: 4 },
-  label: { color: colors.textMuted, fontSize: 12, marginTop: 12, marginBottom: 6 },
-  input: {
-    backgroundColor: colors.surface,
-    color: colors.text,
-    borderRadius: 12,
-    paddingHorizontal: 14,
-    paddingVertical: 12,
-    fontSize: 14,
-  },
-  saveBtn: {
-    flexDirection: 'row',
-    gap: 8,
-    backgroundColor: colors.accent,
-    paddingVertical: 14,
-    borderRadius: 14,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginTop: 24,
-  },
-  saveBtnText: { color: colors.bg, fontWeight: '700', fontSize: 15 },
-});
+const useStyles = makeStyles((t) => ({
+  label: { marginTop: 16, marginBottom: 8 },
+  grid: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between', marginTop: 8 },
+  field: { width: '48%', marginTop: 10 },
+  check: { flexDirection: 'row', alignItems: 'center', gap: 12, marginTop: 18 },
+  box: { width: 26, height: 26, borderRadius: 8, borderWidth: 2, borderColor: t.c.border, alignItems: 'center', justifyContent: 'center' },
+}));

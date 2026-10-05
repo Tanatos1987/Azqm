@@ -1,209 +1,65 @@
 /**
- * Bundled offline food database. Values are per 100 g and are typical averages
- * (mostly USDA FoodData Central, cooked where the name says so). Bulgarian
- * dishes are estimates for a standard home recipe — real values vary.
- *
- * Rows are compact tuples to keep the table readable:
- *   macros: [kcal, protein, fat, carbs, fiber]
- *   micros: [Na mg, K mg, Mg mg, Ca mg, Fe mg, Zn mg, vit A mcg, vit C mg, vit D mcg, B12 mcg]
+ * Offline food database. Values per 100 g come from USDA FoodData Central (SR Legacy, public domain);
+ * Bulgarian dishes are computed from typical home recipes made of USDA ingredients.
+ * The data lives in foods.generated.ts (built by scripts/build-foods.mjs) — this module turns it into
+ * FoodItem objects and provides search.
  */
-import type { FoodCategory, FoodItem } from '@/types';
+import type { FoodCategory, FoodItem, FoodTag, Nutrients, Portion } from '@/types';
+import { FOOD_DATA, NUTRIENT_KEYS } from './foods.generated';
 
-type Macros = [number, number, number, number, number];
-type Micros = [number, number, number, number, number, number, number, number, number, number];
+export const FOOD_CATEGORIES: { key: FoodCategory; label: string; emoji: string }[] = [
+  { key: 'meat', label: 'Месо', emoji: '🥩' },
+  { key: 'deli', label: 'Колбаси', emoji: '🥓' },
+  { key: 'fish', label: 'Риба', emoji: '🐟' },
+  { key: 'eggs', label: 'Яйца', emoji: '🥚' },
+  { key: 'dairy', label: 'Млечни', emoji: '🥛' },
+  { key: 'cheese', label: 'Сирена', emoji: '🧀' },
+  { key: 'fats', label: 'Мазнини', emoji: '🧈' },
+  { key: 'vegetables', label: 'Зеленчуци', emoji: '🥦' },
+  { key: 'fruits', label: 'Плодове', emoji: '🍎' },
+  { key: 'nuts', label: 'Ядки', emoji: '🥜' },
+  { key: 'legumes', label: 'Бобови', emoji: '🌱' },
+  { key: 'grains', label: 'Хляб и зърнени', emoji: '🍞' },
+  { key: 'sweets', label: 'Сладки', emoji: '🍫' },
+  { key: 'sauces', label: 'Сосове', emoji: '🧂' },
+  { key: 'drinks', label: 'Напитки', emoji: '☕' },
+  { key: 'alcohol', label: 'Алкохол', emoji: '🍷' },
+  { key: 'dishes', label: 'Ястия', emoji: '🍲' },
+  { key: 'custom', label: 'Мои храни', emoji: '⭐' },
+];
 
-function food(
-  id: string,
-  name: string,
-  category: FoodCategory,
-  [calories, protein, fat, carbs, fiber]: Macros,
-  [sodiumMg, potassiumMg, magnesiumMg, calciumMg, ironMg, zincMg, vitaminAMcg, vitaminCMg, vitaminDMcg, vitaminB12Mcg]: Micros,
-  portion?: FoodItem['portion']
-): FoodItem {
+const CATEGORY_BY_KEY = new Map(FOOD_CATEGORIES.map((c) => [c.key, c]));
+
+export function categoryLabel(key: FoodCategory): string {
+  return CATEGORY_BY_KEY.get(key)?.label ?? key;
+}
+
+export function categoryEmoji(key: FoodCategory): string {
+  return CATEGORY_BY_KEY.get(key)?.emoji ?? '🍽️';
+}
+
+function parsePortions(raw: string): Portion[] {
+  if (!raw) return [];
+  return raw.split('|').map((p) => {
+    const i = p.lastIndexOf(':');
+    return { label: p.slice(0, i), grams: Number(p.slice(i + 1)) };
+  });
+}
+
+export const FOODS: FoodItem[] = FOOD_DATA.map(([id, name, category, tags, aliases, portions, full, values]) => {
+  const per100 = {} as Nutrients;
+  NUTRIENT_KEYS.forEach((k, i) => (per100[k] = values[i] ?? 0));
   return {
     id,
     name,
-    category,
-    per100g: { calories, protein, fat, carbs, fiber },
-    micros: { sodiumMg, potassiumMg, magnesiumMg, calciumMg, ironMg, zincMg, vitaminAMcg, vitaminCMg, vitaminDMcg, vitaminB12Mcg },
-    portion,
+    category: category as FoodCategory,
+    tags: (tags ? tags.split(',') : []) as FoodTag[],
+    aliases: aliases ? aliases.split('|') : [],
+    portions: parsePortions(portions),
+    hasMicros: full === 1,
+    per100,
   };
-}
-
-export const FOOD_CATEGORY_LABELS: Record<FoodCategory, string> = {
-  meat: 'Месо',
-  deli: 'Колбаси',
-  fish: 'Риба',
-  dairy: 'Млечни и яйца',
-  cheese: 'Сирена',
-  fats: 'Мазнини',
-  vegetables: 'Зеленчуци',
-  fruits: 'Плодове',
-  nuts: 'Ядки и семена',
-  grains: 'Хляб и зърнени',
-  dishes: 'Ястия',
-  drinks: 'Напитки и други',
-};
-
-export const FOODS: FoodItem[] = [
-  // Месо
-  food('chicken-breast', 'Пилешко филе, печено', 'meat', [165, 31, 3.6, 0, 0], [74, 256, 29, 15, 1, 1, 6, 0, 0.1, 0.3]),
-  food('chicken-thigh', 'Пилешко бутче с кожа, печено', 'meat', [232, 24, 15, 0, 0], [84, 229, 21, 11, 1.3, 2.4, 30, 0, 0.1, 0.3], { label: '1 бутче', grams: 130 }),
-  food('chicken-wings', 'Пилешки крилца, печени', 'meat', [254, 24, 17, 0, 0], [82, 184, 16, 15, 1.3, 1.8, 47, 0, 0.1, 0.3], { label: '1 крилце', grams: 35 }),
-  food('chicken-liver', 'Пилешки дробчета, задушени', 'meat', [167, 24.5, 6.5, 0.9, 0], [76, 263, 25, 11, 11.6, 4, 3981, 28, 0, 16.9]),
-  food('turkey-breast', 'Пуешко филе, печено', 'meat', [147, 30, 2, 0, 0], [55, 290, 28, 9, 0.7, 1.2, 0, 0, 0.1, 0.4]),
-  food('pork-tenderloin', 'Свинско бон филе, печено', 'meat', [143, 26, 3.5, 0, 0], [57, 421, 27, 6, 1, 1.9, 2, 0, 0.5, 0.5]),
-  food('pork-neck', 'Свински врат, печен', 'meat', [269, 23, 19, 0, 0], [67, 350, 21, 20, 1.4, 3.6, 3, 0, 0.6, 0.7]),
-  food('pork-chop', 'Свинска пържола', 'meat', [231, 25, 14, 0, 0], [58, 356, 24, 20, 0.8, 2.1, 2, 0, 0.5, 0.6], { label: '1 пържола', grams: 150 }),
-  food('bacon', 'Бекон, пържен', 'meat', [541, 37, 42, 1.4, 0], [1717, 565, 33, 11, 1.4, 3.5, 11, 0, 0.4, 1.2], { label: '1 резен', grams: 10 }),
-  food('beef-mince', 'Говежда кайма (20% мазн.), сготвена', 'meat', [272, 26, 18, 0, 0], [91, 364, 22, 28, 2.6, 6.2, 0, 0, 0.1, 2.6]),
-  food('beef-ribeye', 'Телешки стек (рибай), печен', 'meat', [291, 24, 21, 0, 0], [58, 318, 22, 12, 2.4, 5.9, 0, 0, 0.1, 2.3], { label: '1 стек', grams: 250 }),
-  food('beef-lean', 'Телешко, варено (постно)', 'meat', [190, 29, 8, 0, 0], [60, 350, 25, 6, 2.8, 5, 0, 0, 0.1, 2.5]),
-  food('lamb', 'Агнешко, печено', 'meat', [294, 25, 21, 0, 0], [72, 310, 23, 17, 1.9, 4.5, 0, 0, 0.1, 2.6]),
-  food('kebapche', 'Кебапче', 'meat', [280, 17, 23, 1, 0], [700, 280, 20, 20, 1.8, 3.5, 5, 0, 0.2, 1.5], { label: '1 бр.', grams: 50 }),
-  food('kyufte', 'Кюфте на скара', 'meat', [260, 17, 20, 4, 0.5], [650, 290, 22, 25, 1.9, 3.4, 10, 1, 0.2, 1.4], { label: '1 бр.', grams: 80 }),
-  food('chicken-skewer', 'Пилешко шишче', 'meat', [150, 24, 5, 2, 0.3], [400, 300, 27, 14, 0.9, 0.9, 10, 8, 0.1, 0.3], { label: '1 шишче', grams: 150 }),
-
-  // Колбаси
-  food('lukanka', 'Луканка', 'deli', [478, 28, 40, 1.5, 0], [1900, 350, 20, 20, 2.5, 3.5, 0, 0, 0.5, 1.5], { label: '5 резена', grams: 30 }),
-  food('sudzhuk', 'Суджук', 'deli', [455, 24, 39, 1.5, 0], [1700, 300, 18, 20, 2.3, 3.2, 0, 0, 0.5, 1.4], { label: '5 резена', grams: 30 }),
-  food('ham', 'Шунка, варена', 'deli', [145, 19, 6.5, 1.5, 0], [1200, 290, 20, 8, 0.9, 1.8, 0, 0, 0.6, 0.6], { label: '2 резена', grams: 40 }),
-  food('salami', 'Салам (варено-пушен)', 'deli', [330, 13, 30, 2, 0], [1200, 250, 15, 15, 1.2, 2, 0, 0, 0.3, 1], { label: '3 резена', grams: 30 }),
-  food('frankfurter', 'Кренвирш', 'deli', [290, 11, 26, 3, 0], [1000, 150, 12, 11, 1.1, 1.7, 0, 0, 0.3, 1.1], { label: '1 бр.', grams: 50 }),
-  food('prosciutto', 'Прошуто (сурово-сушено)', 'deli', [250, 26, 16, 0.5, 0], [2300, 450, 20, 10, 1, 2.2, 0, 0, 0.5, 0.8], { label: '3 резена', grams: 30 }),
-
-  // Риба
-  food('salmon', 'Сьомга, печена', 'fish', [206, 22, 12.4, 0, 0], [61, 384, 30, 15, 0.3, 0.4, 15, 3.7, 13.1, 2.8]),
-  food('mackerel', 'Скумрия, печена', 'fish', [262, 24, 18, 0, 0], [83, 401, 97, 15, 1.6, 0.9, 54, 0.4, 16, 19]),
-  food('tuna-water', 'Риба тон, консерва в собствен сос', 'fish', [116, 26, 1, 0, 0], [300, 237, 27, 11, 1.5, 0.8, 17, 0, 1.7, 2.5], { label: '1 консерва', grams: 120 }),
-  food('tuna-oil', 'Риба тон, консерва в олио', 'fish', [198, 29, 8, 0, 0], [354, 207, 31, 13, 1.4, 0.9, 23, 0, 6.7, 2.2], { label: '1 консерва', grams: 120 }),
-  food('sardines', 'Сардини в олио', 'fish', [208, 24.6, 11.5, 0, 0], [307, 397, 39, 382, 2.9, 1.3, 32, 0, 4.8, 8.9], { label: '1 консерва', grams: 90 }),
-  food('sea-bass', 'Лаврак / ципура, печени', 'fish', [130, 24, 4, 0, 0], [87, 328, 53, 13, 0.4, 0.5, 64, 0, 3, 0.3], { label: '1 риба', grams: 250 }),
-  food('trout', 'Пъстърва, печена', 'fish', [150, 23, 6.5, 0, 0], [56, 448, 31, 86, 0.4, 0.5, 18, 0.5, 4.9, 4.2]),
-  food('shrimp', 'Скариди, сготвени', 'fish', [99, 24, 0.3, 0.2, 0], [400, 259, 39, 70, 0.5, 1.6, 0, 0, 0, 1.5]),
-
-  // Млечни и яйца
-  food('egg', 'Яйце', 'dairy', [143, 12.6, 9.5, 0.7, 0], [142, 138, 12, 56, 1.75, 1.3, 160, 0, 2, 0.9], { label: '1 бр.', grams: 50 }),
-  food('egg-white', 'Яйчен белтък', 'dairy', [52, 10.9, 0.2, 0.7, 0], [166, 163, 11, 7, 0.1, 0, 0, 0, 0, 0.1], { label: '1 белтък', grams: 33 }),
-  food('yogurt', 'Кисело мляко 3.6%', 'dairy', [62, 3.5, 3.6, 4, 0], [46, 155, 12, 120, 0.05, 0.6, 27, 0.5, 0.1, 0.4], { label: '1 кофичка', grams: 400 }),
-  food('greek-yogurt', 'Гръцко кисело мляко 10%', 'dairy', [125, 6, 10, 3.5, 0], [40, 140, 11, 100, 0.1, 0.5, 90, 0, 0.1, 0.4], { label: '1 кофичка', grams: 150 }),
-  food('milk', 'Прясно мляко 3.5%', 'dairy', [64, 3.3, 3.5, 4.8, 0], [43, 150, 10, 120, 0, 0.4, 30, 0, 0.1, 0.45], { label: '1 чаша', grams: 250 }),
-  food('heavy-cream', 'Сметана течна 35%', 'dairy', [340, 2.8, 36, 2.8, 0], [38, 95, 7, 66, 0, 0.2, 411, 0.6, 1.6, 0.2], { label: '1 с.л.', grams: 15 }),
-  food('sour-cream', 'Заквасена сметана 20%', 'dairy', [205, 2.6, 20, 3.4, 0], [40, 120, 10, 100, 0.1, 0.3, 180, 0.9, 0.2, 0.3], { label: '1 с.л.', grams: 20 }),
-  food('butter', 'Краве масло', 'dairy', [717, 0.9, 81, 0.1, 0], [11, 24, 2, 24, 0, 0.1, 684, 0, 1.5, 0.2], { label: '1 ч.л.', grams: 5 }),
-  food('ayran', 'Айрян', 'dairy', [37, 1.7, 1.8, 2.2, 0], [300, 80, 6, 60, 0, 0.3, 14, 0, 0, 0.2], { label: '1 чаша', grams: 250 }),
-  food('cottage-cheese', 'Извара', 'dairy', [98, 11, 4.3, 3.4, 0], [364, 104, 8, 83, 0.1, 0.4, 37, 0, 0.1, 0.4]),
-
-  // Сирена
-  food('white-cheese', 'Бяло саламурено сирене (краве)', 'cheese', [260, 17.5, 21, 1, 0], [1100, 60, 19, 450, 0.6, 2.9, 125, 0, 0.4, 1.7], { label: '1 парче', grams: 50 }),
-  food('sheep-cheese', 'Овче сирене', 'cheese', [290, 16, 25, 1, 0], [1200, 70, 20, 490, 0.6, 3, 150, 0, 0.4, 1.6], { label: '1 парче', grams: 50 }),
-  food('kashkaval', 'Кашкавал', 'cheese', [360, 25, 28, 1.5, 0], [800, 90, 28, 700, 0.4, 3.5, 250, 0, 0.5, 1.5], { label: '1 резен', grams: 20 }),
-  food('mozzarella', 'Моцарела (прясна)', 'cheese', [254, 18, 19.5, 1, 0], [200, 80, 20, 505, 0.4, 2.9, 180, 0, 0.4, 2.3], { label: '1 топка', grams: 125 }),
-  food('parmesan', 'Пармезан', 'cheese', [392, 35.8, 25.8, 3.2, 0], [1376, 92, 44, 1184, 0.8, 2.75, 207, 0, 0.5, 1.2], { label: '1 с.л. настърган', grams: 5 }),
-  food('cheddar', 'Чедър', 'cheese', [403, 24.9, 33.1, 1.3, 0], [621, 98, 28, 721, 0.7, 3.1, 265, 0, 0.6, 0.8]),
-  food('cream-cheese', 'Крема сирене', 'cheese', [342, 6, 34, 4, 0], [321, 138, 9, 98, 0.4, 0.5, 308, 0, 0.2, 0.2], { label: '1 с.л.', grams: 15 }),
-  food('blue-cheese', 'Синьо сирене', 'cheese', [353, 21, 28.7, 2.3, 0], [1146, 256, 23, 528, 0.3, 2.7, 198, 0, 0.5, 1.2]),
-  food('halloumi', 'Халуми', 'cheese', [320, 22, 25, 1.8, 0], [1000, 90, 25, 700, 0.3, 3, 230, 0, 0.3, 1]),
-
-  // Мазнини
-  food('olive-oil', 'Зехтин', 'fats', [884, 0, 100, 0, 0], [2, 1, 0, 1, 0.6, 0, 0, 0, 0, 0], { label: '1 с.л.', grams: 13 }),
-  food('coconut-oil', 'Кокосово масло', 'fats', [862, 0, 99, 0, 0], [0, 0, 0, 1, 0, 0, 0, 0, 0, 0], { label: '1 с.л.', grams: 13 }),
-  food('sunflower-oil', 'Слънчогледово олио', 'fats', [884, 0, 100, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0, 0, 0], { label: '1 с.л.', grams: 13 }),
-  food('mct-oil', 'MCT масло', 'fats', [830, 0, 100, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0, 0, 0], { label: '1 с.л.', grams: 14 }),
-  food('lard', 'Свинска мас', 'fats', [902, 0, 100, 0, 0], [0, 0, 0, 0, 0, 0.1, 0, 0, 2.5, 0], { label: '1 с.л.', grams: 13 }),
-  food('ghee', 'Гхи (пречистено масло)', 'fats', [900, 0.3, 99.8, 0, 0], [2, 5, 0, 4, 0, 0, 684, 0, 1.5, 0], { label: '1 с.л.', grams: 13 }),
-  food('mayonnaise', 'Майонеза', 'fats', [680, 1, 75, 0.6, 0], [635, 20, 1, 8, 0.2, 0.1, 23, 0, 0.2, 0.1], { label: '1 с.л.', grams: 15 }),
-  food('avocado', 'Авокадо', 'fats', [160, 2, 14.7, 8.5, 6.7], [7, 485, 29, 12, 0.55, 0.64, 7, 10, 0, 0], { label: '1 бр.', grams: 150 }),
-  food('green-olives', 'Маслини зелени', 'fats', [145, 1, 15.3, 3.8, 3.3], [1556, 42, 11, 52, 0.5, 0.04, 20, 0, 0, 0], { label: '10 бр.', grams: 40 }),
-  food('black-olives', 'Маслини черни', 'fats', [115, 0.8, 10.7, 6.3, 3.2], [735, 8, 4, 88, 3.3, 0.2, 20, 0.9, 0, 0], { label: '10 бр.', grams: 40 }),
-
-  // Зеленчуци
-  food('cucumber', 'Краставица', 'vegetables', [15, 0.65, 0.1, 3.6, 0.5], [2, 147, 13, 16, 0.3, 0.2, 5, 2.8, 0, 0], { label: '1 бр.', grams: 200 }),
-  food('tomato', 'Домат', 'vegetables', [18, 0.9, 0.2, 3.9, 1.2], [5, 237, 11, 10, 0.3, 0.2, 42, 13.7, 0, 0], { label: '1 бр.', grams: 150 }),
-  food('red-pepper', 'Червена чушка', 'vegetables', [31, 1, 0.3, 6, 2.1], [4, 211, 12, 7, 0.4, 0.25, 157, 128, 0, 0], { label: '1 бр.', grams: 120 }),
-  food('green-pepper', 'Зелена чушка', 'vegetables', [20, 0.9, 0.2, 4.6, 1.7], [3, 175, 10, 10, 0.3, 0.1, 18, 80, 0, 0], { label: '1 бр.', grams: 100 }),
-  food('spinach', 'Спанак', 'vegetables', [23, 2.9, 0.4, 3.6, 2.2], [79, 558, 79, 99, 2.7, 0.5, 469, 28, 0, 0]),
-  food('broccoli', 'Броколи', 'vegetables', [34, 2.8, 0.4, 6.6, 2.6], [33, 316, 21, 47, 0.7, 0.4, 31, 89, 0, 0]),
-  food('cauliflower', 'Карфиол', 'vegetables', [25, 1.9, 0.3, 5, 2], [30, 299, 15, 22, 0.4, 0.3, 0, 48, 0, 0]),
-  food('zucchini', 'Тиквичка', 'vegetables', [17, 1.2, 0.3, 3.1, 1], [8, 261, 18, 16, 0.4, 0.3, 10, 18, 0, 0], { label: '1 бр.', grams: 200 }),
-  food('eggplant', 'Патладжан', 'vegetables', [25, 1, 0.2, 5.9, 3], [2, 229, 14, 9, 0.2, 0.2, 1, 2.2, 0, 0]),
-  food('cabbage', 'Зеле (бяло)', 'vegetables', [25, 1.3, 0.1, 5.8, 2.5], [18, 170, 12, 40, 0.5, 0.2, 5, 36.6, 0, 0]),
-  food('sauerkraut', 'Кисело зеле', 'vegetables', [19, 0.9, 0.1, 4.3, 2.9], [661, 170, 13, 30, 1.5, 0.2, 1, 14.7, 0, 0]),
-  food('lettuce', 'Маруля / зелена салата', 'vegetables', [15, 1.4, 0.2, 2.9, 1.3], [28, 194, 13, 36, 0.9, 0.2, 370, 9.2, 0, 0]),
-  food('iceberg', 'Айсберг', 'vegetables', [14, 0.9, 0.1, 3, 1.2], [10, 141, 7, 18, 0.4, 0.15, 25, 2.8, 0, 0]),
-  food('arugula', 'Рукола', 'vegetables', [25, 2.6, 0.7, 3.7, 1.6], [27, 369, 47, 160, 1.5, 0.5, 119, 15, 0, 0]),
-  food('kale', 'Кейл (къдраво зеле)', 'vegetables', [35, 2.9, 1.5, 4.4, 4.1], [53, 348, 33, 254, 1.6, 0.4, 241, 93, 0, 0]),
-  food('mushrooms', 'Гъби печурки', 'vegetables', [22, 3.1, 0.3, 3.3, 1], [5, 318, 9, 3, 0.5, 0.5, 0, 2.1, 0.2, 0.04]),
-  food('asparagus', 'Аспержи', 'vegetables', [20, 2.2, 0.1, 3.9, 2.1], [2, 202, 14, 24, 2.1, 0.5, 38, 5.6, 0, 0]),
-  food('green-beans', 'Зелен фасул', 'vegetables', [31, 1.8, 0.2, 7, 2.7], [6, 211, 25, 37, 1, 0.24, 35, 12.2, 0, 0]),
-  food('onion', 'Лук (кромид)', 'vegetables', [40, 1.1, 0.1, 9.3, 1.7], [4, 146, 10, 23, 0.2, 0.2, 0, 7.4, 0, 0], { label: '1 глава', grams: 110 }),
-  food('garlic', 'Чесън', 'vegetables', [149, 6.4, 0.5, 33, 2.1], [17, 401, 25, 181, 1.7, 1.2, 0, 31.2, 0, 0], { label: '1 скилидка', grams: 3 }),
-  food('carrot', 'Морков', 'vegetables', [41, 0.9, 0.2, 9.6, 2.8], [69, 320, 12, 33, 0.3, 0.24, 835, 5.9, 0, 0], { label: '1 бр.', grams: 70 }),
-  food('celery', 'Целина (стрък)', 'vegetables', [16, 0.7, 0.2, 3, 1.6], [80, 260, 11, 40, 0.2, 0.13, 22, 3.1, 0, 0]),
-  food('radish', 'Репички', 'vegetables', [16, 0.7, 0.1, 3.4, 1.6], [39, 233, 10, 25, 0.3, 0.3, 0, 14.8, 0, 0]),
-  food('potato', 'Картофи, варени', 'vegetables', [87, 1.9, 0.1, 20, 1.8], [4, 379, 22, 5, 0.3, 0.3, 0, 7.4, 0, 0]),
-
-  // Плодове
-  food('strawberries', 'Ягоди', 'fruits', [32, 0.7, 0.3, 7.7, 2], [1, 153, 13, 16, 0.4, 0.14, 1, 58.8, 0, 0]),
-  food('raspberries', 'Малини', 'fruits', [52, 1.2, 0.65, 11.9, 6.5], [1, 151, 22, 25, 0.7, 0.4, 2, 26.2, 0, 0]),
-  food('blueberries', 'Боровинки', 'fruits', [57, 0.7, 0.3, 14.5, 2.4], [1, 77, 6, 6, 0.3, 0.16, 3, 9.7, 0, 0]),
-  food('lemon', 'Лимон', 'fruits', [29, 1.1, 0.3, 9.3, 2.8], [2, 138, 8, 26, 0.6, 0.06, 1, 53, 0, 0]),
-  food('apple', 'Ябълка', 'fruits', [52, 0.3, 0.2, 13.8, 2.4], [1, 107, 5, 6, 0.1, 0.04, 3, 4.6, 0, 0], { label: '1 бр.', grams: 180 }),
-  food('banana', 'Банан', 'fruits', [89, 1.1, 0.3, 22.8, 2.6], [1, 358, 27, 5, 0.3, 0.15, 3, 8.7, 0, 0], { label: '1 бр.', grams: 120 }),
-  food('orange', 'Портокал', 'fruits', [47, 0.9, 0.1, 11.8, 2.4], [0, 181, 10, 40, 0.1, 0.07, 11, 53.2, 0, 0], { label: '1 бр.', grams: 180 }),
-
-  // Ядки и семена
-  food('almonds', 'Бадеми', 'nuts', [579, 21.2, 49.9, 21.6, 12.5], [1, 733, 270, 269, 3.7, 3.1, 0, 0, 0, 0], { label: 'шепа', grams: 30 }),
-  food('walnuts', 'Орехи', 'nuts', [654, 15.2, 65.2, 13.7, 6.7], [2, 441, 158, 98, 2.9, 3.1, 1, 1.3, 0, 0], { label: 'шепа', grams: 30 }),
-  food('hazelnuts', 'Лешници', 'nuts', [628, 15, 60.8, 16.7, 9.7], [0, 680, 163, 114, 4.7, 2.45, 1, 6.3, 0, 0], { label: 'шепа', grams: 30 }),
-  food('macadamia', 'Макадамия', 'nuts', [718, 7.9, 75.8, 13.8, 8.6], [5, 368, 130, 85, 3.7, 1.3, 0, 1.2, 0, 0], { label: 'шепа', grams: 30 }),
-  food('pecans', 'Пекан', 'nuts', [691, 9.2, 72, 13.9, 9.6], [0, 410, 121, 70, 2.5, 4.5, 3, 1.1, 0, 0], { label: 'шепа', grams: 30 }),
-  food('cashews', 'Кашу', 'nuts', [553, 18.2, 43.9, 30.2, 3.3], [12, 660, 292, 37, 6.7, 5.8, 0, 0.5, 0, 0], { label: 'шепа', grams: 30 }),
-  food('pistachios', 'Шам фъстък', 'nuts', [560, 20.2, 45.3, 27.2, 10.6], [1, 1025, 121, 105, 3.9, 2.2, 26, 5.6, 0, 0], { label: 'шепа', grams: 30 }),
-  food('peanuts', 'Фъстъци, печени', 'nuts', [585, 23.7, 49.7, 21.5, 8.4], [6, 634, 176, 54, 2.3, 3.3, 0, 0, 0, 0], { label: 'шепа', grams: 30 }),
-  food('pumpkin-seeds', 'Тиквени семки (белени)', 'nuts', [559, 30.2, 49, 10.7, 6], [7, 809, 592, 46, 8.8, 7.8, 1, 1.9, 0, 0], { label: '1 с.л.', grams: 10 }),
-  food('sunflower-seeds', 'Слънчогледови семки (белени)', 'nuts', [584, 20.8, 51.5, 20, 8.6], [9, 645, 325, 78, 5.25, 5, 3, 1.4, 0, 0], { label: '1 с.л.', grams: 10 }),
-  food('chia', 'Чиа семена', 'nuts', [486, 16.5, 30.7, 42.1, 34.4], [16, 407, 335, 631, 7.7, 4.6, 0, 1.6, 0, 0], { label: '1 с.л.', grams: 12 }),
-  food('flaxseed', 'Ленено семе', 'nuts', [534, 18.3, 42.2, 28.9, 27.3], [30, 813, 392, 255, 5.7, 4.3, 0, 0.6, 0, 0], { label: '1 с.л.', grams: 10 }),
-  food('peanut-butter', 'Фъстъчено масло (без захар)', 'nuts', [588, 25, 50, 20, 6], [17, 558, 168, 43, 1.7, 2.8, 0, 0, 0, 0], { label: '1 с.л.', grams: 16 }),
-  food('tahini', 'Тахан (сусамов)', 'nuts', [595, 17, 53.8, 21.2, 9.3], [35, 414, 95, 426, 8.95, 4.6, 3, 0, 0, 0], { label: '1 с.л.', grams: 15 }),
-  food('coconut-flakes', 'Кокосови стърготини (неподсладени)', 'nuts', [660, 6.9, 64.5, 23.7, 16.3], [37, 543, 90, 26, 3.3, 2, 0, 1.5, 0, 0], { label: '1 с.л.', grams: 7 }),
-  food('almond-flour', 'Бадемово брашно', 'nuts', [571, 21.4, 50, 21.4, 10.7], [0, 700, 270, 260, 3.7, 3.1, 0, 0, 0, 0]),
-  food('coconut-flour', 'Кокосово брашно', 'nuts', [400, 18, 14, 60, 39], [40, 870, 110, 60, 6, 2.5, 0, 0, 0, 0]),
-
-  // Хляб и зърнени
-  food('white-bread', 'Бял хляб', 'grains', [265, 9, 3.2, 49, 2.7], [491, 115, 25, 151, 3.6, 0.8, 0, 0, 0, 0], { label: '1 филия', grams: 30 }),
-  food('wholegrain-bread', 'Пълнозърнест хляб', 'grains', [247, 13, 3.4, 41, 7], [450, 250, 82, 107, 2.5, 1.8, 0, 0, 0, 0], { label: '1 филия', grams: 35 }),
-  food('rice', 'Ориз, варен', 'grains', [130, 2.7, 0.3, 28, 0.4], [1, 35, 12, 10, 0.2, 0.5, 0, 0, 0, 0]),
-  food('pasta', 'Паста, варена', 'grains', [158, 5.8, 0.9, 31, 1.8], [1, 44, 18, 7, 0.5, 0.5, 0, 0, 0, 0]),
-  food('oats', 'Овесени ядки', 'grains', [389, 16.9, 6.9, 66.3, 10.6], [2, 429, 177, 54, 4.7, 4, 0, 0, 0, 0], { label: '1 купичка', grams: 40 }),
-  food('lentils', 'Леща, варена', 'grains', [116, 9, 0.4, 20, 7.9], [2, 369, 36, 19, 3.3, 1.3, 0, 1.5, 0, 0]),
-  food('white-beans', 'Боб (бял), варен', 'grains', [139, 9.7, 0.35, 25, 6.3], [6, 561, 63, 90, 3.7, 1.4, 0, 0, 0, 0]),
-  food('banitsa', 'Баница със сирене', 'grains', [290, 9, 17, 26, 1], [550, 90, 15, 150, 1.2, 1, 60, 0, 0.2, 0.4], { label: '1 парче', grams: 150 }),
-
-  // Ястия
-  food('shopska', 'Шопска салата', 'dishes', [95, 3, 7.5, 4, 1.2], [300, 200, 12, 80, 0.3, 0.5, 50, 25, 0.05, 0.3], { label: '1 порция', grams: 300 }),
-  food('tarator', 'Таратор', 'dishes', [60, 2.5, 4, 3.5, 0.5], [150, 150, 12, 80, 0.2, 0.4, 15, 2, 0, 0.2], { label: '1 купа', grams: 300 }),
-  food('shkembe', 'Шкембе чорба', 'dishes', [70, 6, 4.5, 2, 0.1], [450, 80, 8, 60, 0.4, 1, 30, 0.5, 0.1, 0.5], { label: '1 купа', grams: 350 }),
-  food('kavarma', 'Кавърма (свинска)', 'dishes', [230, 17, 17, 3, 0.7], [500, 330, 22, 20, 1.3, 2.8, 30, 8, 0.4, 0.6], { label: '1 порция', grams: 300 }),
-  food('stuffed-peppers', 'Пълнени чушки с кайма', 'dishes', [120, 7, 7, 7, 1.3], [350, 230, 15, 20, 0.9, 1.5, 60, 40, 0.1, 0.6], { label: '1 чушка', grams: 180 }),
-  food('sarmi', 'Сарми с кайма (лозови)', 'dishes', [170, 8, 11, 10, 1.5], [400, 200, 20, 60, 1.2, 1.5, 150, 3, 0.1, 0.5], { label: '1 порция', grams: 200 }),
-  food('musaka', 'Мусака', 'dishes', [140, 7, 8, 10, 1.2], [350, 300, 20, 40, 0.9, 1.4, 40, 5, 0.3, 0.5], { label: '1 порция', grams: 300 }),
-  food('panagyurski-eggs', 'Яйца по панагюрски', 'dishes', [130, 7, 10, 3, 0], [250, 150, 12, 100, 0.8, 0.8, 110, 0.4, 1, 0.6], { label: '1 порция', grams: 250 }),
-  food('kashkaval-pane', 'Кашкавал пане', 'dishes', [330, 18, 22, 16, 0.6], [700, 90, 20, 500, 0.8, 2.5, 200, 0, 0.5, 1.1], { label: '1 порция', grams: 150 }),
-
-  // Напитки и други
-  food('coffee', 'Кафе (черно)', 'drinks', [2, 0.3, 0, 0, 0], [2, 49, 3, 2, 0, 0, 0, 0, 0, 0], { label: '1 чаша', grams: 200 }),
-  food('bone-broth', 'Костен бульон', 'drinks', [15, 3, 0.2, 0.2, 0], [400, 100, 5, 10, 0.2, 0.2, 0, 0, 0, 0.1], { label: '1 чаша', grams: 250 }),
-  food('mineral-water', 'Минерална вода', 'drinks', [0, 0, 0, 0, 0], [20, 2, 5, 10, 0, 0, 0, 0, 0, 0], { label: '1 чаша', grams: 250 }),
-  food('whey', 'Суроватъчен протеин', 'drinks', [400, 80, 6, 8, 0], [200, 500, 80, 400, 1, 2, 0, 0, 0, 1], { label: '1 мерителна лъжица', grams: 30 }),
-  food('dark-chocolate', 'Черен шоколад 85%', 'drinks', [600, 10, 50, 24, 12], [20, 715, 228, 73, 11.9, 3.3, 2, 0, 0, 0.3], { label: '2 блокчета', grams: 20 }),
-  food('honey', 'Мед', 'drinks', [304, 0.3, 0, 82.4, 0.2], [4, 52, 2, 6, 0.4, 0.2, 0, 0.5, 0, 0], { label: '1 ч.л.', grams: 7 }),
-  food('sugar', 'Захар', 'drinks', [387, 0, 0, 100, 0], [1, 2, 0, 1, 0, 0, 0, 0, 0, 0], { label: '1 ч.л.', grams: 5 }),
-  food('beer', 'Бира', 'drinks', [43, 0.5, 0, 3.6, 0], [4, 27, 6, 4, 0, 0, 0, 0, 0, 0], { label: '1 бутилка', grams: 500 }),
-  food('red-wine', 'Червено вино', 'drinks', [85, 0.1, 0, 2.6, 0], [4, 127, 12, 8, 0.5, 0.1, 0, 0, 0, 0], { label: '1 чаша', grams: 150 }),
-  food('rakia', 'Ракия', 'drinks', [231, 0, 0, 0, 0], [1, 2, 0, 0, 0, 0, 0, 0, 0, 0], { label: '1 малка', grams: 50 }),
-];
+});
 
 const FOODS_BY_ID = new Map(FOODS.map((f) => [f.id, f]));
 
@@ -211,12 +67,130 @@ export function getFoodById(id: string): FoodItem | undefined {
   return FOODS_BY_ID.get(id);
 }
 
-/** Case-insensitive substring search on every word of the query, so "пиле печ" matches "Пилешко филе, печено". */
-export function searchFoods(query: string, category: FoodCategory | null): FoodItem[] {
-  const words = query.toLowerCase().trim().split(/\s+/).filter(Boolean);
-  return FOODS.filter((f) => {
-    if (category && f.category !== category) return false;
-    const name = f.name.toLowerCase();
-    return words.every((w) => name.includes(w));
-  });
+// ---- search ----------------------------------------------------------------------
+
+/** Bulgarian "шльокавица" / streamlined Latin → Cyrillic, longest sequences first. */
+const LATIN_MULTI: [string, string][] = [
+  ['sht', 'щ'],
+  ['sh', 'ш'],
+  ['ch', 'ч'],
+  ['zh', 'ж'],
+  ['ts', 'ц'],
+  ['yu', 'ю'],
+  ['iu', 'ю'],
+  ['ya', 'я'],
+  ['ia', 'я'],
+  ['yo', 'йо'],
+];
+const LATIN_SINGLE: Record<string, string> = {
+  a: 'а', b: 'б', v: 'в', w: 'в', g: 'г', d: 'д', e: 'е', z: 'з', i: 'и', j: 'ж', k: 'к', l: 'л', m: 'м', n: 'н',
+  o: 'о', p: 'п', r: 'р', s: 'с', t: 'т', u: 'у', f: 'ф', h: 'х', x: 'х', c: 'ц', q: 'я', y: 'ъ', '4': 'ч', '6': 'ш',
+};
+
+function latinToCyrillic(word: string): string {
+  let out = '';
+  let i = 0;
+  outer: while (i < word.length) {
+    for (const [lat, cyr] of LATIN_MULTI) {
+      if (word.startsWith(lat, i)) {
+        out += cyr;
+        i += lat.length;
+        continue outer;
+      }
+    }
+    out += LATIN_SINGLE[word[i]] ?? word[i];
+    i++;
+  }
+  return out;
+}
+
+export function normalize(text: string): string {
+  return text
+    .toLowerCase()
+    .replace(/ѝ/g, 'и')
+    .replace(/ё/g, 'е')
+    .replace(/[.,;:()"'„“%/\\-]+/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+/** Query words; Latin words get Cyrillic alternatives ("y" can be ъ or й). */
+function queryWords(query: string): string[][] {
+  return normalize(query)
+    .split(' ')
+    .filter(Boolean)
+    .map((w) => {
+      if (!/[a-z0-9]/.test(w) || /^\d+$/.test(w)) return [w];
+      const cyr = latinToCyrillic(w);
+      return Array.from(new Set([w, cyr, cyr.replace(/ъ/g, 'й'), cyr.replace(/ъ/g, 'и')]));
+    });
+}
+
+const SEARCH_TEXT = new WeakMap<FoodItem, string>();
+function searchTextOf(f: FoodItem): string {
+  let t = SEARCH_TEXT.get(f);
+  if (!t) {
+    t = normalize([f.name, ...f.aliases].join(' '));
+    SEARCH_TEXT.set(f, t);
+  }
+  return t;
+}
+
+/**
+ * Every query word must appear somewhere in the name/aliases (substring, so "пиле печ" finds
+ * "Пилешко филе, печено"). Results are ranked: name starts with the query, then whole-word hits,
+ * then `boost` (favorites/frequently used), then shorter names.
+ */
+export function searchFoods(
+  query: string,
+  pool: FoodItem[],
+  opts: { category?: FoodCategory | null; boost?: (f: FoodItem) => number; limit?: number } = {}
+): FoodItem[] {
+  const words = queryWords(query);
+  const { category, boost, limit = 80 } = opts;
+  const scored: { f: FoodItem; score: number }[] = [];
+  for (const f of pool) {
+    if (category && f.category !== category) continue;
+    if (words.length === 0) {
+      scored.push({ f, score: boost?.(f) ?? 0 });
+      continue;
+    }
+    const text = searchTextOf(f);
+    const name = normalize(f.name);
+    let score = 0;
+    let ok = true;
+    for (const alts of words) {
+      let best = -1;
+      for (const w of alts) {
+        const at = text.indexOf(w);
+        if (at < 0) continue;
+        let s = 1;
+        if (name.startsWith(w)) s += 6;
+        else if (name.includes(` ${w}`) || at === 0) s += 3;
+        if (name.includes(w)) s += 1;
+        best = Math.max(best, s);
+      }
+      if (best < 0) {
+        ok = false;
+        break;
+      }
+      score += best;
+    }
+    if (!ok) continue;
+    score += (boost?.(f) ?? 0) - f.name.length / 60;
+    scored.push({ f, score });
+  }
+  scored.sort((a, b) => b.score - a.score || a.f.name.localeCompare(b.f.name, 'bg'));
+  return scored.slice(0, limit).map((s) => s.f);
+}
+
+/** Portions to offer for a food: its own household portions first, then common gram amounts. */
+export function portionOptions(food: FoodItem): Portion[] {
+  const grams = new Set(food.portions.map((p) => p.grams));
+  const generic = [50, 100, 150, 200, 250].filter((g) => !grams.has(g)).map((g) => ({ label: `${g} г`, grams: g }));
+  return [...food.portions, ...generic];
+}
+
+export function defaultPortion(food: FoodItem): Portion {
+  return food.portions[0] ?? { label: '100 г', grams: 100 };
 }

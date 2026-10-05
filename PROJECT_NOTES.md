@@ -1,22 +1,28 @@
-# Project notes — Keto OMAD Tracker
+# Project notes — Azqm (formerly Keto OMAD Tracker)
 
 Running log of what has been built and decided, so work can continue across sessions.
 
 ## Status
-- **v1** — macro rings, OMAD fasting timer, hydration/electrolytes, food via Vision API photo, OpenFoodFacts barcode, manual entry.
-- **Phase 1 (2026-09-28)** — offline food database with micronutrients (`src/data/foods.ts`), onboarding with BMR/TDEE and automatic keto goals (`src/utils/bodyMetrics.ts`), animated BMI body figure (`src/components/BodyFigure.tsx`), Progress tab with weight log and charts, micronutrient card on Today. DB schema is versioned with `PRAGMA user_version` (currently 2) in `src/db/schema.ts`.
+- **v1 / Phase 1 (2026-09-28)** — as "Keto OMAD Tracker": macro rings, OMAD timer, offline food DB (~130 foods), onboarding with BMR/TDEE, BMI figure, Progress tab. Built with EAS.
+- **Azqm 1.0.0 (2026-10-05)** — renamed to Azqm, package `com.tanatos.azqm` (new app id — installs next to the old keto app). GitHub repo `Tanatos1987/Azqm`; APK built by GitHub Actions and published to Releases.
+  - Theme system (`src/theme`): dark/light/system, text scale, Inter font embedded via the expo-font plugin. All text goes through `<Txt>` / `<Input>` in `src/components/ui.tsx`; styles via `makeStyles`.
+  - 14 diets in `src/data/diets.ts` (macro split, carb basis/cap, fasting window, food-fit rules).
+  - Food DB: 1023 foods generated into `src/data/foods.generated.ts` by `scripts/build-foods.mjs` from `data-src/foodmap/*.json` + USDA SR Legacy (30 nutrients). Bulgarian dishes are recipes of USDA ingredients.
+  - Nutrient targets (RDA/AI/UL by sex/age/diet) in `src/data/nutrients.ts`; analysis in `src/utils/analysis.ts`.
+  - DB `azqm.db` (schema v1): food_entries with `n_<nutrient>` columns + meal, custom_foods, favorites, weight_entries, hydration_entries, fasts. Missing nutrient columns are added automatically on start.
+  - Export: xlsx (own writer on fflate, `src/utils/xlsx.ts`), CSV, JSON backup + restore.
 
 ## Decisions
-- No camera-based offline recognition yet — exact grams from a photo aren't reliable offline. If added later: TFLite classifier identifies the food, the user confirms the grams.
-- Phase 1 avoids new native dependencies: animations use React Native `Animated` (`src/hooks/useTween.ts`), charts are drawn with `react-native-svg`.
-- Food values are USDA-style averages per 100 g; Bulgarian dishes are estimates.
+- No camera-based offline recognition yet — exact grams from a photo aren't reliable offline. Photo mode needs the user's own Gemini/OpenAI key.
+- No icon font / vector-icons package: icons are hand-drawn SVG (`src/components/icons.tsx`).
+- Signing key: PKCS#12 made with node-forge, local copy in `C:\Users\k.ivanova.TSMEGA\Azqm-keystore` (password inside), CI copy in repo secrets. Losing both means updates can't install over the old app.
+- Today's partial day is excluded from averages on the Анализ tab when complete days exist.
 
 ## Ideas for next phases (not agreed yet)
-- Offline photo recognition (vision-camera + fast-tflite)
-- Android Health Connect sync (steps/active calories, write nutrition and weight)
-- Custom foods and favorites, a bigger food database
+- Android Health Connect sync, reminders/notifications, recipes builder (own dishes from ingredients), offline photo recognition.
 
-## Building the APK on this machine
-- Git is not installed → set `EAS_NO_VCS=1`. Log in with an access token passed as `EXPO_TOKEN`.
-- `npx eas-cli@latest build -p android --profile preview --non-interactive`
-- `expo start --tunnel` does not work on the office network (ngrok is blocked).
+## Building
+- Push to `main` → GitHub Actions builds `Azqm.apk` (artifact). Tag `vX.Y.Z` → Release. Bump `expo.version` in app.json for each release; versionCode = run number.
+- Local checks before pushing: `npx tsc --noEmit`, `npx expo lint`, `npx expo export --platform android`.
+- After adding routes, regenerate typed routes by briefly running `npx expo start --offline`.
+- `expo start --tunnel` does not work on the office network (ngrok blocked).

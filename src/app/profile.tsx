@@ -1,28 +1,25 @@
 import React from 'react';
-import { Pressable, StyleSheet, Text } from 'react-native';
 import { router } from 'expo-router';
-import { ScreenContainer } from '@/components/ScreenContainer';
+import { IconButton, Screen } from '@/components/ui';
+import { CloseIcon } from '@/components/icons';
 import { ProfileForm } from '@/components/profile/ProfileForm';
 import { useProfile } from '@/context/ProfileContext';
-import { colors } from '@/theme/colors';
+import { useTheme } from '@/theme/ThemeContext';
 
 export default function ProfileScreen() {
+  const t = useTheme();
   const { profile } = useProfile();
   return (
-    <ScreenContainer
+    <Screen
       title="Профил"
       subtitle="Промяната преизчислява дневните цели"
-      headerRight={
-        <Pressable onPress={() => router.back()} hitSlop={10}>
-          <Text style={styles.close}>Затвори</Text>
-        </Pressable>
+      right={
+        <IconButton onPress={() => router.back()} accessibilityLabel="Затвори">
+          <CloseIcon size={22} color={t.c.text} />
+        </IconButton>
       }
     >
       <ProfileForm initial={profile} onSaved={() => router.back()} />
-    </ScreenContainer>
+    </Screen>
   );
 }
-
-const styles = StyleSheet.create({
-  close: { color: colors.accent, fontWeight: '600', fontSize: 14 },
-});

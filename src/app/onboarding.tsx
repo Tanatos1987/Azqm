@@ -1,5 +1,5 @@
 import React from 'react';
-import { ScreenContainer } from '@/components/ScreenContainer';
+import { Screen } from '@/components/ui';
 import { ProfileForm } from '@/components/profile/ProfileForm';
 
 /**
@@ -8,8 +8,8 @@ import { ProfileForm } from '@/components/profile/ProfileForm';
  */
 export default function OnboardingScreen() {
   return (
-    <ScreenContainer title="Добре дошли" subtitle="Въведи данните си, за да изчислим личните ти цели">
-      <ProfileForm initial={null} onSaved={() => {}} />
-    </ScreenContainer>
+    <Screen title="Добре дошли в Azqm" subtitle="Въведи данните си и избери режим — ще изчислим личните ти цели">
+      <ProfileForm initial={null} onSaved={() => {}} askDiet />
+    </Screen>
   );
 }

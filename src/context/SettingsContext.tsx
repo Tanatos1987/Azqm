@@ -1,36 +1,41 @@
-import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
+import React, { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as SecureStore from 'expo-secure-store';
 import type { DailyGoals, VisionProvider } from '@/types';
+import type { DietId } from '@/data/diets';
+import type { TextScaleKey, ThemePref } from '@/theme/ThemeContext';
 
-const GOALS_KEY = 'settings_goals_v1';
-const PROVIDER_KEY = 'settings_vision_provider_v1';
-const MODEL_KEY = 'settings_vision_model_v1';
-const FASTING_GOAL_KEY = 'settings_fasting_goal_hours_v1';
+const SETTINGS_KEY = 'azqm_settings_v1';
 // expo-secure-store, not AsyncStorage: this is a credential, not app state.
-const API_KEY_STORE_KEY = 'vision_api_key_v1';
+const API_KEY_STORE_KEY = 'azqm_vision_api_key_v1';
 
-export const DEFAULT_GOALS: DailyGoals = {
-  calories: 1800,
-  protein: 110,
-  fat: 140,
-  netCarbs: 25,
-};
+export interface AppSettings {
+  dietId: DietId;
+  goals: DailyGoals;
+  themePref: ThemePref;
+  textScale: TextScaleKey;
+  fastingGoalHours: number;
+  visionProvider: VisionProvider;
+  visionModel: string;
+}
 
 export function defaultModelFor(provider: VisionProvider): string {
   return provider === 'openai' ? 'gpt-4o-mini' : 'gemini-2.5-flash';
 }
 
-interface SettingsContextValue {
+const DEFAULTS: AppSettings = {
+  dietId: 'keto',
+  goals: { calories: 1800, protein: 110, fat: 140, carbs: 25 },
+  themePref: 'system',
+  textScale: 'normal',
+  fastingGoalHours: 16,
+  visionProvider: 'gemini',
+  visionModel: defaultModelFor('gemini'),
+};
+
+interface SettingsContextValue extends AppSettings {
   loaded: boolean;
-  goals: DailyGoals;
-  setGoals: (goals: DailyGoals) => Promise<void>;
-  visionProvider: VisionProvider;
-  setVisionProvider: (p: VisionProvider) => Promise<void>;
-  visionModel: string;
-  setVisionModel: (m: string) => Promise<void>;
-  fastingGoalHours: number;
-  setFastingGoalHours: (h: number) => Promise<void>;
+  update: (patch: Partial<AppSettings>) => Promise<void>;
   apiKey: string;
   hasApiKey: boolean;
   setApiKey: (key: string) => Promise<void>;
@@ -41,27 +46,20 @@ const SettingsContext = createContext<SettingsContextValue | null>(null);
 
 export function SettingsProvider({ children }: { children: React.ReactNode }) {
   const [loaded, setLoaded] = useState(false);
-  const [goals, setGoalsState] = useState<DailyGoals>(DEFAULT_GOALS);
-  const [visionProvider, setVisionProviderState] = useState<VisionProvider>('gemini');
-  const [visionModel, setVisionModelState] = useState<string>(defaultModelFor('gemini'));
-  const [fastingGoalHours, setFastingGoalHoursState] = useState<number>(23);
+  const [settings, setSettings] = useState<AppSettings>(DEFAULTS);
   const [apiKey, setApiKeyState] = useState('');
+  // Latest value for sequential updates fired in the same tick.
+  const latest = useRef(settings);
 
   useEffect(() => {
     (async () => {
       try {
-        const [storedGoals, storedProvider, storedModel, storedFastingGoal, storedKey] = await Promise.all([
-          AsyncStorage.getItem(GOALS_KEY),
-          AsyncStorage.getItem(PROVIDER_KEY),
-          AsyncStorage.getItem(MODEL_KEY),
-          AsyncStorage.getItem(FASTING_GOAL_KEY),
-          SecureStore.getItemAsync(API_KEY_STORE_KEY),
-        ]);
-        if (storedGoals) setGoalsState(JSON.parse(storedGoals));
-        const provider = (storedProvider as VisionProvider) || 'gemini';
-        setVisionProviderState(provider);
-        setVisionModelState(storedModel || defaultModelFor(provider));
-        if (storedFastingGoal) setFastingGoalHoursState(Number(storedFastingGoal));
+        const [stored, storedKey] = await Promise.all([AsyncStorage.getItem(SETTINGS_KEY), SecureStore.getItemAsync(API_KEY_STORE_KEY)]);
+        if (stored) {
+          const next = { ...DEFAULTS, ...JSON.parse(stored) };
+          latest.current = next;
+          setSettings(next);
+        }
         if (storedKey) setApiKeyState(storedKey);
       } finally {
         setLoaded(true);
@@ -69,26 +67,11 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
     })();
   }, []);
 
-  const setGoals = useCallback(async (next: DailyGoals) => {
-    setGoalsState(next);
-    await AsyncStorage.setItem(GOALS_KEY, JSON.stringify(next));
-  }, []);
-
-  const setVisionProvider = useCallback(async (p: VisionProvider) => {
-    setVisionProviderState(p);
-    const nextModel = defaultModelFor(p);
-    setVisionModelState(nextModel);
-    await Promise.all([AsyncStorage.setItem(PROVIDER_KEY, p), AsyncStorage.setItem(MODEL_KEY, nextModel)]);
-  }, []);
-
-  const setVisionModel = useCallback(async (m: string) => {
-    setVisionModelState(m);
-    await AsyncStorage.setItem(MODEL_KEY, m);
-  }, []);
-
-  const setFastingGoalHours = useCallback(async (h: number) => {
-    setFastingGoalHoursState(h);
-    await AsyncStorage.setItem(FASTING_GOAL_KEY, String(h));
+  const update = useCallback(async (patch: Partial<AppSettings>) => {
+    const next = { ...latest.current, ...patch };
+    latest.current = next;
+    setSettings(next);
+    await AsyncStorage.setItem(SETTINGS_KEY, JSON.stringify(next));
   }, []);
 
   const setApiKey = useCallback(async (key: string) => {
@@ -102,35 +85,8 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const value = useMemo<SettingsContextValue>(
-    () => ({
-      loaded,
-      goals,
-      setGoals,
-      visionProvider,
-      setVisionProvider,
-      visionModel,
-      setVisionModel,
-      fastingGoalHours,
-      setFastingGoalHours,
-      apiKey,
-      hasApiKey: apiKey.length > 0,
-      setApiKey,
-      clearApiKey,
-    }),
-    [
-      loaded,
-      goals,
-      setGoals,
-      visionProvider,
-      setVisionProvider,
-      visionModel,
-      setVisionModel,
-      fastingGoalHours,
-      setFastingGoalHours,
-      apiKey,
-      setApiKey,
-      clearApiKey,
-    ]
+    () => ({ ...settings, loaded, update, apiKey, hasApiKey: apiKey.length > 0, setApiKey, clearApiKey }),
+    [settings, loaded, update, apiKey, setApiKey, clearApiKey]
   );
 
   return <SettingsContext.Provider value={value}>{children}</SettingsContext.Provider>;

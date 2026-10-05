@@ -1,33 +1,31 @@
 {
   "expo": {
-    "name": "Keto OMAD Tracker",
-    "slug": "keto-omad-tracker",
-    "owner": "tanatos",
+    "name": "Azqm",
+    "slug": "azqm",
     "version": "1.0.0",
-    "scheme": "ketoomad",
+    "scheme": "azqm",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
-    "userInterfaceStyle": "dark",
-    "backgroundColor": "#0B0D10",
+    "userInterfaceStyle": "automatic",
+    "backgroundColor": "#0E1116",
     "experiments": {
       "typedRoutes": true
     },
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.ketoomad.tracker",
+      "bundleIdentifier": "com.tanatos.azqm",
       "infoPlist": {
-        "NSCameraUsageDescription": "Нужен е достъп до камерата, за да разпознае храната и да сканира баркодове."
+        "NSCameraUsageDescription": "Камерата се използва за сканиране на баркодове и снимане на храна."
       }
     },
     "android": {
-      "package": "com.ketoomad.tracker",
+      "package": "com.tanatos.azqm",
       "versionCode": 1,
       "permissions": [
-        "CAMERA",
         "android.permission.CAMERA"
       ],
       "adaptiveIcon": {
-        "backgroundColor": "#0B0D10",
+        "backgroundColor": "#0E1116",
         "foregroundImage": "./assets/android-icon-foreground.png",
         "backgroundImage": "./assets/android-icon-background.png",
         "monochromeImage": "./assets/android-icon-monochrome.png"
@@ -48,18 +46,44 @@
       [
         "expo-camera",
         {
-          "cameraPermission": "Нужен е достъп до камерата, за да разпознае храната и да сканира баркодове.",
+          "cameraPermission": "Камерата се използва за сканиране на баркодове и снимане на храна.",
           "microphonePermission": false,
           "recordAudioAndroid": false,
           "barcodeScannerEnabled": true
         }
+      ],
+      "expo-document-picker",
+      [
+        "expo-font",
+        {
+          "android": {
+            "fonts": [
+              {
+                "fontFamily": "Inter",
+                "fontDefinitions": [
+                  { "path": "./assets/fonts/Inter_400Regular.ttf", "weight": 400 },
+                  { "path": "./assets/fonts/Inter_500Medium.ttf", "weight": 500 },
+                  { "path": "./assets/fonts/Inter_600SemiBold.ttf", "weight": 600 },
+                  { "path": "./assets/fonts/Inter_700Bold.ttf", "weight": 700 },
+                  { "path": "./assets/fonts/Inter_800ExtraBold.ttf", "weight": 800 }
+                ]
+              }
+            ]
+          },
+          "ios": {
+            "fonts": [
+              "./assets/fonts/Inter_400Regular.ttf",
+              "./assets/fonts/Inter_500Medium.ttf",
+              "./assets/fonts/Inter_600SemiBold.ttf",
+              "./assets/fonts/Inter_700Bold.ttf",
+              "./assets/fonts/Inter_800ExtraBold.ttf"
+            ]
+          }
+        }
       ]
     ],
     "extra": {
-      "router": {},
-      "eas": {
-        "projectId": "2f732adc-aa9b-4fb5-bfe9-0dd853fb3f94"
-      }
+      "router": {}
     }
   }
 }

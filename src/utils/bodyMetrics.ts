@@ -1,5 +1,5 @@
 import type { ActivityLevel, DailyGoals, Sex, UserProfile, WeightGoal } from '@/types';
-import { colors } from '@/theme/colors';
+import type { Diet } from '@/data/diets';
 
 export const ACTIVITY_LEVELS: { value: ActivityLevel; label: string; hint: string; factor: number }[] = [
   { value: 'sedentary', label: 'Заседнал', hint: 'Офис работа, почти без спорт', factor: 1.2 },
@@ -15,27 +15,21 @@ export const WEIGHT_GOALS: { value: WeightGoal; label: string; calorieFactor: nu
   { value: 'gain', label: 'Качване', calorieFactor: 1.1 },
 ];
 
-/** Keto split of total calories: 70% fat, 25% protein, 5% carbs. */
-const KETO_SPLIT = { fat: 0.7, protein: 0.25, carbs: 0.05 };
-
 /** Don't suggest intakes below these without medical supervision. */
 const MIN_CALORIES: Record<Sex, number> = { male: 1500, female: 1200 };
+
+export type BmiTone = 'info' | 'success' | 'warning' | 'danger';
 
 export function bmiOf(weightKg: number, heightCm: number): number {
   const m = heightCm / 100;
   return m > 0 ? weightKg / (m * m) : 0;
 }
 
-export interface BmiCategory {
-  label: string;
-  color: string;
-}
-
-export function bmiCategory(bmi: number): BmiCategory {
-  if (bmi < 18.5) return { label: 'Поднормено тегло', color: colors.accentAlt };
-  if (bmi < 25) return { label: 'Нормално тегло', color: colors.success };
-  if (bmi < 30) return { label: 'Наднормено тегло', color: colors.warning };
-  return { label: 'Затлъстяване', color: colors.danger };
+export function bmiCategory(bmi: number): { label: string; tone: BmiTone } {
+  if (bmi < 18.5) return { label: 'Поднормено тегло', tone: 'info' };
+  if (bmi < 25) return { label: 'Нормално тегло', tone: 'success' };
+  if (bmi < 30) return { label: 'Наднормено тегло', tone: 'warning' };
+  return { label: 'Затлъстяване', tone: 'danger' };
 }
 
 /** Weight range for a healthy BMI (18.5–24.9) at the given height. */
@@ -62,20 +56,29 @@ export interface ProfileMetrics {
   goals: DailyGoals;
 }
 
-export function computeMetrics(profile: UserProfile): ProfileMetrics {
+/** Calorie target from TDEE and the weight goal, split into macros by the diet. */
+export function computeMetrics(profile: UserProfile, diet: Diet): ProfileMetrics {
   const bmr = bmrOf(profile);
   const tdee = tdeeOf(profile);
   const factor = WEIGHT_GOALS.find((g) => g.value === profile.goal)?.calorieFactor ?? 1;
-  const calories = Math.max(tdee * factor, MIN_CALORIES[profile.sex]);
+  const calories = diet.noCalories ? 0 : Math.max(tdee * factor, MIN_CALORIES[profile.sex]);
+  let carbs = (calories * diet.split.carbs) / 4;
+  if (diet.carbCapG != null) carbs = Math.min(carbs, diet.carbCapG);
   return {
     bmi: bmiOf(profile.weightKg, profile.heightCm),
     bmr,
     tdee,
     goals: {
       calories: Math.round(calories),
-      protein: Math.round((calories * KETO_SPLIT.protein) / 4),
-      fat: Math.round((calories * KETO_SPLIT.fat) / 9),
-      netCarbs: Math.round((calories * KETO_SPLIT.carbs) / 4),
+      protein: Math.round((calories * diet.split.protein) / 4),
+      fat: Math.round((calories * diet.split.fat) / 9),
+      carbs: Math.round(carbs),
     },
   };
+}
+
+/** ~35 ml per kg, rounded to a glass, at least 2 l. */
+export function waterGoalMl(profile: UserProfile | null): number {
+  if (!profile) return 2500;
+  return Math.max(2000, Math.round((profile.weightKg * 35) / 250) * 250);
 }

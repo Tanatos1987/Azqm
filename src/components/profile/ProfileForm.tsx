@@ -1,22 +1,30 @@
 import React, { useEffect, useState } from 'react';
-import { Alert, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
-import { colors } from '@/theme/colors';
-import { SegmentedControl } from '@/components/SegmentedControl';
+import { Alert, Pressable, ScrollView, View } from 'react-native';
+import { Button, Card, Input, Row, Segmented, Txt } from '@/components/ui';
 import { BodyFigure } from '@/components/BodyFigure';
+import { DietPicker } from '@/components/DietPicker';
 import { useProfile } from '@/context/ProfileContext';
+import { useSettings } from '@/context/SettingsContext';
 import { useTween } from '@/hooks/useTween';
+import { getDiet, type DietId } from '@/data/diets';
+import { makeStyles, useTheme } from '@/theme/ThemeContext';
 import { ACTIVITY_LEVELS, WEIGHT_GOALS, bmiCategory, bmiOf, computeMetrics, healthyWeightRange } from '@/utils/bodyMetrics';
 import type { ActivityLevel, Sex, UserProfile, WeightGoal } from '@/types';
 
 interface ProfileFormProps {
   initial: UserProfile | null;
   onSaved: () => void;
+  /** onboarding: ask for the diet between the form and the result */
+  askDiet?: boolean;
 }
 
 const NEUTRAL_BMI = 22;
 
-export function ProfileForm({ initial, onSaved }: ProfileFormProps) {
-  const [step, setStep] = useState<'form' | 'result'>('form');
+export function ProfileForm({ initial, onSaved, askDiet }: ProfileFormProps) {
+  const t = useTheme();
+  const s = useStyles();
+  const { dietId: currentDiet } = useSettings();
+  const [step, setStep] = useState<'form' | 'diet' | 'result'>('form');
   const [sex, setSex] = useState<Sex>(initial?.sex ?? 'female');
   const [age, setAge] = useState(initial ? String(initial.age) : '');
   const [height, setHeight] = useState(initial ? String(initial.heightCm) : '');
@@ -24,6 +32,7 @@ export function ProfileForm({ initial, onSaved }: ProfileFormProps) {
   const [target, setTarget] = useState(initial?.targetWeightKg ? String(initial.targetWeightKg) : '');
   const [activity, setActivity] = useState<ActivityLevel>(initial?.activity ?? 'light');
   const [goal, setGoal] = useState<WeightGoal>(initial?.goal ?? 'lose');
+  const [dietId, setDietId] = useState<DietId>(currentDiet);
 
   const num = (v: string) => Number(v.replace(',', '.'));
   const liveBmi = num(weight) > 0 && num(height) > 0 ? bmiOf(num(weight), num(height)) : NEUTRAL_BMI;
@@ -45,78 +54,110 @@ export function ProfileForm({ initial, onSaved }: ProfileFormProps) {
     if (draft.targetWeightKg != null && !(draft.targetWeightKg >= 30 && draft.targetWeightKg <= 300)) {
       return Alert.alert('Целево тегло', 'Целевото тегло трябва да е между 30 и 300 кг (или остави полето празно).');
     }
-    setStep('result');
+    setStep(askDiet ? 'diet' : 'result');
   };
 
+  if (step === 'diet') {
+    return (
+      <ScrollView contentContainerStyle={{ paddingBottom: 48 }}>
+        <Txt v="h2" style={{ marginBottom: 6 }}>
+          Избери хранителен режим
+        </Txt>
+        <Txt v="small" tone="textMuted" style={{ marginBottom: 14 }}>
+          Можеш да го смениш по всяко време от „Днес“ или „Настройки“.
+        </Txt>
+        <DietPicker
+          value={dietId}
+          selectLabel="Избери и продължи"
+          onSelect={(id) => {
+            setDietId(id);
+            setStep('result');
+          }}
+        />
+        <Button label={`Продължи с „${getDiet(dietId).name}“`} onPress={() => setStep('result')} style={{ marginTop: 8 }} />
+        <Button label="Назад" variant="ghost" onPress={() => setStep('form')} />
+      </ScrollView>
+    );
+  }
+
   if (step === 'result') {
-    return <ProfileResult profile={draft} onBack={() => setStep('form')} onSaved={onSaved} />;
+    return <ProfileResult profile={draft} dietId={askDiet ? dietId : currentDiet} saveDiet={askDiet} onBack={() => setStep(askDiet ? 'diet' : 'form')} onSaved={onSaved} />;
   }
 
   return (
-    <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-      <ScrollView contentContainerStyle={{ paddingBottom: 40 }} keyboardShouldPersistTaps="handled">
-        <View style={styles.previewCard}>
+    <ScrollView contentContainerStyle={{ paddingBottom: 48 }} keyboardShouldPersistTaps="handled">
+      <Card>
+        <Row gap={12}>
           <BodyFigure bmi={liveBmi} sex={sex} size={150} />
           <View style={{ flex: 1 }}>
-            <Text style={styles.previewTitle}>Твоят профил</Text>
-            <Text style={styles.previewText}>
-              По тези данни изчисляваме базовия метаболизъм (BMR), дневния разход (TDEE) и личните ти кето макроси.
-            </Text>
+            <Txt v="h3" style={{ marginBottom: 6 }}>
+              Твоят профил
+            </Txt>
+            <Txt v="small" tone="textMuted">
+              По тези данни изчисляваме базовия метаболизъм, дневния разход на енергия и личните ти цели според избрания режим.
+            </Txt>
           </View>
-        </View>
+        </Row>
+      </Card>
 
-        <Text style={styles.label}>Пол</Text>
-        <SegmentedControl<Sex>
-          value={sex}
-          onChange={setSex}
-          options={[
-            { label: 'Жена', value: 'female' },
-            { label: 'Мъж', value: 'male' },
-          ]}
-        />
+      <Txt v="label" tone="textMuted" style={s.label}>
+        Пол
+      </Txt>
+      <Segmented<Sex>
+        value={sex}
+        onChange={setSex}
+        options={[
+          { label: 'Жена', value: 'female' },
+          { label: 'Мъж', value: 'male' },
+        ]}
+      />
 
-        <View style={styles.grid}>
-          <NumberField label="Възраст (г.)" value={age} onChangeText={setAge} placeholder="35" />
-          <NumberField label="Ръст (см)" value={height} onChangeText={setHeight} placeholder="170" />
-          <NumberField label="Тегло (кг)" value={weight} onChangeText={setWeight} placeholder="75" />
-          <NumberField label="Целево тегло (кг)" value={target} onChangeText={setTarget} placeholder="по избор" />
-        </View>
+      <View style={s.grid}>
+        <NumberField label="Възраст (години)" value={age} onChangeText={setAge} placeholder="35" />
+        <NumberField label="Ръст (см)" value={height} onChangeText={setHeight} placeholder="170" />
+        <NumberField label="Тегло (кг)" value={weight} onChangeText={setWeight} placeholder="75" />
+        <NumberField label="Целево тегло (кг)" value={target} onChangeText={setTarget} placeholder="по избор" />
+      </View>
 
-        <Text style={styles.label}>Ниво на активност</Text>
-        {ACTIVITY_LEVELS.map((a) => {
-          const active = a.value === activity;
-          return (
-            <Pressable key={a.value} onPress={() => setActivity(a.value)} style={[styles.option, active && styles.optionActive]}>
-              <View style={[styles.radio, active && styles.radioActive]} />
-              <View style={{ flex: 1 }}>
-                <Text style={styles.optionLabel}>{a.label}</Text>
-                <Text style={styles.optionHint}>{a.hint}</Text>
-              </View>
-            </Pressable>
-          );
-        })}
+      <Txt v="label" tone="textMuted" style={s.label}>
+        Ниво на активност
+      </Txt>
+      {ACTIVITY_LEVELS.map((a) => {
+        const active = a.value === activity;
+        return (
+          <Pressable key={a.value} onPress={() => setActivity(a.value)} style={[s.option, active && { borderColor: t.c.accent }]}>
+            <View style={[s.radio, active && { borderColor: t.c.accent, backgroundColor: t.c.accent }]} />
+            <View style={{ flex: 1 }}>
+              <Txt v="bodyStrong">{a.label}</Txt>
+              <Txt v="caption" tone="textMuted">
+                {a.hint}
+              </Txt>
+            </View>
+          </Pressable>
+        );
+      })}
 
-        <Text style={[styles.label, { marginTop: 16 }]}>Цел</Text>
-        <SegmentedControl<WeightGoal> value={goal} onChange={setGoal} options={WEIGHT_GOALS.map((g) => ({ label: g.label, value: g.value }))} />
+      <Txt v="label" tone="textMuted" style={s.label}>
+        Цел
+      </Txt>
+      <Segmented<WeightGoal> value={goal} onChange={setGoal} options={WEIGHT_GOALS.map((g) => ({ label: g.label, value: g.value }))} />
 
-        <Pressable style={styles.primaryBtn} onPress={next}>
-          <Text style={styles.primaryBtnText}>Изчисли</Text>
-        </Pressable>
-      </ScrollView>
-    </KeyboardAvoidingView>
+      <Button label={askDiet ? 'Напред' : 'Изчисли'} onPress={next} style={{ marginTop: 24 }} />
+    </ScrollView>
   );
 }
 
-function ProfileResult({ profile, onBack, onSaved }: { profile: UserProfile; onBack: () => void; onSaved: () => void }) {
+function ProfileResult({ profile, dietId, saveDiet, onBack, onSaved }: { profile: UserProfile; dietId: DietId; saveDiet?: boolean; onBack: () => void; onSaved: () => void }) {
+  const t = useTheme();
+  const s = useStyles();
   const { saveProfile } = useProfile();
   const [saving, setSaving] = useState(false);
-  const metrics = computeMetrics(profile);
+  const diet = getDiet(dietId);
+  const metrics = computeMetrics(profile, diet);
   const [healthyMin, healthyMax] = healthyWeightRange(profile.heightCm);
 
-  // Where the "Цел" figure lands: the user's own target, otherwise the edge of
-  // the healthy BMI range when they're outside it.
-  const goalWeight =
-    profile.targetWeightKg ?? (metrics.bmi > 24.9 ? healthyMax : metrics.bmi < 18.5 ? healthyMin : null);
+  // Where the "Цел" figure lands: the user's own target, otherwise the edge of the healthy BMI range.
+  const goalWeight = profile.targetWeightKg ?? (metrics.bmi > 24.9 ? healthyMax : metrics.bmi < 18.5 ? healthyMin : null);
   const goalBmi = goalWeight != null ? bmiOf(goalWeight, profile.heightCm) : null;
   const hasGoalFigure = goalBmi != null && Math.abs(goalBmi - metrics.bmi) >= 0.3;
 
@@ -124,18 +165,19 @@ function ProfileResult({ profile, onBack, onSaved }: { profile: UserProfile; onB
   useEffect(() => {
     if (!hasGoalFigure) return;
     // After the first morph (neutral → current), show the transformation once.
-    const t = setTimeout(() => setPhase('goal'), 2600);
-    return () => clearTimeout(t);
+    const timer = setTimeout(() => setPhase('goal'), 2600);
+    return () => clearTimeout(timer);
   }, [hasGoalFigure]);
 
   const shownBmi = phase === 'goal' && goalBmi != null ? goalBmi : metrics.bmi;
   const bmiText = useTween(shownBmi, 1400, NEUTRAL_BMI);
   const category = bmiCategory(shownBmi);
+  const toneColor = { info: t.c.info, success: t.c.success, warning: t.c.warning, danger: t.c.danger }[category.tone];
 
   const save = async () => {
     setSaving(true);
     try {
-      await saveProfile(profile);
+      await saveProfile(profile, saveDiet ? dietId : undefined);
       onSaved();
     } finally {
       setSaving(false);
@@ -143,140 +185,104 @@ function ProfileResult({ profile, onBack, onSaved }: { profile: UserProfile; onB
   };
 
   return (
-    <ScrollView contentContainerStyle={{ paddingBottom: 40 }}>
-      <View style={styles.resultCard}>
+    <ScrollView contentContainerStyle={{ paddingBottom: 48 }}>
+      <Card style={{ alignItems: 'center' }}>
         {hasGoalFigure && (
-          <SegmentedControl<'now' | 'goal'>
+          <Segmented<'now' | 'goal'>
             value={phase}
             onChange={setPhase}
+            style={{ alignSelf: 'stretch', marginBottom: 8 }}
             options={[
               { label: `Сега · ${profile.weightKg} кг`, value: 'now' },
               { label: `Цел · ${Math.round(goalWeight!)} кг`, value: 'goal' },
             ]}
           />
         )}
-        <BodyFigure bmi={shownBmi} sex={profile.sex} size={260} fromBmi={NEUTRAL_BMI} />
-        <Text style={styles.bmiValue}>BMI {bmiText.toFixed(1)}</Text>
-        <Text style={[styles.bmiCategory, { color: category.color }]}>{category.label}</Text>
-        <Text style={styles.bmiHint}>
+        <BodyFigure bmi={shownBmi} sex={profile.sex} size={250} fromBmi={NEUTRAL_BMI} />
+        <Txt v="display">BMI {bmiText.toFixed(1)}</Txt>
+        <Txt v="bodyStrong" color={toneColor}>
+          {category.label}
+        </Txt>
+        <Txt v="small" tone="textMuted" center style={{ marginTop: 6 }}>
           Здравословно тегло за ръст {profile.heightCm} см: {Math.round(healthyMin)}–{Math.round(healthyMax)} кг
-        </Text>
-      </View>
+        </Txt>
+      </Card>
 
-      <View style={styles.statsRow}>
-        <Stat label="BMR" value={metrics.bmr} unit="ккал" />
-        <Stat label="TDEE" value={metrics.tdee} unit="ккал" />
+      <Txt v="label" tone="textMuted" style={{ marginBottom: 8 }}>
+        Режим: {diet.name}
+      </Txt>
+      <View style={s.statsRow}>
+        <Stat label="Базов метаболизъм" value={metrics.bmr} unit="ккал" />
+        <Stat label="Дневен разход" value={metrics.tdee} unit="ккал" />
         <Stat label="Дневна цел" value={metrics.goals.calories} unit="ккал" highlight />
       </View>
-      <View style={styles.statsRow}>
-        <Stat label="Протеин" value={metrics.goals.protein} unit="г" color={colors.protein} />
-        <Stat label="Мазнини" value={metrics.goals.fat} unit="г" color={colors.fat} />
-        <Stat label="Нетни В-ди" value={metrics.goals.netCarbs} unit="г" color={colors.carbs} />
-      </View>
-      <Text style={styles.hint}>
-        BMR по формулата на Mifflin-St Jeor × коефициент на активност = TDEE. Макросите са кето разпределение 70% мазнини / 25%
-        протеин / 5% въглехидрати. Можеш да ги промениш ръчно в Настройки.
-      </Text>
+      {!diet.noCalories && (
+        <View style={s.statsRow}>
+          <Stat label="Протеин" value={metrics.goals.protein} unit="г" color={t.c.protein} />
+          <Stat label="Мазнини" value={metrics.goals.fat} unit="г" color={t.c.fat} />
+          <Stat label={diet.carbBasis === 'net' ? 'Нетни въгл.' : 'Въглехидрати'} value={metrics.goals.carbs} unit="г" color={t.c.carbs} />
+        </View>
+      )}
+      <Txt v="caption" tone="textMuted" style={{ marginTop: 4 }}>
+        Базов метаболизъм по формулата на Mifflin-St Jeor × коефициент на активност = дневен разход. Макросите следват разпределението на режима. Можеш да ги
+        промениш ръчно в „Настройки“.
+      </Txt>
 
-      <View style={styles.actionsRow}>
-        <Pressable style={styles.secondaryBtn} onPress={onBack}>
-          <Text style={styles.secondaryBtnText}>Промени данните</Text>
-        </Pressable>
-        <Pressable style={[styles.primaryBtn, { flex: 1, marginTop: 0 }]} onPress={save} disabled={saving}>
-          <Text style={styles.primaryBtnText}>{saving ? 'Запазване…' : 'Запази'}</Text>
-        </Pressable>
-      </View>
+      <Row gap={12} style={{ marginTop: 20 }}>
+        <Button label="Назад" variant="secondary" onPress={onBack} flex />
+        <Button label={saving ? 'Запазване…' : 'Запази'} onPress={save} disabled={saving} flex />
+      </Row>
     </ScrollView>
   );
 }
 
 function NumberField({ label, value, onChangeText, placeholder }: { label: string; value: string; onChangeText: (v: string) => void; placeholder: string }) {
+  const s = useStyles();
   return (
-    <View style={styles.field}>
-      <Text style={styles.label}>{label}</Text>
-      <TextInput
-        style={styles.input}
-        value={value}
-        onChangeText={onChangeText}
-        keyboardType="numeric"
-        placeholder={placeholder}
-        placeholderTextColor={colors.textMuted}
-      />
+    <View style={s.field}>
+      <Txt v="caption" tone="textMuted" style={{ marginBottom: 6, marginTop: 12 }}>
+        {label}
+      </Txt>
+      <Input value={value} onChangeText={onChangeText} keyboardType="numeric" placeholder={placeholder} />
     </View>
   );
 }
 
 function Stat({ label, value, unit, color, highlight }: { label: string; value: number; unit: string; color?: string; highlight?: boolean }) {
+  const t = useTheme();
+  const s = useStyles();
   const shown = useTween(value, 1200, 0);
   return (
-    <View style={[styles.stat, highlight && styles.statHighlight]}>
-      <Text style={[styles.statValue, color ? { color } : null, highlight && { color: colors.accent }]}>{Math.round(shown)}</Text>
-      <Text style={styles.statUnit}>{unit}</Text>
-      <Text style={styles.statLabel}>{label}</Text>
+    <View style={[s.stat, highlight && { borderWidth: 2, borderColor: t.c.accent }]}>
+      <Txt v="h2" color={highlight ? t.c.accent : color}>
+        {Math.round(shown)}
+      </Txt>
+      <Txt v="caption" tone="textMuted">
+        {unit}
+      </Txt>
+      <Txt v="caption" tone="textMuted" center style={{ marginTop: 2 }}>
+        {label}
+      </Txt>
     </View>
   );
 }
 
-const styles = StyleSheet.create({
-  previewCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-    backgroundColor: colors.surface,
-    borderRadius: 20,
-    padding: 12,
-    marginBottom: 8,
-  },
-  previewTitle: { color: colors.text, fontSize: 17, fontWeight: '700', marginBottom: 6 },
-  previewText: { color: colors.textMuted, fontSize: 12, lineHeight: 17 },
-  label: { color: colors.textMuted, fontSize: 12, marginTop: 12, marginBottom: 6 },
+const useStyles = makeStyles((t) => ({
+  label: { marginTop: 18, marginBottom: 8 },
   grid: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between' },
   field: { width: '48%' },
-  input: {
-    backgroundColor: colors.surface,
-    color: colors.text,
-    borderRadius: 12,
-    paddingHorizontal: 14,
-    paddingVertical: 12,
-    fontSize: 15,
-  },
   option: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 12,
-    backgroundColor: colors.surface,
-    borderRadius: 12,
-    padding: 12,
-    marginBottom: 6,
-    borderWidth: 1,
+    backgroundColor: t.c.surface,
+    borderRadius: 16,
+    padding: 14,
+    marginBottom: 8,
+    borderWidth: 2,
     borderColor: 'transparent',
   },
-  optionActive: { borderColor: colors.accent },
-  radio: { width: 18, height: 18, borderRadius: 9, borderWidth: 2, borderColor: colors.textMuted },
-  radioActive: { borderColor: colors.accent, backgroundColor: colors.accent },
-  optionLabel: { color: colors.text, fontSize: 14, fontWeight: '600' },
-  optionHint: { color: colors.textMuted, fontSize: 11, marginTop: 1 },
-  primaryBtn: { backgroundColor: colors.accent, paddingVertical: 14, borderRadius: 14, alignItems: 'center', justifyContent: 'center', marginTop: 20 },
-  primaryBtnText: { color: colors.bg, fontWeight: '700', fontSize: 15 },
-  secondaryBtn: {
-    backgroundColor: colors.surfaceAlt,
-    paddingVertical: 14,
-    borderRadius: 14,
-    alignItems: 'center',
-    justifyContent: 'center',
-    flex: 1,
-  },
-  secondaryBtnText: { color: colors.text, fontWeight: '600', fontSize: 14 },
-  resultCard: { backgroundColor: colors.surface, borderRadius: 20, padding: 16, alignItems: 'center', marginBottom: 12 },
-  bmiValue: { color: colors.text, fontSize: 30, fontWeight: '800', marginTop: 4 },
-  bmiCategory: { fontSize: 15, fontWeight: '700', marginTop: 2 },
-  bmiHint: { color: colors.textMuted, fontSize: 12, marginTop: 6, textAlign: 'center' },
+  radio: { width: 20, height: 20, borderRadius: 10, borderWidth: 2, borderColor: t.c.textFaint },
   statsRow: { flexDirection: 'row', gap: 8, marginBottom: 8 },
-  stat: { flex: 1, backgroundColor: colors.surface, borderRadius: 14, paddingVertical: 12, alignItems: 'center' },
-  statHighlight: { borderWidth: 1, borderColor: colors.accent },
-  statValue: { color: colors.text, fontSize: 20, fontWeight: '700' },
-  statUnit: { color: colors.textMuted, fontSize: 10 },
-  statLabel: { color: colors.textMuted, fontSize: 11, marginTop: 4 },
-  hint: { color: colors.textMuted, fontSize: 11, lineHeight: 16, marginTop: 4 },
-  actionsRow: { flexDirection: 'row', gap: 12, marginTop: 20 },
-});
+  stat: { flex: 1, backgroundColor: t.c.surface, borderRadius: 16, paddingVertical: 12, paddingHorizontal: 4, alignItems: 'center' },
+}));

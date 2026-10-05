@@ -7,19 +7,26 @@ import { migrateDbIfNeeded } from '@/db/schema';
 import { SettingsProvider, useSettings } from '@/context/SettingsContext';
 import { DataRefreshProvider } from '@/context/DataRefreshContext';
 import { ProfileProvider, useProfile } from '@/context/ProfileContext';
-import { colors } from '@/theme/colors';
+import { SelectedDateProvider } from '@/context/SelectedDateContext';
+import { ToastProvider } from '@/context/ToastContext';
+import { ThemeProvider, useTheme } from '@/theme/ThemeContext';
 
 export default function RootLayout() {
   return (
     <SafeAreaProvider>
-      <SQLiteProvider databaseName="keto-omad.db" onInit={migrateDbIfNeeded}>
+      <SQLiteProvider databaseName="azqm.db" onInit={migrateDbIfNeeded}>
         <SettingsProvider>
-          <DataRefreshProvider>
-            <ProfileProvider>
-              <StatusBar style="light" />
-              <RootNavigator />
-            </ProfileProvider>
-          </DataRefreshProvider>
+          <ThemeProvider>
+            <DataRefreshProvider>
+              <ProfileProvider>
+                <SelectedDateProvider>
+                  <ToastProvider>
+                    <RootNavigator />
+                  </ToastProvider>
+                </SelectedDateProvider>
+              </ProfileProvider>
+            </DataRefreshProvider>
+          </ThemeProvider>
         </SettingsProvider>
       </SQLiteProvider>
     </SafeAreaProvider>
@@ -27,6 +34,7 @@ export default function RootLayout() {
 }
 
 function RootNavigator() {
+  const t = useTheme();
   const settings = useSettings();
   const { loaded, profile } = useProfile();
   // Render nothing until stored state is read, so onboarding doesn't flash for existing users.
@@ -34,14 +42,19 @@ function RootNavigator() {
   const hasProfile = profile !== null;
 
   return (
-    <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: colors.bg } }}>
-      <Stack.Protected guard={hasProfile}>
-        <Stack.Screen name="(tabs)" />
-        <Stack.Screen name="profile" options={{ presentation: 'modal' }} />
-      </Stack.Protected>
-      <Stack.Protected guard={!hasProfile}>
-        <Stack.Screen name="onboarding" />
-      </Stack.Protected>
-    </Stack>
+    <>
+      <StatusBar style={t.dark ? 'light' : 'dark'} />
+      <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: t.c.bg }, animation: 'slide_from_right' }}>
+        <Stack.Protected guard={hasProfile}>
+          <Stack.Screen name="(tabs)" />
+          <Stack.Screen name="settings" />
+          <Stack.Screen name="diet" />
+          <Stack.Screen name="profile" options={{ presentation: 'modal', animation: 'slide_from_bottom' }} />
+        </Stack.Protected>
+        <Stack.Protected guard={!hasProfile}>
+          <Stack.Screen name="onboarding" />
+        </Stack.Protected>
+      </Stack>
+    </>
   );
 }

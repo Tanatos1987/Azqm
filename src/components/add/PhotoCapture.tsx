@@ -1,198 +1,126 @@
 import React, { useRef, useState } from 'react';
-import { ActivityIndicator, Alert, Pressable, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, Alert, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { CameraView, useCameraPermissions } from 'expo-camera';
-import { useSQLiteContext } from 'expo-sqlite';
-import { colors } from '@/theme/colors';
+import { router } from 'expo-router';
+import { Button, Card, Txt } from '@/components/ui';
+import { CameraIcon } from '@/components/icons';
+import { AmountEditor } from '@/components/food/AmountEditor';
 import { useSettings } from '@/context/SettingsContext';
-import { useDataRefresh } from '@/context/DataRefreshContext';
+import { useLogFood } from '@/hooks/useLogFood';
 import { analyzeFoodPhoto } from '@/api/visionClient';
-import { insertFoodEntry } from '@/db/queries';
-import type { VisionAnalysisResult } from '@/types';
-import { todayKey } from '@/utils/date';
-import { CameraIcon, CheckIcon } from '../icons';
+import { fillNutrients } from '@/data/nutrients';
+import { useTheme } from '@/theme/ThemeContext';
+import type { FoodItem } from '@/types';
+import { mealForNow } from '@/utils/date';
 
 export function PhotoCapture() {
-  const db = useSQLiteContext();
+  const t = useTheme();
   const { apiKey, visionProvider, visionModel, hasApiKey } = useSettings();
-  const { bump } = useDataRefresh();
+  const { logEntry } = useLogFood();
   const [permission, requestPermission] = useCameraPermissions();
   const cameraRef = useRef<CameraView | null>(null);
   const [analyzing, setAnalyzing] = useState(false);
-  const [result, setResult] = useState<VisionAnalysisResult | null>(null);
+  const [result, setResult] = useState<{ food: FoodItem; grams: number } | null>(null);
 
-  if (!permission) {
+  if (!hasApiKey) {
     return (
-      <View style={styles.center}>
-        <ActivityIndicator color={colors.accent} />
-      </View>
+      <Card style={{ marginTop: 12, gap: 12 }}>
+        <Txt v="h3">Разпознаване по снимка</Txt>
+        <Txt tone="textMuted">
+          Тази функция изпраща снимката към изкуствен интелект (Google Gemini или OpenAI) и иска личен API ключ. Без ключ използвай търсенето в базата — тя работи
+          без интернет.
+        </Txt>
+        <Button label="Добави API ключ в Настройки" onPress={() => router.push('/settings')} />
+      </Card>
     );
   }
+
+  if (!permission) return <ActivityIndicator color={t.c.accent} style={{ marginTop: 40 }} />;
 
   if (!permission.granted) {
     return (
-      <View style={styles.center}>
-        <Text style={styles.infoText}>Нужен е достъп до камерата, за да разпознаваме храна от снимка.</Text>
-        <Pressable style={styles.primaryBtn} onPress={requestPermission}>
-          <Text style={styles.primaryBtnText}>Разреши достъп</Text>
-        </Pressable>
-      </View>
+      <Card style={{ marginTop: 12, alignItems: 'center', gap: 12 }}>
+        <Txt center>Нужен е достъп до камерата, за да снимаш храната.</Txt>
+        <Button label="Разреши достъп" onPress={requestPermission} />
+      </Card>
     );
   }
 
-  const reset = () => setResult(null);
-
   const takePicture = async () => {
-    if (!hasApiKey) {
-      Alert.alert('Липсва API ключ', 'Добави API ключ за Vision AI в раздел Настройки.');
-      return;
-    }
     const photo = await cameraRef.current?.takePictureAsync({ base64: true, quality: 0.5 });
     if (!photo?.base64) return;
     setAnalyzing(true);
     try {
-      const analysis = await analyzeFoodPhoto({
-        provider: visionProvider,
-        apiKey,
-        model: visionModel,
-        base64Image: photo.base64,
+      const a = await analyzeFoodPhoto({ provider: visionProvider, apiKey, model: visionModel, base64Image: photo.base64 });
+      const grams = a.estimatedGrams > 0 ? a.estimatedGrams : 100;
+      const f = 100 / grams;
+      setResult({
+        grams,
+        food: {
+          id: 'photo',
+          name: a.foodName,
+          category: 'custom',
+          tags: [],
+          aliases: [],
+          portions: [{ label: 'по снимката', grams }],
+          hasMicros: false,
+          per100: fillNutrients({ kcal: a.calories * f, protein: a.protein * f, fat: a.fat * f, carbs: a.carbs * f, fiber: a.fiber * f }),
+          custom: true,
+        },
       });
-      setResult(analysis);
     } catch (err: any) {
-      Alert.alert('Грешка при анализ', err?.message ?? String(err));
+      Alert.alert('Грешка при анализа', err?.message ?? String(err));
     } finally {
       setAnalyzing(false);
     }
   };
 
-  const save = async () => {
-    if (!result) return;
-    await insertFoodEntry(db, {
-      date: todayKey(),
-      timeIso: new Date().toISOString(),
-      name: result.foodName,
-      source: 'photo',
-      grams: result.estimatedGrams || null,
-      calories: result.calories,
-      protein: result.protein,
-      fat: result.fat,
-      carbs: result.carbs,
-      fiber: result.fiber,
-      netCarbs: result.netCarbs,
-    });
-    bump();
-    Alert.alert('Добавено', `${result.foodName} е записано в дневника.`);
-    reset();
-  };
-
   if (result) {
     return (
-      <View style={styles.resultCard}>
-        <Text style={styles.resultTitle}>{result.foodName}</Text>
-        <Text style={styles.resultMeta}>≈ {Math.round(result.estimatedGrams)} г</Text>
-        <View style={styles.macroGrid}>
-          <MacroStat label="Ккал" value={result.calories} />
-          <MacroStat label="Протеин" value={result.protein} unit="г" />
-          <MacroStat label="Мазнини" value={result.fat} unit="г" />
-          <MacroStat label="Нетни В-ди" value={result.netCarbs} unit="г" />
-        </View>
-        <View style={styles.actionsRow}>
-          <Pressable style={styles.secondaryBtn} onPress={reset}>
-            <Text style={styles.secondaryBtnText}>Отказ</Text>
-          </Pressable>
-          <Pressable style={styles.primaryBtn} onPress={save}>
-            <CheckIcon size={18} color={colors.bg} />
-            <Text style={styles.primaryBtnText}>Запази</Text>
-          </Pressable>
-        </View>
-      </View>
+      <ScrollView contentContainerStyle={{ paddingBottom: 120 }} keyboardShouldPersistTaps="handled">
+        <Card>
+          <AmountEditor
+            food={result.food}
+            initialGrams={result.grams}
+            initialMeal={mealForNow()}
+            primaryLabel="Добави"
+            hideFit
+            onSubmit={async ({ grams, meal, n }) => {
+              await logEntry({ meal, name: result.food.name, source: 'photo', grams, foodId: null, hasMicros: false, n });
+              setResult(null);
+            }}
+          >
+            <Button label="Нова снимка" variant="secondary" onPress={() => setResult(null)} style={{ marginTop: 10 }} />
+          </AmountEditor>
+          <Txt v="caption" tone="textFaint" style={{ marginTop: 12 }}>
+            Оценката по снимка е приблизителна — провери грамажа.
+          </Txt>
+        </Card>
+      </ScrollView>
     );
   }
 
   return (
     <View style={styles.cameraWrap}>
-      <CameraView ref={cameraRef} style={styles.camera} facing="back" />
+      <CameraView ref={cameraRef} style={StyleSheet.absoluteFill} facing="back" />
       {analyzing ? (
-        <View style={styles.overlay}>
-          <ActivityIndicator color={colors.accent} size="large" />
-          <Text style={styles.overlayText}>Анализирам снимката...</Text>
+        <View style={[styles.overlay, { backgroundColor: t.c.overlay }]}>
+          <ActivityIndicator color="#fff" size="large" />
+          <Txt v="bodyStrong" color="#FFFFFF">
+            Анализирам снимката…
+          </Txt>
         </View>
       ) : (
-        <Pressable style={styles.shutter} onPress={takePicture}>
-          <CameraIcon size={26} color={colors.bg} />
+        <Pressable style={[styles.shutter, { backgroundColor: t.c.accent }]} onPress={takePicture} accessibilityLabel="Снимай">
+          <CameraIcon size={30} color={t.c.onAccent} />
         </Pressable>
       )}
     </View>
   );
 }
 
-function MacroStat({ label, value, unit = '' }: { label: string; value: number; unit?: string }) {
-  return (
-    <View style={styles.macroStat}>
-      <Text style={styles.macroValue}>
-        {Math.round(value)}
-        {unit}
-      </Text>
-      <Text style={styles.macroLabel}>{label}</Text>
-    </View>
-  );
-}
-
 const styles = StyleSheet.create({
-  center: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 12 },
-  infoText: { color: colors.textMuted, fontSize: 14, textAlign: 'center' },
-  cameraWrap: { flex: 1, borderRadius: 20, overflow: 'hidden' },
-  camera: { flex: 1 },
-  shutter: {
-    position: 'absolute',
-    bottom: 20,
-    alignSelf: 'center',
-    width: 64,
-    height: 64,
-    borderRadius: 32,
-    backgroundColor: colors.accent,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  overlay: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    backgroundColor: 'rgba(11,13,16,0.85)',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 12,
-  },
-  overlayText: { color: colors.text, fontSize: 14 },
-  resultCard: { backgroundColor: colors.surface, borderRadius: 20, padding: 18 },
-  resultTitle: { color: colors.text, fontSize: 18, fontWeight: '700' },
-  resultMeta: { color: colors.textMuted, fontSize: 13, marginTop: 2, marginBottom: 14 },
-  macroGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 12 },
-  macroStat: { width: '45%' },
-  macroValue: { color: colors.text, fontSize: 18, fontWeight: '700' },
-  macroLabel: { color: colors.textMuted, fontSize: 12 },
-  actionsRow: { flexDirection: 'row', gap: 12, marginTop: 20 },
-  primaryBtn: {
-    flexDirection: 'row',
-    gap: 6,
-    backgroundColor: colors.accent,
-    paddingVertical: 12,
-    paddingHorizontal: 20,
-    borderRadius: 12,
-    alignItems: 'center',
-    justifyContent: 'center',
-    flex: 1,
-  },
-  primaryBtnText: { color: colors.bg, fontWeight: '700', fontSize: 14 },
-  secondaryBtn: {
-    backgroundColor: colors.surfaceAlt,
-    paddingVertical: 12,
-    paddingHorizontal: 20,
-    borderRadius: 12,
-    alignItems: 'center',
-    justifyContent: 'center',
-    flex: 1,
-  },
-  secondaryBtnText: { color: colors.text, fontWeight: '600', fontSize: 14 },
+  cameraWrap: { flex: 1, borderRadius: 24, overflow: 'hidden', marginTop: 12, marginBottom: 100, backgroundColor: '#000' },
+  shutter: { position: 'absolute', bottom: 24, alignSelf: 'center', width: 76, height: 76, borderRadius: 38, alignItems: 'center', justifyContent: 'center' },
+  overlay: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, alignItems: 'center', justifyContent: 'center', gap: 14 },
 });

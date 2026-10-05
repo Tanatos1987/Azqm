@@ -1,69 +1,74 @@
-export type FoodSource = 'photo' | 'barcode' | 'manual' | 'database';
+import type { NUTRIENT_KEYS } from '@/data/foods.generated';
 
-export interface MacroTotals {
-  calories: number;
-  protein: number;
-  fat: number;
-  carbs: number;
-  fiber: number;
-  netCarbs: number;
-}
+/** Every nutrient the app tracks, per 100 g on foods and per portion on diary entries. */
+export type NutrientKey = (typeof NUTRIENT_KEYS)[number];
+export type Nutrients = Record<NutrientKey, number>;
 
-export interface Micronutrients {
-  sodiumMg: number;
-  potassiumMg: number;
-  magnesiumMg: number;
-  calciumMg: number;
-  ironMg: number;
-  zincMg: number;
-  vitaminAMcg: number;
-  vitaminCMg: number;
-  vitaminDMcg: number;
-  vitaminB12Mcg: number;
-}
+export type FoodSource = 'photo' | 'barcode' | 'manual' | 'database' | 'custom';
+export type MealType = 'breakfast' | 'lunch' | 'dinner' | 'snack';
 
-export type MicroKey = keyof Micronutrients;
-
-export interface FoodEntry extends MacroTotals {
+export interface FoodEntry {
   id: number;
   date: string; // YYYY-MM-DD
   timeIso: string;
+  meal: MealType;
   name: string;
   source: FoodSource;
   grams: number | null;
-  micros: Micronutrients;
-  /** id from the bundled food database (src/data/foods.ts), when the entry came from it */
+  /** id from the food database or a custom food, when the entry came from one */
   foodId: string | null;
+  /** true when the entry carries full vitamin/mineral data (database foods); photo/barcode/manual don't */
+  hasMicros: boolean;
+  /** nutrients for the whole logged portion */
+  n: Nutrients;
 }
 
-/** Micros and foodId are optional on insert — photo/barcode/manual entries have no micronutrient data. */
-export type NewFoodEntry = Omit<FoodEntry, 'id' | 'micros' | 'foodId'> & {
-  micros?: Partial<Micronutrients>;
-  foodId?: string | null;
-};
-
-export interface FoodItem {
-  id: string;
-  name: string;
-  category: FoodCategory;
-  per100g: OffPer100g;
-  micros: Partial<Micronutrients>; // per 100 g
-  portion?: { label: string; grams: number };
-}
+export type NewFoodEntry = Omit<FoodEntry, 'id' | 'n'> & { n: Partial<Nutrients> };
 
 export type FoodCategory =
   | 'meat'
   | 'deli'
   | 'fish'
+  | 'eggs'
   | 'dairy'
   | 'cheese'
   | 'fats'
   | 'vegetables'
   | 'fruits'
   | 'nuts'
+  | 'legumes'
   | 'grains'
+  | 'sweets'
+  | 'sauces'
+  | 'drinks'
+  | 'alcohol'
   | 'dishes'
-  | 'drinks';
+  | 'custom';
+
+/**
+ * Diet-relevant food tags (see data-src/foodmap): m meat, rm red meat, pm processed meat, f fish, d dairy,
+ * e eggs, h honey, r starchy root, b berries, wg whole grain, rg refined grain, s added sugar, fr fried,
+ * po refined seed oil, uf ultra-processed.
+ */
+export type FoodTag = 'm' | 'rm' | 'pm' | 'f' | 'd' | 'e' | 'h' | 'r' | 'b' | 'wg' | 'rg' | 's' | 'fr' | 'po' | 'uf';
+
+export interface Portion {
+  label: string;
+  grams: number;
+}
+
+export interface FoodItem {
+  id: string;
+  name: string;
+  category: FoodCategory;
+  tags: FoodTag[];
+  aliases: string[];
+  portions: Portion[];
+  hasMicros: boolean;
+  /** nutrients per 100 g */
+  per100: Nutrients;
+  custom?: boolean;
+}
 
 export type Sex = 'male' | 'female';
 export type ActivityLevel = 'sedentary' | 'light' | 'moderate' | 'active' | 'veryActive';
@@ -84,10 +89,13 @@ export interface WeightEntry {
   weightKg: number;
 }
 
-export interface DailyCalories {
+/** Sum of every diary entry of one day. */
+export interface DaySummary {
   date: string;
-  calories: number;
-  netCarbs: number;
+  entries: number;
+  n: Nutrients;
+  /** kcal coming from entries that have full micronutrient data */
+  kcalWithMicros: number;
 }
 
 export interface HydrationEntry {
@@ -109,11 +117,19 @@ export interface HydrationTotals {
   magnesiumMg: number;
 }
 
+/** Daily targets. `carbs` is net or total carbohydrate depending on the diet's carb basis. */
 export interface DailyGoals {
   calories: number;
   protein: number;
   fat: number;
-  netCarbs: number;
+  carbs: number;
+}
+
+export interface FastRecord {
+  id: number;
+  startIso: string;
+  endIso: string | null;
+  goalHours: number;
 }
 
 export type VisionProvider = 'openai' | 'gemini';
@@ -126,19 +142,10 @@ export interface VisionAnalysisResult {
   fat: number;
   carbs: number;
   fiber: number;
-  netCarbs: number;
-}
-
-export interface OffPer100g {
-  calories: number;
-  protein: number;
-  fat: number;
-  carbs: number;
-  fiber: number;
 }
 
 export interface OffLookupResult {
   name: string;
-  per100g: OffPer100g;
+  per100: Partial<Nutrients>;
   servingGrams?: number;
 }

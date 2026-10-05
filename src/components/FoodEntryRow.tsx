@@ -1,69 +1,63 @@
 import React from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
-import { colors } from '@/theme/colors';
+import { Pressable, View } from 'react-native';
+import { Txt } from '@/components/ui';
+import { BarcodeIcon, CameraIcon, ManualEntryIcon, SearchIcon, StarIcon } from './icons';
+import { MacroLine } from './food/FoodBits';
+import { makeStyles, useTheme } from '@/theme/ThemeContext';
 import type { FoodEntry } from '@/types';
-import { formatTime } from '@/utils/date';
-import { BarcodeIcon, CameraIcon, ManualEntryIcon, SearchIcon, TrashIcon } from './icons';
+import { formatNumber, formatTime } from '@/utils/date';
 
-const SOURCE_ICON: Record<FoodEntry['source'], (props: { size: number; color: string }) => React.JSX.Element> = {
+const SOURCE_ICON = {
   photo: CameraIcon,
   barcode: BarcodeIcon,
   manual: ManualEntryIcon,
   database: SearchIcon,
-};
+  custom: StarIcon,
+} as const;
 
 interface FoodEntryRowProps {
   entry: FoodEntry;
-  onDelete: (id: number) => void;
+  carbBasis: 'net' | 'total';
+  onPress: (entry: FoodEntry) => void;
 }
 
-export function FoodEntryRow({ entry, onDelete }: FoodEntryRowProps) {
-  const SourceIcon = SOURCE_ICON[entry.source];
+export const FoodEntryRow = React.memo(function FoodEntryRow({ entry, carbBasis, onPress }: FoodEntryRowProps) {
+  const t = useTheme();
+  const s = useStyles();
+  const SourceIcon = SOURCE_ICON[entry.source] ?? SearchIcon;
   return (
-    <View style={styles.row}>
-      <View style={styles.iconWrap}>
-        <SourceIcon size={17} color={colors.accent} />
+    <Pressable onPress={() => onPress(entry)} style={({ pressed }) => [s.row, pressed && { opacity: 0.85 }]}>
+      <View style={s.icon}>
+        <SourceIcon size={18} color={t.c.accent} />
       </View>
-      <View style={styles.info}>
-        <Text style={styles.name} numberOfLines={1}>
+      <View style={{ flex: 1, gap: 3 }}>
+        <Txt v="bodyStrong" numberOfLines={2}>
           {entry.name}
-        </Text>
-        <Text style={styles.meta}>
+        </Txt>
+        <Txt v="caption" tone="textMuted">
           {formatTime(entry.timeIso)}
-          {entry.grams ? ` · ${Math.round(entry.grams)} г` : ''} · {Math.round(entry.calories)} ккал
-        </Text>
-        <Text style={styles.macros}>
-          Б {Math.round(entry.protein)}г · М {Math.round(entry.fat)}г · НВ {Math.round(entry.netCarbs)}г
-        </Text>
+          {entry.grams ? ` · ${formatNumber(entry.grams)} г` : ''}
+        </Txt>
+        <MacroLine n={entry.n} carbBasis={carbBasis} />
       </View>
-      <Pressable hitSlop={10} onPress={() => onDelete(entry.id)} style={styles.deleteBtn}>
-        <TrashIcon size={17} color={colors.textMuted} />
-      </Pressable>
-    </View>
+      <View style={{ alignItems: 'flex-end' }}>
+        <Txt v="h3">{formatNumber(entry.n.kcal)}</Txt>
+        <Txt v="caption" tone="textMuted">
+          ккал
+        </Txt>
+      </View>
+    </Pressable>
   );
-}
+});
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((t) => ({
   row: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: colors.surface,
-    borderRadius: 14,
-    padding: 12,
-    marginBottom: 8,
-    gap: 10,
+    gap: 12,
+    paddingVertical: 12,
+    borderTopWidth: 1,
+    borderTopColor: t.c.border,
   },
-  iconWrap: {
-    width: 34,
-    height: 34,
-    borderRadius: 17,
-    backgroundColor: colors.surfaceAlt,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  info: { flex: 1 },
-  name: { color: colors.text, fontWeight: '600', fontSize: 14 },
-  meta: { color: colors.textMuted, fontSize: 12, marginTop: 2 },
-  macros: { color: colors.textMuted, fontSize: 11, marginTop: 2 },
-  deleteBtn: { padding: 6 },
-});
+  icon: { width: 40, height: 40, borderRadius: 20, backgroundColor: t.c.accentSoft, alignItems: 'center', justifyContent: 'center' },
+}));

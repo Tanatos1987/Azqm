@@ -1,0 +1,96 @@
+name: Android APK
+
+# Every push to main builds a signed APK (downloadable from the run's artifacts).
+# Pushing a tag like v1.0.0 additionally publishes it as a GitHub Release with Azqm.apk attached.
+on:
+  push:
+    branches: [main]
+    tags: ['v*']
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: android-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+
+      - uses: gradle/actions/setup-gradle@v4
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Typecheck and lint
+        run: |
+          npx tsc --noEmit
+          npx expo lint
+
+      - name: Set Android versionCode from the run number
+        run: |
+          node -e "const fs=require('fs');const j=JSON.parse(fs.readFileSync('app.json','utf8'));j.expo.android.versionCode=Number(process.env.GITHUB_RUN_NUMBER);fs.writeFileSync('app.json',JSON.stringify(j,null,2));console.log('versionCode',j.expo.android.versionCode,'version',j.expo.version)"
+
+      - name: Generate the native Android project
+        run: npx expo prebuild --platform android --no-install
+
+      - name: Restore the signing key
+        env:
+          KEYSTORE_B64: ${{ secrets.AZQM_KEYSTORE_BASE64 }}
+          KS_PASS: ${{ secrets.AZQM_KEYSTORE_PASSWORD }}
+        run: |
+          echo "$KEYSTORE_B64" | base64 --decode > "$RUNNER_TEMP/azqm-release.p12"
+          keytool -list -keystore "$RUNNER_TEMP/azqm-release.p12" -storetype PKCS12 -storepass "$KS_PASS" | grep -i -E "azqm|entries"
+
+      - name: Build the release APK
+        working-directory: android
+        env:
+          KS_PASS: ${{ secrets.AZQM_KEYSTORE_PASSWORD }}
+        run: |
+          ./gradlew assembleRelease --no-daemon \
+            -PreactNativeArchitectures=arm64-v8a,armeabi-v7a \
+            -Pandroid.injected.signing.store.file="$RUNNER_TEMP/azqm-release.p12" \
+            -Pandroid.injected.signing.store.password="$KS_PASS" \
+            -Pandroid.injected.signing.key.alias=azqm \
+            -Pandroid.injected.signing.key.password="$KS_PASS"
+
+      - name: Verify the signature
+        run: |
+          APK=android/app/build/outputs/apk/release/app-release.apk
+          BUILD_TOOLS=$(ls -d "$ANDROID_HOME"/build-tools/* | sort -V | tail -n 1)
+          "$BUILD_TOOLS/apksigner" verify --print-certs "$APK" | tee signer.txt
+          grep -q "CN=Azqm" signer.txt
+          mkdir -p dist-apk
+          cp "$APK" dist-apk/Azqm.apk
+          ls -lh dist-apk
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Azqm-apk
+          path: dist-apk/Azqm.apk
+
+      - name: Publish the GitHub release
+        if: startsWith(github.ref, 'refs/tags/v')
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if gh release view "$GITHUB_REF_NAME" > /dev/null 2>&1; then
+            gh release upload "$GITHUB_REF_NAME" dist-apk/Azqm.apk --clobber
+          else
+            gh release create "$GITHUB_REF_NAME" dist-apk/Azqm.apk --title "Azqm $GITHUB_REF_NAME" --notes-file RELEASE_NOTES.md
+          fi

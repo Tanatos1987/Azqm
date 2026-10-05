@@ -39,3 +39,6 @@ yarn-error.*
 # generated native folders
 /ios
 /android
+
+# USDA raw data (scripts/fetch-usda.mjs)
+.usda/
