@@ -1,3 +1,14 @@
+## Azqm 1.1.0
+
+**Изтегляне:** `Azqm.apk` — за директно инсталиране на телефона. `Azqm.aab` — за Google Play.
+
+### Какво е новото
+- **Език: български / English** — превключва се от Настройки → Изглед → Език (и още на първия екран при нова инсталация). Преведени са всички екрани, 14-те режима и над 1000 храни.
+- Търсенето на храни разбира и двата езика („пиле“ и „chicken“).
+
+### What's new
+- **Language: Bulgarian / English** — switch in Settings → Appearance → Language (also on the first screen of a new install). All screens, the 14 diets and 1000+ foods are translated.
+- Food search understands both languages.
 ## Azqm 1.0.1
 
 **Изтегляне:** `Azqm.apk` — за директно инсталиране на телефона. `Azqm.aab` — за качване в Google Play (не се инсталира директно).
