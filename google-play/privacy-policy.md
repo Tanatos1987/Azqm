@@ -24,7 +24,7 @@ Azqm („приложението“) е дневник на храненето.
 Azqm не е медицинско изделие и не замества съвет от лекар.
 
 ## Контакт
-{{КОНТАКТЕН_ИМЕЙЛ}}
+toshko87@protonmail.com
 
 ---
 
@@ -40,4 +40,4 @@ Permissions: Camera — only for barcode scanning and food photos you take.
 
 You can export your data from Settings. Uninstalling the app or clearing its storage deletes all data permanently. The app is not intended for children under 18 and is not a medical device.
 
-Contact: {{КОНТАКТЕН_ИМЕЙЛ}}
+Contact: toshko87@protonmail.com
