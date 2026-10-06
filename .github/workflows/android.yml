@@ -1,7 +1,10 @@
 name: Android APK + AAB
 
 # Every push to main builds a signed APK and a Google Play bundle (AAB), downloadable from the run's artifacts.
-# Pushing a tag like v1.0.0 additionally publishes them as a GitHub Release with Azqm.apk and Azqm.aab attached.
+# Pushing a tag like v1.0.0 additionally publishes a GitHub Release with Azqm.aab attached.
+# The APK is NOT attached to releases: it is signed with the upload key, while Google Play delivers the app signed
+# with the Play app signing key. A phone with the APK can never take an update from Play (and Play keeps offering one),
+# so testers install only from Google Play. The APK stays a run artifact for the developer's own checks.
 on:
   push:
     branches: [main]
@@ -88,7 +91,7 @@ jobs:
 
       - uses: actions/upload-artifact@v4
         with:
-          name: Azqm-apk
+          name: Azqm-apk-dev-only-not-for-testers
           path: dist-apk/Azqm.apk
 
       - uses: actions/upload-artifact@v4
@@ -102,7 +105,7 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           if gh release view "$GITHUB_REF_NAME" > /dev/null 2>&1; then
-            gh release upload "$GITHUB_REF_NAME" dist-apk/Azqm.apk dist-apk/Azqm.aab --clobber
+            gh release upload "$GITHUB_REF_NAME" dist-apk/Azqm.aab --clobber
           else
-            gh release create "$GITHUB_REF_NAME" dist-apk/Azqm.apk dist-apk/Azqm.aab --title "Azqm $GITHUB_REF_NAME" --notes-file RELEASE_NOTES.md
+            gh release create "$GITHUB_REF_NAME" dist-apk/Azqm.aab --title "Azqm $GITHUB_REF_NAME" --notes-file RELEASE_NOTES.md
           fi
