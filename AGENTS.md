@@ -31,7 +31,7 @@ Run lint and typecheck before declaring any task done.
 
 ## Building
 
-This project builds its Android APK with GitHub Actions (`.github/workflows/android.yml`: `expo prebuild` + Gradle, signed with the key in repo secrets) — not EAS. Push to `main` for a CI build; push a `vX.Y.Z` tag to publish a GitHub Release with `Azqm.apk`. See PROJECT_NOTES.md.
+This project builds its Android APK with GitHub Actions (`.github/workflows/android.yml`: `expo prebuild` + Gradle, signed with the key in repo secrets) — not EAS. Push to `main` for a CI build; push a `vX.Y.Z` tag to publish a GitHub Release with `Azqm.aab` only. Never attach the APK to releases or hand it to testers: it is signed with the upload key, Play delivers the app with the Play app signing key, so an APK install can never update from Play. See PROJECT_NOTES.md.
 
 ## Rules
 

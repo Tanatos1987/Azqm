@@ -21,13 +21,14 @@ Running log of what has been built and decided, so work can continue across sess
 - No camera-based offline recognition yet — exact grams from a photo aren't reliable offline. Photo mode needs the user's own Gemini/OpenAI key.
 - No icon font / vector-icons package: icons are hand-drawn SVG (`src/components/icons.tsx`).
 - Signing key: PKCS#12 made with node-forge, local copy in `C:\Users\k.ivanova.TSMEGA\Azqm-keystore` (password inside), CI copy in repo secrets. Losing both means updates can't install over the old app.
+- **Testers install only from Google Play (2026-10-06).** Play App Signing is on: Play signs Azqm with the app signing key (SHA-256 `C7:D4:A9:...:64:AA`), the CI key `azqm` is only the upload key (`56:F1:1A:...:86:1C`). Testers who had installed `Azqm.apk` 1.0.0/1.0.1 from GitHub Releases (versionCode 2/4) saw an update to 1.1.0 (7) in Play that never installed. Fix for them: backup in Settings, uninstall, install from Play, restore. Releases no longer carry the APK.
 - Today's partial day is excluded from averages on the Анализ tab when complete days exist.
 
 ## Ideas for next phases (not agreed yet)
 - Android Health Connect sync, reminders/notifications, recipes builder (own dishes from ingredients), offline photo recognition.
 
 ## Building
-- Push to `main` → GitHub Actions builds `Azqm.apk` (artifact). Tag `vX.Y.Z` → Release. Bump `expo.version` in app.json for each release; versionCode = run number.
+- Push to `main` → GitHub Actions builds `Azqm.apk` and `Azqm.aab` (artifacts). Tag `vX.Y.Z` → Release with `Azqm.aab` only. Bump `expo.version` in app.json for each release; versionCode = run number.
 - Local checks before pushing: `npx tsc --noEmit`, `npx expo lint`, `npx expo export --platform android`.
 - After adding routes, regenerate typed routes by briefly running `npx expo start --offline`.
 - `expo start --tunnel` does not work on the office network (ngrok blocked).
