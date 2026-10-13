@@ -6,14 +6,14 @@
 - **По-бързо превключване между разделите.** Числата и датите вече се форматират без бавните системни функции на Android, списъкът с храни се подрежда без тях, а таймерът на поста не анимира кръга всяка секунда.
 - **Нов шрифт: Manrope.** На телефон с български език буквите са в българската им форма, както в приложенията на Google.
 - **Поправено:** бутоните „Подходящи / Последни / Любими“ в „Добави“ се показваха отрязани наполовина.
-- **Таблети, сгъваеми телефони и хоризонтален режим:** приложението вече не е заключено вертикално, а съдържанието стои в удобна за четене колона.
+- **Таблети и сгъваеми телефони:** там приложението вече се върти и хоризонтално, а съдържанието стои в удобна за четене колона. На обикновен телефон остава вертикално, както досега.
 - По-малък и оптимизиран код (R8), по изискване на Google Play.
 
 ### What's new
 - **Faster switching between tabs.** Numbers and dates no longer go through Android's slow system formatters, neither does sorting the food list, and the fasting ring no longer animates every second.
 - **New font: Manrope.**
 - **Fixed:** the "Suitable / Recent / Favorites" chips on the Add tab were cut in half.
-- **Tablets, foldables and landscape:** the app is no longer locked to portrait; content stays in a readable column.
+- **Tablets and foldables:** the app now rotates there, with content in a readable column. Phones stay in portrait as before.
 - Smaller, optimized code (R8), as Google Play recommends.
 ## Azqm 1.1.0
 
