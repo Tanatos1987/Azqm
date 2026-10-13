@@ -1,6 +1,6 @@
 /**
  * Shared UI building blocks. Everything reads the active theme (dark/light, text size), so screens only
- * describe layout. <Txt> applies the Inter font and the user's text-size setting to every label.
+ * describe layout. <Txt> applies the app font and the user's text-size setting to every label.
  */
 import React from 'react';
 import {
@@ -24,6 +24,9 @@ import {
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { FONT, TYPE, makeStyles, useTheme, type TypeVariant } from '@/theme/ThemeContext';
 import type { Palette } from '@/theme/palette';
+
+/** Widest the content column gets on tablets and in landscape. */
+export const CONTENT_MAX_WIDTH = 720;
 
 type Tone = keyof Pick<Palette, 'text' | 'textMuted' | 'textFaint' | 'accent' | 'onAccent' | 'danger' | 'warning' | 'success' | 'info' | 'protein' | 'fat' | 'carbs' | 'fiber' | 'water'>;
 
@@ -85,18 +88,19 @@ export function Screen({ title, subtitle, right, left, children, scroll, scrollP
       keyboardShouldPersistTaps="handled"
       showsVerticalScrollIndicator={false}
       {...scrollProps}
-      contentContainerStyle={[padded && s.padX, { paddingBottom: 48 }, scrollProps?.contentContainerStyle]}
+      contentContainerStyle={[padded && s.padX, s.column, { paddingBottom: 48 }, scrollProps?.contentContainerStyle]}
     >
       {children}
     </ScrollView>
   ) : (
-    <View style={[{ flex: 1 }, padded && s.padX]}>{children}</View>
+    <View style={[{ flex: 1 }, padded && s.padX, s.column]}>{children}</View>
   );
+  // left/right: in landscape the camera cutout or the 3-button navigation bar sits at the side.
   return (
-    <SafeAreaView style={s.safe} edges={['top']}>
+    <SafeAreaView style={s.safe} edges={['top', 'left', 'right']}>
       <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
         {(title || right || left) && (
-          <View style={[s.header, s.padX]}>
+          <View style={[s.header, s.padX, s.column]}>
             {left}
             <View style={{ flex: 1 }}>
               {title ? (
@@ -292,8 +296,10 @@ export function Sheet({ visible, onClose, children, title }: { visible: boolean;
   const insets = useSafeAreaInsets();
   return (
     <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose} statusBarTranslucent navigationBarTranslucent>
-      <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-        <Pressable style={s.backdrop} onPress={onClose} />
+      <KeyboardAvoidingView style={s.backdrop} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+        {/* Full-size tap target behind the sheet: on wide screens the sheet is narrower, so the sides close it too. */}
+        <Pressable style={StyleSheet.absoluteFill} onPress={onClose} />
+        <View style={{ flex: 1 }} pointerEvents="none" />
         <View style={[s.sheet, { paddingBottom: insets.bottom + 8 }]}>
           <View style={s.handle} />
           {title ? (
@@ -313,6 +319,8 @@ export function Sheet({ visible, onClose, children, title }: { visible: boolean;
 const useStyles = makeStyles((t) => ({
   safe: { flex: 1, backgroundColor: t.c.bg },
   padX: { paddingHorizontal: 16 },
+  // Tablets, foldables and landscape: keep a readable column instead of stretching cards across the screen.
+  column: { width: '100%', maxWidth: CONTENT_MAX_WIDTH, alignSelf: 'center' },
   header: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingTop: 10, paddingBottom: 14 },
   card: {
     backgroundColor: t.c.surface,
@@ -373,6 +381,9 @@ const useStyles = makeStyles((t) => ({
     paddingHorizontal: 20,
     paddingTop: 10,
     maxHeight: '88%',
+    width: '100%',
+    maxWidth: CONTENT_MAX_WIDTH,
+    alignSelf: 'center',
   },
   handle: { alignSelf: 'center', width: 44, height: 5, borderRadius: 3, backgroundColor: t.c.border, marginBottom: 14 },
 }));

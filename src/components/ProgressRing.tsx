@@ -17,7 +17,7 @@ export function ProgressRing({ size = 120, strokeWidth = 10, progress, color, tr
   const t = useTheme();
   const radius = (size - strokeWidth) / 2;
   const circumference = 2 * Math.PI * radius;
-  const clamped = useTween(Math.max(0, Math.min(progress, 1)), 900, 0);
+  const clamped = useTween(Math.max(0, Math.min(progress, 1)), 900, 0, 0.02);
   const dashOffset = circumference * (1 - clamped);
   const center = size / 2;
 

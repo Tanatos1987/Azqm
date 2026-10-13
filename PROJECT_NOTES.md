@@ -16,6 +16,11 @@ Running log of what has been built and decided, so work can continue across sess
 - **Azqm 1.1.0 (2026-10-05)** — Bulgarian/English UI. `src/i18n`: inline pairs `tr('бг', 'en')` (no key table), language in a module variable set by `<I18nProvider>` (from `settings.language`), so `tr()` also works in plain modules; components call `useI18n()` to re-render, memos list `lang` in deps; module-level labels are getters. Fresh installs pick the language from the phone locale, old installs stay Bulgarian. Switch in Settings → Appearance and on the first onboarding step.
   - Foods: English names/portions/aliases in `data-src/foodmap-en/*.json` (keyed by id; build fails if a food has no English name). `FoodItem.name` is a language getter, `nameBg`/`nameEn` also present; search indexes both languages. Diary entries keep storing the Bulgarian name in the DB and are displayed via `entryDisplayName()` (`src/utils/entryName.ts`) by `food_id`.
   - Vision prompt, Open Food Facts name, Excel/CSV headers follow the language; JSON backup format unchanged.
+- **Azqm 1.2.0 (2026-10-13)** — fixes for the Play Console pre-launch notes and the tab-switch lag.
+  - Lag: Hermes on Android builds a new Java formatter for every `toLocaleString` / `toLocaleDateString` / `localeCompare(…, locale)` call. `formatNumber`, `formatDayMonth`, `formatTime` in `src/utils/date.ts` are now plain JS (checked against Intl bg-BG/en-GB on 4M numbers), and `searchFoods` ties are sorted by a cached lower-case key instead of `localeCompare`. `useTween` takes a `snap` threshold so the fasting ring doesn't run a 900 ms animation every second.
+  - Chips on Добави were cut in half: a horizontal ScrollView has `flexShrink: 1` and was squeezed by the FlatList; now `flexShrink: 0`.
+  - Font Inter → Manrope (`assets/fonts`, OFL). Manrope has locl BGR, so a Bulgarian phone shows Bulgarian letter forms.
+  - Play Console: R8 on via `expo-build-properties` (`enableMinifyInReleaseBuilds`; the AAB carries the mapping, CI also uploads `mapping.txt`). `orientation: default` + a centered 720 px column (`Screen`, `Sheet`) for large screens (Android 16 ignores orientation locks there). The edge-to-edge warning lists calls inside React Native itself (`WindowUtilKt.enableEdgeToEdge` and friends, used for Android ≤ 14); the app code calls none of them — it goes away with a React Native update.
 
 ## Decisions
 - No camera-based offline recognition yet — exact grams from a photo aren't reliable offline. Photo mode needs the user's own Gemini/OpenAI key.
@@ -23,6 +28,9 @@ Running log of what has been built and decided, so work can continue across sess
 - Signing key: PKCS#12 made with node-forge, local copy in `C:\Users\k.ivanova.TSMEGA\Azqm-keystore` (password inside), CI copy in repo secrets. Losing both means updates can't install over the old app.
 - **Testers install only from Google Play (2026-10-06).** Play App Signing is on: Play signs Azqm with the app signing key (SHA-256 `C7:D4:A9:...:64:AA`), the CI key `azqm` is only the upload key (`56:F1:1A:...:86:1C`). Testers who had installed `Azqm.apk` 1.0.0/1.0.1 from GitHub Releases (versionCode 2/4) saw an update to 1.1.0 (7) in Play that never installed. Fix for them: backup in Settings, uninstall, install from Play, restore. Releases no longer carry the APK.
 - Today's partial day is excluded from averages on the Анализ tab when complete days exist.
+- No `toLocaleString` / `toLocaleDateString` / `Intl` / `localeCompare(…, locale)` in render paths (slow on Hermes Android) — use the helpers in `src/utils/date.ts`. Export code may still use them (one-off).
+- No React Compiler: `tr()` reads a module-level language variable, so auto-memoized components would keep old-language strings.
+- R8 code shrinking only, no `shrinkResources`: React Native looks up fonts and bundled images by name (`getIdentifier`), which the resource shrinker can't see.
 
 ## Ideas for next phases (not agreed yet)
 - Android Health Connect sync, reminders/notifications, recipes builder (own dishes from ingredients), offline photo recognition.

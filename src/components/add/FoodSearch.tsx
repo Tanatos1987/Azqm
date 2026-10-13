@@ -89,7 +89,8 @@ export function FoodSearch({ onManual }: { onManual: () => void }) {
         ) : null}
       </View>
 
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ flexGrow: 0 }} contentContainerStyle={s.chips} keyboardShouldPersistTaps="handled">
+      {/* ScrollViews shrink by default: next to the long FlatList this row got squeezed and the chips were cut in half. */}
+      <ScrollView horizontal showsHorizontalScrollIndicator={false} style={s.chipRow} contentContainerStyle={s.chips} keyboardShouldPersistTaps="handled">
         <Chip label={onlyFit ? `✓ ${tr('Подходящи', 'Suitable')}` : tr('Подходящи', 'Suitable')} active={onlyFit} onPress={() => setOnlyFit((v) => !v)} color={t.c.success} />
         {modes.map((m) => (
           <Chip key={m.key} label={m.label} active={mode === m.key} onPress={() => setMode(m.key)} />
@@ -175,5 +176,6 @@ const useStyles = makeStyles((t) => ({
     borderColor: t.c.border,
   },
   searchInput: { flex: 1, backgroundColor: 'transparent', borderWidth: 0, paddingHorizontal: 0, paddingVertical: 14 },
-  chips: { gap: 8, paddingVertical: 12 },
+  chipRow: { flexGrow: 0, flexShrink: 0 },
+  chips: { gap: 8, paddingVertical: 12, alignItems: 'center' },
 }));

@@ -3,8 +3,11 @@ import { StyleSheet, useColorScheme, type TextStyle } from 'react-native';
 import { darkPalette, lightPalette, type Palette } from './palette';
 import { useSettings } from '@/context/SettingsContext';
 
-/** Embedded at build time by the expo-font config plugin (app.json) with weights 400–800. */
-export const FONT = 'Inter';
+/**
+ * Embedded at build time by the expo-font config plugin (app.json) with weights 400–800. Manrope has Bulgarian
+ * letter forms (OpenType locl BGR), which Android uses when the phone language is Bulgarian.
+ */
+export const FONT = 'Manrope';
 
 export const TEXT_SCALES = { normal: 1, large: 1.15, xlarge: 1.3 } as const;
 export type TextScaleKey = keyof typeof TEXT_SCALES;

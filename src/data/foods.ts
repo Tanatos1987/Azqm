@@ -6,7 +6,7 @@
  */
 import type { FoodCategory, FoodItem, FoodTag, Nutrients, Portion } from '@/types';
 import { FOOD_DATA, NUTRIENT_KEYS } from './foods.generated';
-import { locale, tr } from '@/i18n';
+import { getLang, tr } from '@/i18n';
 
 export const FOOD_CATEGORIES: { key: FoodCategory; readonly label: string; emoji: string }[] = (
   [
@@ -157,6 +157,42 @@ function searchTextOf(f: FoodItem): string {
   return t;
 }
 
+/** Per-language caches: `name` follows the app language, so its derived strings are cached per language. */
+const NAME_TEXT = { bg: new WeakMap<FoodItem, string>(), en: new WeakMap<FoodItem, string>() };
+const SORT_KEY = { bg: new WeakMap<FoodItem, string>(), en: new WeakMap<FoodItem, string>() };
+
+function nameTextOf(f: FoodItem): string {
+  const cache = NAME_TEXT[getLang()];
+  let t = cache.get(f);
+  if (t === undefined) {
+    t = normalize(f.name);
+    cache.set(f, t);
+  }
+  return t;
+}
+
+/**
+ * Alphabetical key. Bulgarian and English letters are in alphabet order in Unicode, so comparing lower-cased
+ * names with `<` gives the same order as the locale collator (checked on all built-in foods). localeCompare
+ * builds a new collator on every call in Hermes, and sorting the full list calls it thousands of times.
+ * Typographic quotes become '"' so „Добруджа“ sorts before the letters, as the collator puts it.
+ */
+function sortKeyOf(f: FoodItem): string {
+  const cache = SORT_KEY[getLang()];
+  let k = cache.get(f);
+  if (k === undefined) {
+    k = f.name.toLowerCase().replace(/[„“”«»]/g, '"');
+    cache.set(f, k);
+  }
+  return k;
+}
+
+function byName(a: FoodItem, b: FoodItem): number {
+  const ka = sortKeyOf(a);
+  const kb = sortKeyOf(b);
+  return ka < kb ? -1 : ka > kb ? 1 : 0;
+}
+
 /**
  * Every query word must appear somewhere in the name/aliases (substring, so "пиле печ" finds
  * "Пилешко филе, печено"). Results are ranked: name starts with the query, then whole-word hits,
@@ -177,7 +213,7 @@ export function searchFoods(
       continue;
     }
     const text = searchTextOf(f);
-    const name = normalize(f.name);
+    const name = nameTextOf(f);
     let score = 0;
     let ok = true;
     for (const alts of words) {
@@ -201,7 +237,7 @@ export function searchFoods(
     score += (boost?.(f) ?? 0) - f.name.length / 60;
     scored.push({ f, score });
   }
-  scored.sort((a, b) => b.score - a.score || a.f.name.localeCompare(b.f.name, locale()));
+  scored.sort((a, b) => b.score - a.score || byName(a.f, b.f));
   return scored.slice(0, limit).map((s) => s.f);
 }
 

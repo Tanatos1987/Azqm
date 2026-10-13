@@ -1,7 +1,8 @@
 import type { NutrientKey, Nutrients, UserProfile } from '@/types';
 import { NUTRIENT_KEYS } from './foods.generated';
 import type { Diet } from './diets';
-import { locale, tr } from '@/i18n';
+import { tr } from '@/i18n';
+import { formatNumber } from '@/utils/date';
 
 export { NUTRIENT_KEYS };
 
@@ -175,7 +176,7 @@ export function netCarbsOf(n: Pick<Nutrients, 'carbs' | 'fiber'>): number {
 export function formatAmount(value: number, key: NutrientKey): string {
   const m = NUTRIENT_META[key];
   const decimals = value !== 0 && Math.abs(value) < 1 ? Math.max(m.decimals, 1) : m.decimals;
-  return value.toLocaleString(locale(), { maximumFractionDigits: decimals, minimumFractionDigits: 0 });
+  return formatNumber(value, decimals);
 }
 
 export interface NutrientTarget {

@@ -12,9 +12,9 @@ import { deleteFast, getFasts, getHydrationTotals, insertHydrationEntry } from '
 import { getDiet } from '@/data/diets';
 import { useTheme } from '@/theme/ThemeContext';
 import type { FastRecord, HydrationTotals } from '@/types';
-import { formatNumber, todayKey } from '@/utils/date';
+import { formatDayMonth, formatNumber, todayKey } from '@/utils/date';
 import { waterGoalMl } from '@/utils/bodyMetrics';
-import { locale, tr, useI18n } from '@/i18n';
+import { tr, useI18n } from '@/i18n';
 
 const EMPTY: HydrationTotals = { waterMl: 0, sodiumMg: 0, potassiumMg: 0, magnesiumMg: 0 };
 
@@ -250,7 +250,7 @@ export default function FastingScreen() {
               return (
                 <Row key={f.id} style={{ paddingVertical: 10, borderTopWidth: i ? 1 : 0, borderTopColor: t.c.border }}>
                   <View style={{ flex: 1 }}>
-                    <Txt v="smallStrong">{new Date(f.startIso).toLocaleDateString(locale(), { day: 'numeric', month: 'long' })}</Txt>
+                    <Txt v="smallStrong">{formatDayMonth(new Date(f.startIso))}</Txt>
                     <Txt v="caption" tone="textMuted">
                       {tr(`цел ${f.goalHours} ч`, `goal ${f.goalHours} h`)}
                     </Txt>

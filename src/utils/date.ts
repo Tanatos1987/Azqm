@@ -1,5 +1,21 @@
 import type { MealType } from '@/types';
-import { locale, tr } from '@/i18n';
+import { getLang, tr } from '@/i18n';
+
+/*
+ * Dates and numbers are formatted by hand, not with toLocaleString / Intl: Hermes on Android builds a new
+ * Java formatter on every such call, and a food list or the Анализ tab makes hundreds of them per render,
+ * which made switching tabs slow. Output matches Intl for bg-BG / en-GB.
+ */
+
+const MONTHS = ['януари', 'февруари', 'март', 'април', 'май', 'юни', 'юли', 'август', 'септември', 'октомври', 'ноември', 'декември'];
+const MONTHS_EN = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+
+/** "3 октомври" / "3 October", with the year: "3 октомври 2026 г." / "3 October 2026". */
+export function formatDayMonth(d: Date, withYear = false): string {
+  const m = d.getMonth();
+  const base = `${d.getDate()} ${tr(MONTHS[m], MONTHS_EN[m])}`;
+  return withYear ? `${base} ${d.getFullYear()}${tr(' г.', '')}` : base;
+}
 
 export function todayKey(d: Date = new Date()): string {
   const y = d.getFullYear();
@@ -13,8 +29,10 @@ export function dateOf(dateKey: string): Date {
   return new Date(y, m - 1, d);
 }
 
+/** 24-hour "21:08" (both languages). */
 export function formatTime(iso: string): string {
-  return new Date(iso).toLocaleTimeString(locale(), { hour: '2-digit', minute: '2-digit' });
+  const d = new Date(iso);
+  return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
 }
 
 export function shiftDateKey(dateKey: string, deltaDays: number): string {
@@ -47,13 +65,13 @@ export function formatDateLabel(dateKey: string): string {
   if (dateKey === today) return tr('Днес', 'Today');
   if (dateKey === shiftDateKey(today, -1)) return tr('Вчера', 'Yesterday');
   if (dateKey === shiftDateKey(today, 1)) return tr('Утре', 'Tomorrow');
-  return dateOf(dateKey).toLocaleDateString(locale(), { day: 'numeric', month: 'long' });
+  return formatDayMonth(dateOf(dateKey));
 }
 
 export function formatLongDate(dateKey: string): string {
   const d = dateOf(dateKey);
   const day = d.getDay();
-  return `${tr(WEEKDAYS_LONG[day], WEEKDAYS_LONG_EN[day])}, ${d.toLocaleDateString(locale(), { day: 'numeric', month: 'long', year: 'numeric' })}`;
+  return `${tr(WEEKDAYS_LONG[day], WEEKDAYS_LONG_EN[day])}, ${formatDayMonth(d, true)}`;
 }
 
 export const MEALS: { key: MealType; readonly label: string; emoji: string }[] = (
@@ -92,6 +110,21 @@ export function entryTimeIso(dateKey: string): string {
   return d.toISOString();
 }
 
-export function formatNumber(n: number, decimals = 0): string {
-  return n.toLocaleString(locale(), { maximumFractionDigits: decimals, minimumFractionDigits: 0 });
+/**
+ * Like toLocaleString(bg-BG | en-GB, { maximumFractionDigits: decimals, minimumFractionDigits: minDecimals }):
+ * "1234,5" and "10 000" in Bulgarian (grouping starts at 5 digits), "1,234.5" in English.
+ */
+export function formatNumber(n: number, decimals = 0, minDecimals = 0): string {
+  if (!Number.isFinite(n)) return String(n);
+  const en = getLang() === 'en';
+  const abs = Math.abs(n);
+  // Round half away from zero on the shortest decimal form, as Intl does ("4.35" → 4.4, not 4.3).
+  // (String() of numbers below 1e-6 or from 1e21 switches to exponent form, so those skip the trick.)
+  const rounded = abs < 1e-6 ? 0 : abs >= 1e21 ? abs : Number(`${Math.round(Number(`${abs}e${decimals}`))}e-${decimals}`);
+  let [int, frac = ''] = rounded.toFixed(decimals).split('.');
+  frac = frac.replace(/0+$/, '');
+  if (frac.length < minDecimals) frac = frac.padEnd(minDecimals, '0');
+  if (int.length >= (en ? 4 : 5)) int = int.replace(/\B(?=(\d{3})+$)/g, en ? ',' : '\u00a0');
+  const sign = n < 0 && rounded !== 0 ? '-' : '';
+  return `${sign}${int}${frac ? (en ? '.' : ',') + frac : ''}`;
 }

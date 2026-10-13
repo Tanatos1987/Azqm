@@ -2,8 +2,8 @@ import type { DaySummary, FoodEntry, FoodItem, HydrationTotals, NutrientKey, Nut
 import { ANALYZED_NUTRIENTS, addNutrients, emptyNutrients, netCarbsOf, nutrientTarget, type NutrientTarget } from '@/data/nutrients';
 import type { Diet } from '@/data/diets';
 import { defaultPortion } from '@/data/foods';
-import { locale, tr } from '@/i18n';
-import { todayKey } from './date';
+import { tr } from '@/i18n';
+import { formatNumber, todayKey } from './date';
 import { entryDisplayName } from './entryName';
 
 export interface PeriodStats {
@@ -101,8 +101,8 @@ export function macroChecks(avg: Nutrients, profile: UserProfile | null, diet: D
       out.push({
         kind: 'warning',
         text: tr(
-          `Протеинът е ${perKg.toLocaleString(locale(), { minimumFractionDigits: 1, maximumFractionDigits: 1 })} г/кг — под минимума от 0,8 г на кг телесно тегло.`,
-          `Protein is ${perKg.toLocaleString(locale(), { minimumFractionDigits: 1, maximumFractionDigits: 1 })} g/kg — below the minimum of 0.8 g per kg of body weight.`
+          `Протеинът е ${formatNumber(perKg, 1, 1)} г/кг — под минимума от 0,8 г на кг телесно тегло.`,
+          `Protein is ${formatNumber(perKg, 1, 1)} g/kg — below the minimum of 0.8 g per kg of body weight.`
         ),
       });
     }
