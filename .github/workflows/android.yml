@@ -5,11 +5,18 @@ name: Android APK + AAB
 # The APK is NOT attached to releases: it is signed with the upload key, while Google Play delivers the app signed
 # with the Play app signing key. A phone with the APK can never take an update from Play (and Play keeps offering one),
 # so testers install only from Google Play. The APK stays a run artifact for the developer's own checks.
+# Run it by hand with "preview" ticked for "Azqm Preview" (com.tanatos.azqm.preview): an APK that installs next to the
+# Play version instead of over it, with its own (empty) data — move data across with a backup and restore.
 on:
   push:
     branches: [main]
     tags: ['v*']
   workflow_dispatch:
+    inputs:
+      preview:
+        description: 'Azqm Preview: separate app id, installs next to the Google Play version (APK only)'
+        type: boolean
+        default: false
 
 permissions:
   contents: write
@@ -49,6 +56,11 @@ jobs:
       - name: Set Android versionCode from the run number
         run: |
           node -e "const fs=require('fs');const j=JSON.parse(fs.readFileSync('app.json','utf8'));j.expo.android.versionCode=Number(process.env.GITHUB_RUN_NUMBER);fs.writeFileSync('app.json',JSON.stringify(j,null,2));console.log('versionCode',j.expo.android.versionCode,'version',j.expo.version)"
+
+      - name: Make it Azqm Preview (separate app next to the Play version)
+        if: ${{ inputs.preview }}
+        run: |
+          node -e "const fs=require('fs');const j=JSON.parse(fs.readFileSync('app.json','utf8'));j.expo.name='Azqm Preview';j.expo.scheme='azqm-preview';j.expo.android.package='com.tanatos.azqm.preview';fs.writeFileSync('app.json',JSON.stringify(j,null,2));console.log(j.expo.name,j.expo.android.package)"
 
       - name: Generate the native Android project
         run: npx expo prebuild --platform android --no-install
@@ -97,19 +109,32 @@ jobs:
           ls -lh dist-apk
 
       - uses: actions/upload-artifact@v4
+        if: ${{ !inputs.preview }}
         with:
           name: Azqm-apk-dev-only-not-for-testers
           path: dist-apk/Azqm.apk
 
       - uses: actions/upload-artifact@v4
+        if: ${{ !inputs.preview }}
         with:
           name: Azqm-aab-google-play
           path: dist-apk/Azqm.aab
 
       - uses: actions/upload-artifact@v4
+        if: ${{ !inputs.preview }}
         with:
           name: Azqm-r8-mapping
           path: dist-apk/mapping.txt
+
+      - name: Name the preview APK
+        if: ${{ inputs.preview }}
+        run: mv dist-apk/Azqm.apk dist-apk/Azqm-Preview.apk
+
+      - uses: actions/upload-artifact@v4
+        if: ${{ inputs.preview }}
+        with:
+          name: Azqm-Preview-apk-installs-next-to-play
+          path: dist-apk/Azqm-Preview.apk
 
       - name: Publish the GitHub release
         if: startsWith(github.ref, 'refs/tags/v')

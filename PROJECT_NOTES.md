@@ -39,6 +39,7 @@ Running log of what has been built and decided, so work can continue across sess
 
 ## Building
 - Push to `main` → GitHub Actions builds `Azqm.apk` and `Azqm.aab` (artifacts). Tag `vX.Y.Z` → Release with `Azqm.aab` only. Bump `expo.version` in app.json for each release; versionCode = run number.
+- **Azqm Preview** — Actions → "Android APK + AAB" → Run workflow, pick the branch, tick "preview": builds an APK with app id `com.tanatos.azqm.preview` and name "Azqm Preview" that installs next to the Play version (own empty data; move data with Settings → backup / restore). APK only, never for Play.
 - Local checks before pushing: `npx tsc --noEmit`, `npx expo lint`, `npx expo export --platform android`.
 - After adding routes, regenerate typed routes by briefly running `npx expo start --offline`.
 - `expo start --tunnel` does not work on the office network (ngrok blocked).
