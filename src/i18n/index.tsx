@@ -113,6 +113,13 @@ function pluralIndex(n: number, forms: number): number {
   return Math.min(i, forms - 1);
 }
 
+/** A label used inside a sentence: lower-cased, except German nouns; Turkish I → ı. */
+export function inSentence(label: string): string {
+  if (current === 'de') return label;
+  if (current === 'tr') return label.replace(/I/g, 'ı').replace(/İ/g, 'i').toLowerCase();
+  return label.toLowerCase();
+}
+
 /** BCP 47 locale of the current language (export files only — see the note in src/utils/date.ts). */
 export function locale(): string {
   return languageInfo().locale;

@@ -8,7 +8,7 @@ import { InfoIcon, LeafIcon, WarningIcon } from '@/components/icons';
 import { useSettings } from '@/context/SettingsContext';
 import { useProfile } from '@/context/ProfileContext';
 import { useDataRefresh } from '@/context/DataRefreshContext';
-import { useI18n } from '@/i18n';
+import { inSentence, useI18n } from '@/i18n';
 import { getDaySummaries, getEntriesBetween, getFirstEntryDate, getHydrationByDay } from '@/db/queries';
 import { getDiet } from '@/data/diets';
 import { FOODS } from '@/data/foods';
@@ -304,7 +304,7 @@ function MacroStat({ label, value, color }: { label: string; value: number; colo
         {formatNumber(value)}
       </Txt>
       <Txt v="caption" tone="textMuted">
-        {tr('г', 'g')} {label.toLowerCase()}
+        {tr('г', 'g')} {inSentence(label)}
       </Txt>
     </View>
   );
@@ -394,7 +394,7 @@ function HighCard({ v, contributors, avgOfMaxKey }: { v: NutrientVerdict; contri
       <Bar value={avgOfMaxKey} max={avgOfMaxKey} color={t.c.danger} height={8} marker={max} />
       <Txt v="small" tone="textMuted" style={{ marginTop: 8 }}>
         {tr('Средно', 'Average')} {formatAmount(avgOfMaxKey, v.target.maxKey ?? v.key)} {maxMeta.unit} {tr('на ден', 'per day')}
-        {v.target.maxKey ? ` (${maxMeta.label.toLowerCase()})` : ''} {tr('при горна граница', 'vs. upper limit')} {formatAmount(max, v.target.maxKey ?? v.key)} {maxMeta.unit}.
+        {v.target.maxKey ? ` (${inSentence(maxMeta.label)})` : ''} {tr('при горна граница', 'vs. upper limit')} {formatAmount(max, v.target.maxKey ?? v.key)} {maxMeta.unit}.
       </Txt>
       {v.target.note ? (
         <Txt v="small" style={{ marginTop: 6 }}>

@@ -189,7 +189,20 @@ const nameTextOf = perLanguage((f) => normalize(f.name));
  * localeCompare builds a new collator on every call in Hermes, and sorting the full list calls it thousands of times.
  * Typographic quotes become '"' so „Добруджа“ sorts before the letters, as the collator puts it.
  */
-const sortKeyOf = perLanguage((f) => fold(f.name.toLowerCase()).replace(/[„“”«»]/g, '"'));
+const sortKeyOf = perLanguage((f) => {
+  const name = f.name.replace(/[„“”«»]/g, '"');
+  return getLang() === 'tr' ? turkishKey(name) : fold(name.toLowerCase());
+});
+
+/** Turkish has ç ğ ı ö ş ü as letters of their own (ç after c, ı before i…): "~" after the base letter sorts them so. */
+const TR_LETTERS: Record<string, string> = { ç: 'c~', ğ: 'g~', ı: 'h~', ö: 'o~', ş: 's~', ü: 'u~' };
+function turkishKey(name: string): string {
+  return name
+    .replace(/I/g, 'ı')
+    .replace(/İ/g, 'i')
+    .toLowerCase()
+    .replace(/[çğıöşü]/g, (c) => TR_LETTERS[c]);
+}
 
 function byName(a: FoodItem, b: FoodItem): number {
   const ka = sortKeyOf(a);
