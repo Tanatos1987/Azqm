@@ -1,20 +1,74 @@
 import type { MealType } from '@/types';
-import { getLang, tr } from '@/i18n';
+import { getLang, tr, type Lang } from '@/i18n';
 
 /*
  * Dates and numbers are formatted by hand, not with toLocaleString / Intl: Hermes on Android builds a new
  * Java formatter on every such call, and a food list or the Анализ tab makes hundreds of them per render,
- * which made switching tabs slow. Output matches Intl for bg-BG / en-GB.
+ * which made switching tabs slow. Output matches Intl for every app language (checked against Node's ICU).
  */
 
-const MONTHS = ['януари', 'февруари', 'март', 'април', 'май', 'юни', 'юли', 'август', 'септември', 'октомври', 'ноември', 'декември'];
-const MONTHS_EN = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+/** Month names as used after a day number (Russian genitive), weekdays from Sunday, and short weekdays for charts. */
+const DATE_WORDS: Record<Lang, { months: string[]; weekdays: string[]; weekdaysShort: string[] }> = {
+  bg: {
+    months: ['януари', 'февруари', 'март', 'април', 'май', 'юни', 'юли', 'август', 'септември', 'октомври', 'ноември', 'декември'],
+    weekdays: ['неделя', 'понеделник', 'вторник', 'сряда', 'четвъртък', 'петък', 'събота'],
+    weekdaysShort: ['Нд', 'Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб'],
+  },
+  en: {
+    months: ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'],
+    weekdays: ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'],
+    weekdaysShort: ['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'],
+  },
+  de: {
+    months: ['Januar', 'Februar', 'März', 'April', 'Mai', 'Juni', 'Juli', 'August', 'September', 'Oktober', 'November', 'Dezember'],
+    weekdays: ['Sonntag', 'Montag', 'Dienstag', 'Mittwoch', 'Donnerstag', 'Freitag', 'Samstag'],
+    weekdaysShort: ['So', 'Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa'],
+  },
+  es: {
+    months: ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'],
+    weekdays: ['domingo', 'lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado'],
+    weekdaysShort: ['Do', 'Lu', 'Ma', 'Mi', 'Ju', 'Vi', 'Sá'],
+  },
+  fr: {
+    months: ['janvier', 'février', 'mars', 'avril', 'mai', 'juin', 'juillet', 'août', 'septembre', 'octobre', 'novembre', 'décembre'],
+    weekdays: ['dimanche', 'lundi', 'mardi', 'mercredi', 'jeudi', 'vendredi', 'samedi'],
+    weekdaysShort: ['Di', 'Lu', 'Ma', 'Me', 'Je', 'Ve', 'Sa'],
+  },
+  it: {
+    months: ['gennaio', 'febbraio', 'marzo', 'aprile', 'maggio', 'giugno', 'luglio', 'agosto', 'settembre', 'ottobre', 'novembre', 'dicembre'],
+    weekdays: ['domenica', 'lunedì', 'martedì', 'mercoledì', 'giovedì', 'venerdì', 'sabato'],
+    weekdaysShort: ['Do', 'Lu', 'Ma', 'Me', 'Gi', 'Ve', 'Sa'],
+  },
+  ru: {
+    months: ['января', 'февраля', 'марта', 'апреля', 'мая', 'июня', 'июля', 'августа', 'сентября', 'октября', 'ноября', 'декабря'],
+    weekdays: ['воскресенье', 'понедельник', 'вторник', 'среда', 'четверг', 'пятница', 'суббота'],
+    weekdaysShort: ['Вс', 'Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб'],
+  },
+  tr: {
+    months: ['Ocak', 'Şubat', 'Mart', 'Nisan', 'Mayıs', 'Haziran', 'Temmuz', 'Ağustos', 'Eylül', 'Ekim', 'Kasım', 'Aralık'],
+    weekdays: ['Pazar', 'Pazartesi', 'Salı', 'Çarşamba', 'Perşembe', 'Cuma', 'Cumartesi'],
+    weekdaysShort: ['Paz', 'Pzt', 'Sal', 'Çar', 'Per', 'Cum', 'Cmt'],
+  },
+};
 
-/** "3 октомври" / "3 October", with the year: "3 октомври 2026 г." / "3 October 2026". */
+const words = () => DATE_WORDS[getLang()] ?? DATE_WORDS.en;
+
+/** "3 октомври", "3. Oktober", "3 de octubre"; with the year "3 октомври 2026 г.", "3 de octubre de 2026". */
 export function formatDayMonth(d: Date, withYear = false): string {
-  const m = d.getMonth();
-  const base = `${d.getDate()} ${tr(MONTHS[m], MONTHS_EN[m])}`;
-  return withYear ? `${base} ${d.getFullYear()}${tr(' г.', '')}` : base;
+  const day = d.getDate();
+  const month = words().months[d.getMonth()];
+  const year = d.getFullYear();
+  switch (getLang()) {
+    case 'bg':
+    case 'ru':
+      return withYear ? `${day} ${month} ${year} г.` : `${day} ${month}`;
+    case 'de':
+      return withYear ? `${day}. ${month} ${year}` : `${day}. ${month}`;
+    case 'es':
+      return withYear ? `${day} de ${month} de ${year}` : `${day} de ${month}`;
+    default:
+      return withYear ? `${day} ${month} ${year}` : `${day} ${month}`;
+  }
 }
 
 export function todayKey(d: Date = new Date()): string {
@@ -29,7 +83,7 @@ export function dateOf(dateKey: string): Date {
   return new Date(y, m - 1, d);
 }
 
-/** 24-hour "21:08" (both languages). */
+/** 24-hour "21:08" (every app language uses the 24-hour clock). */
 export function formatTime(iso: string): string {
   const d = new Date(iso);
   return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
@@ -45,14 +99,8 @@ export function daysBetween(fromKey: string, toKey: string): number {
   return Math.round((dateOf(toKey).getTime() - dateOf(fromKey).getTime()) / 86400000);
 }
 
-const WEEKDAYS = ['Нд', 'Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб'];
-const WEEKDAYS_EN = ['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'];
-const WEEKDAYS_LONG = ['неделя', 'понеделник', 'вторник', 'сряда', 'четвъртък', 'петък', 'събота'];
-const WEEKDAYS_LONG_EN = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
-
 export function weekdayShort(dateKey: string): string {
-  const i = dateOf(dateKey).getDay();
-  return tr(WEEKDAYS[i], WEEKDAYS_EN[i]);
+  return words().weekdaysShort[dateOf(dateKey).getDay()];
 }
 
 export function shortDate(dateKey: string): string {
@@ -68,10 +116,20 @@ export function formatDateLabel(dateKey: string): string {
   return formatDayMonth(dateOf(dateKey));
 }
 
+/** "вторник, 13 януари 2026 г.", "mardi 13 janvier 2026", "13 Ocak 2026 Salı". */
 export function formatLongDate(dateKey: string): string {
   const d = dateOf(dateKey);
-  const day = d.getDay();
-  return `${tr(WEEKDAYS_LONG[day], WEEKDAYS_LONG_EN[day])}, ${formatDayMonth(d, true)}`;
+  const weekday = words().weekdays[d.getDay()];
+  const date = formatDayMonth(d, true);
+  switch (getLang()) {
+    case 'tr':
+      return `${date} ${weekday}`;
+    case 'fr':
+    case 'it':
+      return `${weekday} ${date}`;
+    default:
+      return `${weekday}, ${date}`;
+  }
 }
 
 export const MEALS: { key: MealType; readonly label: string; emoji: string }[] = (
@@ -110,13 +168,25 @@ export function entryTimeIso(dateKey: string): string {
   return d.toISOString();
 }
 
+/** Decimal mark, thousands separator and the integer length where grouping starts (CLDR minimumGroupingDigits). */
+const NUMBER_FORMAT: Record<Lang, { decimal: string; group: string; groupFrom: number }> = {
+  bg: { decimal: ',', group: '\u00a0', groupFrom: 5 },
+  en: { decimal: '.', group: ',', groupFrom: 4 },
+  de: { decimal: ',', group: '.', groupFrom: 4 },
+  es: { decimal: ',', group: '.', groupFrom: 5 },
+  fr: { decimal: ',', group: '\u202f', groupFrom: 4 },
+  it: { decimal: ',', group: '.', groupFrom: 5 },
+  ru: { decimal: ',', group: '\u00a0', groupFrom: 4 },
+  tr: { decimal: ',', group: '.', groupFrom: 4 },
+};
+
 /**
- * Like toLocaleString(bg-BG | en-GB, { maximumFractionDigits: decimals, minimumFractionDigits: minDecimals }):
- * "1234,5" and "10 000" in Bulgarian (grouping starts at 5 digits), "1,234.5" in English.
+ * Like toLocaleString(locale, { maximumFractionDigits: decimals, minimumFractionDigits: minDecimals }):
+ * "1234,5" and "10 000" in Bulgarian, "1,234.5" in English, "1.234,5" in German.
  */
 export function formatNumber(n: number, decimals = 0, minDecimals = 0): string {
   if (!Number.isFinite(n)) return String(n);
-  const en = getLang() === 'en';
+  const f = NUMBER_FORMAT[getLang()] ?? NUMBER_FORMAT.en;
   const abs = Math.abs(n);
   // Round half away from zero on the shortest decimal form, as Intl does ("4.35" → 4.4, not 4.3).
   // (String() of numbers below 1e-6 or from 1e21 switches to exponent form, so those skip the trick.)
@@ -124,7 +194,7 @@ export function formatNumber(n: number, decimals = 0, minDecimals = 0): string {
   let [int, frac = ''] = rounded.toFixed(decimals).split('.');
   frac = frac.replace(/0+$/, '');
   if (frac.length < minDecimals) frac = frac.padEnd(minDecimals, '0');
-  if (int.length >= (en ? 4 : 5)) int = int.replace(/\B(?=(\d{3})+$)/g, en ? ',' : '\u00a0');
+  if (int.length >= f.groupFrom) int = int.replace(/\B(?=(\d{3})+$)/g, f.group);
   const sign = n < 0 && rounded !== 0 ? '-' : '';
-  return `${sign}${int}${frac ? (en ? '.' : ',') + frac : ''}`;
+  return `${sign}${int}${frac ? f.decimal + frac : ''}`;
 }

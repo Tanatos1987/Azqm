@@ -99,7 +99,7 @@ export default function TodayScreen() {
   const copyYesterday = async () => {
     const n = await copyDay(db, shiftDateKey(date, -1), date);
     bump();
-    toast.show(tr(`Копирани ${n} записа от предишния ден`, `Copied ${n} ${n === 1 ? 'entry' : 'entries'} from the previous day`));
+    toast.show(tr('{n|Копиран|Копирани} {n} {n|запис|записа} от предишния ден', 'Copied {n} {n|entry|entries} from the previous day', { n }));
   };
 
   const split = totals.kcal > 0 ? { p: (totals.protein * 4) / totals.kcal, f: (totals.fat * 9) / totals.kcal, c: (carbs * 4) / totals.kcal } : null;
@@ -145,7 +145,10 @@ export default function TodayScreen() {
           </Txt>
           <Txt tone="textMuted">
             {fasting.isFasting
-              ? tr(`В пост от ${formatDuration(fasting.elapsedMs, false)} (цел ${fasting.goalHours} ч).`, `Fasting for ${formatDuration(fasting.elapsedMs, false)} (goal ${fasting.goalHours} h).`)
+              ? tr('В пост от {duration} (цел {h} ч).', 'Fasting for {duration} (goal {h} h).', {
+                  duration: formatDuration(fasting.elapsedMs, false),
+                  h: fasting.goalHours,
+                })
               : tr('Таймерът не е пуснат — започни поста от раздел „Пост“.', 'The timer isn’t running — start your fast from the “Fasting” tab.')}
           </Txt>
           <Txt v="small" tone="warning" style={{ marginTop: 10 }}>
@@ -221,7 +224,7 @@ export default function TodayScreen() {
             {fasting.isFasting ? formatDuration(fasting.elapsedMs, false) : tr('не е пуснат', 'not started')}
           </Txt>
           <Txt v="caption" tone="textMuted" style={{ marginTop: 6 }}>
-            {fasting.isFasting ? tr(`цел ${fasting.goalHours} ч`, `goal ${fasting.goalHours} h`) : tr(`цел ${settings.fastingGoalHours} ч · старт`, `goal ${settings.fastingGoalHours} h · start`)}
+            {fasting.isFasting ? tr('цел {h} ч', 'goal {h} h', { h: fasting.goalHours }) : tr('цел {h} ч · старт', 'goal {h} h · start', { h: settings.fastingGoalHours })}
           </Txt>
         </Card>
         <Card style={s.tile} tight onPress={() => router.navigate('/analysis')}>
@@ -233,7 +236,7 @@ export default function TodayScreen() {
           </Txt>
           <Txt v="caption" tone="textMuted" style={{ marginTop: 6 }}>
             {avg7.days
-              ? tr(`ккал/ден · ${avg7.days} дни`, `kcal/day · ${avg7.days} ${avg7.days === 1 ? 'day' : 'days'}`)
+              ? tr('ккал/ден · {n} {n|ден|дни}', 'kcal/day · {n} {n|day|days}', { n: avg7.days })
               : tr('още няма дни', 'no days yet')}
           </Txt>
         </Card>

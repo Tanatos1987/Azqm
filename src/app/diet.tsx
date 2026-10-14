@@ -22,7 +22,7 @@ export default function DietScreen() {
     const diet = getDiet(id);
     const apply = async () => {
       await applyDiet(id);
-      toast.show(diet.noCalories ? tr(`Режим: ${diet.name}`, `Plan: ${diet.name}`) : tr(`Режим: ${diet.name}. Целите са преизчислени.`, `Plan: ${diet.name}. Your targets have been recalculated.`));
+      toast.show(diet.noCalories ? tr('Режим: {diet}', 'Plan: {diet}', { diet: diet.name }) : tr('Режим: {diet}. Целите са преизчислени.', 'Plan: {diet}. Your targets have been recalculated.', { diet: diet.name }));
       router.back();
     };
     if (diet.warning) {

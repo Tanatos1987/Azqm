@@ -90,8 +90,9 @@ export function macroChecks(avg: Nutrients, profile: UserProfile | null, diet: D
     out.push({
       kind: 'warning',
       text: tr(
-        `Средният прием (${Math.round(avg.kcal)} ккал) е под базовия метаболизъм (${Math.round(bmr)} ккал). Дълго така може да забави метаболизма и да стопи мускули.`,
-        `Your average intake (${Math.round(avg.kcal)} kcal) is below your basal metabolic rate (${Math.round(bmr)} kcal). Over time this can slow your metabolism and cost muscle.`
+        'Средният прием ({intake} ккал) е под базовия метаболизъм ({bmr} ккал). Дълго така може да забави метаболизма и да стопи мускули.',
+        'Your average intake ({intake} kcal) is below your basal metabolic rate ({bmr} kcal). Over time this can slow your metabolism and cost muscle.',
+        { intake: Math.round(avg.kcal), bmr: Math.round(bmr) }
       ),
     });
   }
@@ -101,8 +102,9 @@ export function macroChecks(avg: Nutrients, profile: UserProfile | null, diet: D
       out.push({
         kind: 'warning',
         text: tr(
-          `Протеинът е ${formatNumber(perKg, 1, 1)} г/кг — под минимума от 0,8 г на кг телесно тегло.`,
-          `Protein is ${formatNumber(perKg, 1, 1)} g/kg — below the minimum of 0.8 g per kg of body weight.`
+          'Протеинът е {perKg} г/кг — под минимума от 0,8 г на кг телесно тегло.',
+          'Protein is {perKg} g/kg — below the minimum of 0.8 g per kg of body weight.',
+          { perKg: formatNumber(perKg, 1, 1) }
         ),
       });
     }
@@ -112,18 +114,18 @@ export function macroChecks(avg: Nutrients, profile: UserProfile | null, diet: D
     out.push({
       kind: 'warning',
       text: tr(
-        `Средно ${Math.round(carbs)} г нетни въглехидрати — над границата от ${diet.carbCapG} г за режима „${diet.name}“.`,
-        `On average ${Math.round(carbs)} g net carbs — above the ${diet.carbCapG} g limit for the “${diet.name}” diet.`
+        'Средно {carbs} г нетни въглехидрати — над границата от {cap} г за режима „{diet}“.',
+        'On average {carbs} g net carbs — above the {cap} g limit for the “{diet}” diet.',
+        { carbs: Math.round(carbs), cap: diet.carbCapG, diet: diet.name }
       ),
     });
   }
   if (goals.calories > 0 && avg.kcal > goals.calories * 1.1) {
     out.push({
       kind: 'info',
-      text: tr(
-        `Средно приемаш с ${Math.round(avg.kcal - goals.calories)} ккал повече от дневната цел.`,
-        `On average you eat ${Math.round(avg.kcal - goals.calories)} kcal more than your daily goal.`
-      ),
+      text: tr('Средно приемаш с {kcal} ккал повече от дневната цел.', 'On average you eat {kcal} kcal more than your daily goal.', {
+        kcal: Math.round(avg.kcal - goals.calories),
+      }),
     });
   }
   return out;

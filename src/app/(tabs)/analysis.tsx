@@ -201,8 +201,9 @@ export default function AnalysisScreen() {
                 <SplitBar label={tr('Цел', 'Goal')} p={diet.split.protein} f={diet.split.fat} c={diet.split.carbs} />
                 <Txt v="caption" tone="textMuted" style={{ marginTop: 6 }}>
                   {tr(
-                    `Дял от калориите: синьо — протеин, оранжево — мазнини, розово — въглехидрати. Цел: „${diet.name}“.`,
-                    `Share of calories: blue — protein, orange — fat, pink — carbs. Goal: “${diet.name}”.`
+                    'Дял от калориите: синьо — протеин, оранжево — мазнини, розово — въглехидрати. Цел: „{diet}“.',
+                    'Share of calories: blue — protein, orange — fat, pink — carbs. Goal: “{diet}”.',
+                    { diet: diet.name }
                   )}
                 </Txt>
               </>
@@ -222,7 +223,7 @@ export default function AnalysisScreen() {
             </Card>
           )}
 
-          <SectionHeader title={low.length ? tr(`Нуждаеш се от повече (${low.length})`, `You need more (${low.length})`) : tr('Нуждаеш се от повече', 'You need more')} />
+          <SectionHeader title={low.length ? tr('Нуждаеш се от повече ({count})', 'You need more ({count})', { count: low.length }) : tr('Нуждаеш се от повече', 'You need more')} />
           {low.length === 0 ? (
             <Card>
               <Txt tone="success">
@@ -233,7 +234,7 @@ export default function AnalysisScreen() {
             low.map((v) => <LowCard key={v.key} v={v} dietName={diet.name} sources={sourcesByKey.get(v.key) ?? []} />)
           )}
 
-          <SectionHeader title={high.length ? tr(`Приемаш твърде много (${high.length})`, `Too much (${high.length})`) : tr('Приемаш твърде много', 'Too much')} />
+          <SectionHeader title={high.length ? tr('Приемаш твърде много ({count})', 'Too much ({count})', { count: high.length }) : tr('Приемаш твърде много', 'Too much')} />
           {high.length === 0 ? (
             <Card>
               <Txt tone="success">{tr('Нищо не надвишава горните граници. 👍', 'Nothing goes over the upper limits. 👍')}</Txt>
@@ -275,8 +276,9 @@ export default function AnalysisScreen() {
               <View style={{ flex: 1, gap: 6 }}>
                 <Txt v="small" tone="textMuted">
                   {tr(
-                    `Пълни данни за витамини и минерали има за ${Math.round(stats.microCoverage * 100)}% от калориите в периода. Храните от снимка, баркод или ръчно въвеждане съдържат само калории и макроси, затова реалният прием на микронутриенти може да е по-висок.`,
-                    `Full vitamin and mineral data covers ${Math.round(stats.microCoverage * 100)}% of the calories in this period. Foods from a photo, barcode or manual entry only have calories and macros, so your real micronutrient intake may be higher.`
+                    'Пълни данни за витамини и минерали има за {pct}% от калориите в периода. Храните от снимка, баркод или ръчно въвеждане съдържат само калории и макроси, затова реалният прием на микронутриенти може да е по-висок.',
+                    'Full vitamin and mineral data covers {pct}% of the calories in this period. Foods from a photo, barcode or manual entry only have calories and macros, so your real micronutrient intake may be higher.',
+                    { pct: Math.round(stats.microCoverage * 100) }
                   )}
                 </Txt>
                 <Txt v="small" tone="textMuted">
@@ -358,7 +360,7 @@ function LowCard({ v, sources, dietName }: { v: NutrientVerdict; sources: Return
           <Row gap={6}>
             <LeafIcon size={16} color={t.c.success} />
             <Txt v="caption" tone="success" style={{ fontWeight: '700' }}>
-              {tr(`Добри източници, подходящи за „${dietName}“:`, `Good sources that suit “${dietName}”:`)}
+              {tr('Добри източници, подходящи за „{diet}“:', 'Good sources that suit “{diet}”:', { diet: dietName })}
             </Txt>
           </Row>
           {sources.map((src) => (

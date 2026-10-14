@@ -1,4 +1,5 @@
 import React from 'react';
+import { Text } from 'react-native';
 import { Tabs } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { AddIcon, AnalysisIcon, FastingIcon, ProgressIcon, TodayIcon } from '@/components/icons';
@@ -25,7 +26,18 @@ export default function TabsLayout() {
           paddingTop: 6,
           paddingBottom: Math.max(insets.bottom, 8),
         },
-        tabBarLabelStyle: { fontFamily: FONT, fontSize: 12 * Math.min(t.scale, 1.15), fontWeight: '600' },
+        // Five tabs share the width: a long translation ("Hinzufügen") shrinks instead of being cut off.
+        tabBarLabel: ({ color, children }) => (
+          <Text
+            numberOfLines={1}
+            adjustsFontSizeToFit
+            minimumFontScale={0.7}
+            maxFontSizeMultiplier={1.4}
+            style={{ fontFamily: FONT, fontSize: 12 * Math.min(t.scale, 1.15), fontWeight: '600', color }}
+          >
+            {children}
+          </Text>
+        ),
         sceneStyle: { backgroundColor: t.c.bg },
       }}
     >

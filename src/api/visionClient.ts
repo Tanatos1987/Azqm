@@ -1,4 +1,4 @@
-import { getLang, tr } from '@/i18n';
+import { getLang, languageInfo, tr } from '@/i18n';
 import type { VisionAnalysisResult, VisionProvider } from '@/types';
 
 interface AnalyzeParams {
@@ -22,10 +22,11 @@ const SYSTEM_PROMPT_BG = `Ти си опитен нутриционист. Ан�
 Давай реалистични, консервативни оценки на база типични плътности на калории и видимия обем.
 Ако не разпознаваш храна на снимката, върни foodName "Неразпозната храна" и нулеви стойности за всичко останало.`;
 
-const SYSTEM_PROMPT_EN = `You are an experienced nutritionist. Analyze the photo of food
+/** English instructions for every other language; the food name comes back in `language`. */
+const systemPromptIn = (language: string, unrecognized: string) => `You are an experienced nutritionist. Analyze the photo of food
 and return ONLY a valid JSON object, with no markdown formatting and no explanations, with exactly these fields:
 {
-  "foodName": string,       // short name of the recognized food, in English
+  "foodName": string,       // short name of the recognized food, in ${language}
   "estimatedGrams": number, // estimated total weight of the portion in grams, based on the visible volume
   "calories": number,       // total kilocalories for the whole portion
   "protein": number,        // grams of protein for the whole portion
@@ -34,10 +35,11 @@ and return ONLY a valid JSON object, with no markdown formatting and no explanat
   "fiber": number           // dietary fiber in grams for the whole portion
 }
 Give realistic, conservative estimates based on typical calorie densities and the visible volume.
-If you don't recognize any food in the photo, return foodName "Unrecognized food" and zero for everything else.`;
+If you don't recognize any food in the photo, return foodName "${unrecognized}" and zero for everything else.`;
 
 /** The prompt follows the app language so the food name comes back in it. */
-const systemPrompt = () => (getLang() === 'en' ? SYSTEM_PROMPT_EN : SYSTEM_PROMPT_BG);
+const systemPrompt = () =>
+  getLang() === 'bg' ? SYSTEM_PROMPT_BG : systemPromptIn(languageInfo().english, tr('Неразпозната храна', 'Unrecognized food'));
 const userPrompt = () => tr('Анализирай тази снимка на храна.', 'Analyze this photo of food.');
 
 export async function analyzeFoodPhoto({ provider, apiKey, model, base64Image }: AnalyzeParams): Promise<VisionAnalysisResult> {

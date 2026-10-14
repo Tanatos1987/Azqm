@@ -6,7 +6,7 @@
  */
 import type { FoodCategory, FoodItem, FoodTag, Nutrients, Portion } from '@/types';
 import { FOOD_DATA, NUTRIENT_KEYS } from './foods.generated';
-import { getLang, tr } from '@/i18n';
+import { foodName, getLang, tr, type Lang } from '@/i18n';
 
 export const FOOD_CATEGORIES: { key: FoodCategory; readonly label: string; emoji: string }[] = (
   [
@@ -70,7 +70,7 @@ export const FOODS: FoodItem[] = FOOD_DATA.map(([id, nameBg, nameEn, category, t
   return {
     id,
     get name() {
-      return tr(nameBg, nameEn);
+      return foodName(id, nameBg, nameEn);
     },
     nameBg,
     nameEn,
@@ -125,12 +125,24 @@ function latinToCyrillic(word: string): string {
   return out;
 }
 
+/** Latin letters with accents → plain letters, so "kase" finds "Käse" and "cafe" finds "café". */
+const FOLD: Record<string, string> = {
+  à: 'a', á: 'a', â: 'a', ã: 'a', ä: 'a', å: 'a', æ: 'ae', ç: 'c', è: 'e', é: 'e', ê: 'e', ë: 'e', ì: 'i', í: 'i', î: 'i', ï: 'i',
+  ı: 'i', ñ: 'n', ò: 'o', ó: 'o', ô: 'o', õ: 'o', ö: 'o', ø: 'o', œ: 'oe', ù: 'u', ú: 'u', û: 'u', ü: 'u', ý: 'y', ÿ: 'y', ß: 'ss',
+  ğ: 'g', ş: 's', ѝ: 'и', ё: 'е',
+  // "İ".toLowerCase() is "i" + a combining dot above
+  '\u0307': '',
+};
+const FOLD_RE = new RegExp(`[${Object.keys(FOLD).join('')}]`, 'g');
+
+/** Lower-cased text → accents folded (Cyrillic letters other than ѝ and ё stay as they are). */
+function fold(lower: string): string {
+  return lower.replace(FOLD_RE, (c) => FOLD[c]);
+}
+
 export function normalize(text: string): string {
-  return text
-    .toLowerCase()
-    .replace(/ѝ/g, 'и')
-    .replace(/ё/g, 'е')
-    .replace(/[.,;:()"'„“%/\\-]+/g, ' ')
+  return fold(text.toLowerCase())
+    .replace(/[.,;:()"'„“”«»‘’¿¡%/\\-]+/g, ' ')
     .replace(/\s+/g, ' ')
     .trim();
 }
@@ -147,45 +159,37 @@ function queryWords(query: string): string[][] {
     });
 }
 
-const SEARCH_TEXT = new WeakMap<FoodItem, string>();
-function searchTextOf(f: FoodItem): string {
-  let t = SEARCH_TEXT.get(f);
-  if (!t) {
-    t = normalize([f.nameBg ?? f.name, ...f.aliases].join(' '));
-    SEARCH_TEXT.set(f, t);
-  }
-  return t;
+/** A per-food string derived from the name in the app language, cached per language. */
+function perLanguage(make: (f: FoodItem) => string): (f: FoodItem) => string {
+  const byLang = new Map<Lang, WeakMap<FoodItem, string>>();
+  return (f) => {
+    const lang = getLang();
+    let cache = byLang.get(lang);
+    if (!cache) {
+      cache = new WeakMap();
+      byLang.set(lang, cache);
+    }
+    let value = cache.get(f);
+    if (value === undefined) {
+      value = make(f);
+      cache.set(f, value);
+    }
+    return value;
+  };
 }
 
-/** Per-language caches: `name` follows the app language, so its derived strings are cached per language. */
-const NAME_TEXT = { bg: new WeakMap<FoodItem, string>(), en: new WeakMap<FoodItem, string>() };
-const SORT_KEY = { bg: new WeakMap<FoodItem, string>(), en: new WeakMap<FoodItem, string>() };
+/** Search covers the Bulgarian and English names, the name in the app language and the aliases. */
+const searchTextOf = perLanguage((f) => normalize([f.nameBg ?? f.name, f.nameEn ?? '', f.name, ...f.aliases].join(' ')));
 
-function nameTextOf(f: FoodItem): string {
-  const cache = NAME_TEXT[getLang()];
-  let t = cache.get(f);
-  if (t === undefined) {
-    t = normalize(f.name);
-    cache.set(f, t);
-  }
-  return t;
-}
+const nameTextOf = perLanguage((f) => normalize(f.name));
 
 /**
- * Alphabetical key. Bulgarian and English letters are in alphabet order in Unicode, so comparing lower-cased
- * names with `<` gives the same order as the locale collator (checked on all built-in foods). localeCompare
- * builds a new collator on every call in Hermes, and sorting the full list calls it thousands of times.
+ * Alphabetical key. Once accents are folded (ä → a), the letters of every app language are in alphabet order in
+ * Unicode, so comparing keys with `<` matches the locale collator closely (checked on all built-in foods).
+ * localeCompare builds a new collator on every call in Hermes, and sorting the full list calls it thousands of times.
  * Typographic quotes become '"' so „Добруджа“ sorts before the letters, as the collator puts it.
  */
-function sortKeyOf(f: FoodItem): string {
-  const cache = SORT_KEY[getLang()];
-  let k = cache.get(f);
-  if (k === undefined) {
-    k = f.name.toLowerCase().replace(/[„“”«»]/g, '"');
-    cache.set(f, k);
-  }
-  return k;
-}
+const sortKeyOf = perLanguage((f) => fold(f.name.toLowerCase()).replace(/[„“”«»]/g, '"'));
 
 function byName(a: FoodItem, b: FoodItem): number {
   const ka = sortKeyOf(a);
@@ -244,7 +248,7 @@ export function searchFoods(
 /** Portions to offer for a food: its own household portions first, then common gram amounts. */
 export function portionOptions(food: FoodItem): Portion[] {
   const grams = new Set(food.portions.map((p) => p.grams));
-  const generic = [50, 100, 150, 200, 250].filter((g) => !grams.has(g)).map((g) => ({ label: tr(`${g} г`, `${g} g`), grams: g }));
+  const generic = [50, 100, 150, 200, 250].filter((g) => !grams.has(g)).map((g) => ({ label: tr('{g} г', '{g} g', { g }), grams: g }));
   return [...food.portions, ...generic];
 }
 

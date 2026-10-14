@@ -72,7 +72,7 @@ export function formatDuration(ms: number, withSeconds = true): string {
   const m = Math.floor((totalSeconds % 3600) / 60);
   const s = totalSeconds % 60;
   const pad = (n: number) => String(n).padStart(2, '0');
-  return withSeconds ? `${pad(h)}:${pad(m)}:${pad(s)}` : tr(`${h} ч ${pad(m)} мин`, `${h} h ${pad(m)} min`);
+  return withSeconds ? `${pad(h)}:${pad(m)}:${pad(s)}` : tr('{h} ч {m} мин', '{h} h {m} min', { h, m: pad(m) });
 }
 
 /** Commonly described stages of a fast (approximate — they vary from person to person). */

@@ -28,7 +28,7 @@ const GOALS: { hours: number; readonly label: string }[] = [
   ...[24, 36, 48, 72].map((hours) => ({
     hours,
     get label() {
-      return tr(`${hours} ч`, `${hours} h`);
+      return tr('{h} ч', '{h} h', { h: hours });
     },
   })),
 ];
@@ -85,7 +85,9 @@ export default function FastingScreen() {
     if (timer.isFasting) {
       Alert.alert(
         tr('Да прекратя ли поста?', 'End the fast?'),
-        tr(`Продължителност: ${formatDuration(timer.elapsedMs, false)}. Ще се запише в историята.`, `Duration: ${formatDuration(timer.elapsedMs, false)}. It will be saved to your history.`),
+        tr('Продължителност: {duration}. Ще се запише в историята.', 'Duration: {duration}. It will be saved to your history.', {
+          duration: formatDuration(timer.elapsedMs, false),
+        }),
         [
           { text: tr('Отказ', 'Cancel'), style: 'cancel' },
           { text: tr('Прекрати', 'End'), style: 'destructive', onPress: () => timer.stop() },
@@ -123,7 +125,7 @@ export default function FastingScreen() {
   return (
     <Screen
       title={tr('Пост', 'Fasting')}
-      subtitle={tr(`Интервално хранене и гладуване · цел ${timer.goalHours} ч`, `Intermittent and extended fasting · goal ${timer.goalHours} h`)}
+      subtitle={tr('Интервално хранене и гладуване · цел {h} ч', 'Intermittent and extended fasting · goal {h} h', { h: timer.goalHours })}
       scroll
     >
       <Card style={{ alignItems: 'center', paddingVertical: 24 }}>
@@ -135,7 +137,7 @@ export default function FastingScreen() {
             {timer.isFasting
               ? timer.isGoalReached
                 ? tr('Целта е постигната! 🎉', 'Goal reached! 🎉')
-                : tr(`остават ${formatDuration(timer.remainingMs, false)}`, `${formatDuration(timer.remainingMs, false)} to go`)
+                : tr('остават {duration}', '{duration} to go', { duration: formatDuration(timer.remainingMs, false) })
               : tr('няма активен пост', 'no active fast')}
           </Txt>
         </ProgressRing>
@@ -152,7 +154,7 @@ export default function FastingScreen() {
             </Txt>
             <Row gap={8} style={{ justifyContent: 'center' }}>
               {[1, 2, 3, 4].map((h) => (
-                <Chip key={h} label={tr(`${h} ч`, `${h} h`)} onPress={() => timer.start(h)} />
+                <Chip key={h} label={tr('{h} ч', '{h} h', { h })} onPress={() => timer.start(h)} />
               ))}
             </Row>
           </View>
@@ -252,7 +254,7 @@ export default function FastingScreen() {
                   <View style={{ flex: 1 }}>
                     <Txt v="smallStrong">{formatDayMonth(new Date(f.startIso))}</Txt>
                     <Txt v="caption" tone="textMuted">
-                      {tr(`цел ${f.goalHours} ч`, `goal ${f.goalHours} h`)}
+                      {tr('цел {h} ч', 'goal {h} h', { h: f.goalHours })}
                     </Txt>
                   </View>
                   <Txt v="bodyStrong" tone={ok ? 'success' : 'text'} style={{ marginRight: 12 }}>

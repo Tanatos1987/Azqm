@@ -322,3 +322,13 @@ export function PaletteIcon({ size = D.size, color = D.color, strokeWidth = D.st
     </Svg>
   );
 }
+
+export function GlobeIcon({ size = D.size, color = D.color, strokeWidth = D.strokeWidth }: IconProps) {
+  return (
+    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+      <Circle cx={12} cy={12} r={9} {...line(color, strokeWidth)} />
+      <Path d="M12 3c2.5 2.6 3.8 5.6 3.8 9s-1.3 6.4-3.8 9c-2.5-2.6-3.8-5.6-3.8-9S9.5 5.6 12 3z" {...line(color, strokeWidth)} />
+      <Line x1={3} y1={12} x2={21} y2={12} {...line(color, strokeWidth)} />
+    </Svg>
+  );
+}

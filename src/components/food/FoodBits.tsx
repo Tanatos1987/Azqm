@@ -20,7 +20,7 @@ export function FitBadge({ fit, diet }: { fit: FoodFit; diet: Diet }) {
     <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, alignSelf: 'flex-start', backgroundColor: `${color}22`, paddingHorizontal: 10, paddingVertical: 5, borderRadius: 12 }}>
       <Dot color={color} size={8} />
       <Txt v="caption" color={color} style={{ fontWeight: '700' }}>
-        {FIT_LABEL[fit]} {tr(`за „${diet.name}“`, `for “${diet.name}”`)}
+        {FIT_LABEL[fit]} {tr('за „{diet}“', 'for “{diet}”', { diet: diet.name })}
       </Txt>
     </View>
   );

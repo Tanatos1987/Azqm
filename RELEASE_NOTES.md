@@ -3,6 +3,7 @@
 **Инсталиране:** само от Google Play, през поканата за изпитатели. `Azqm.aab` е за качване в Play Console и не се инсталира на телефона.
 
 ### Какво е новото
+- **8 езика:** български, английски, немски, испански, френски, италиански, руски и турски. Преведени са всички екрани, 14-те режима, съветите и над 1000 храни; числата и датите са във формата на съответния език. Езикът се сменя с бутона 🌐 горе в Настройки (и в Настройки → Изглед → Език), а при нова инсталация се избира от телефона.
 - **По-бързо превключване между разделите.** Числата и датите вече се форматират без бавните системни функции на Android, списъкът с храни се подрежда без тях, а таймерът на поста не анимира кръга всяка секунда.
 - **Нов шрифт: Manrope.** На телефон с български език буквите са в българската им форма, както в приложенията на Google.
 - **Поправено:** бутоните „Подходящи / Последни / Любими“ в „Добави“ се показваха отрязани наполовина.
@@ -10,6 +11,7 @@
 - По-малък и оптимизиран код (R8), по изискване на Google Play.
 
 ### What's new
+- **8 languages:** Bulgarian, English, German, Spanish, French, Italian, Russian and Turkish. Every screen, the 14 diets, the tips and 1000+ foods are translated; numbers and dates follow the language. Switch with the 🌐 button at the top of Settings (or Settings → Appearance → Language); a new install picks the phone's language.
 - **Faster switching between tabs.** Numbers and dates no longer go through Android's slow system formatters, neither does sorting the food list, and the fasting ring no longer animates every second.
 - **New font: Manrope.**
 - **Fixed:** the "Suitable / Recent / Favorites" chips on the Add tab were cut in half.

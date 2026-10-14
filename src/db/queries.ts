@@ -188,7 +188,8 @@ export async function saveCustomFood(db: SQLiteDatabase, food: { id?: string; na
     `INSERT OR REPLACE INTO custom_foods (${cols.join(', ')}) VALUES (${cols.map(() => '?').join(', ')})`,
     id,
     food.name,
-    food.portion?.label ?? null,
+    // The app's own "1 serving" is stored in Bulgarian, whatever the UI language, so customPortion() can translate it.
+    food.portion ? (food.portion.label === tr('1 порция', '1 serving') ? '1 порция' : food.portion.label) : null,
     food.portion?.grams ?? null,
     food.hasMicros ? 1 : 0,
     new Date().toISOString(),

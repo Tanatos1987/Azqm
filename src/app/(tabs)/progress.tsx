@@ -54,7 +54,7 @@ export default function ProgressScreen() {
   };
 
   const removeWeight = (w: WeightEntry) =>
-    Alert.alert(tr('Изтриване', 'Delete'), tr(`Да изтрия ли записа ${w.weightKg} кг от ${formatDateLabel(w.date)}?`, `Delete the ${w.weightKg} kg entry from ${formatDateLabel(w.date)}?`), [
+    Alert.alert(tr('Изтриване', 'Delete'), tr('Да изтрия ли записа {kg} кг от {date}?', 'Delete the {kg} kg entry from {date}?', { kg: formatNumber(w.weightKg, 1), date: formatDateLabel(w.date) }), [
       { text: tr('Отказ', 'Cancel'), style: 'cancel' },
       {
         text: tr('Изтрий', 'Delete'),
@@ -70,8 +70,9 @@ export default function ProgressScreen() {
     Alert.alert(
       tr('Преизчисляване', 'Recalculate'),
       tr(
-        `Да изчисля ли наново дневните цели с текущото тегло ${currentWeight} кг? Ръчно зададените цели ще бъдат заменени.`,
-        `Recalculate your daily goals with your current weight of ${currentWeight} kg? Goals you set manually will be replaced.`
+        'Да изчисля ли наново дневните цели с текущото тегло {kg} кг? Ръчно зададените цели ще бъдат заменени.',
+        'Recalculate your daily goals with your current weight of {kg} kg? Goals you set manually will be replaced.',
+        { kg: formatNumber(currentWeight, 1) }
       ),
       [
         { text: tr('Отказ', 'Cancel'), style: 'cancel' },
@@ -119,7 +120,7 @@ export default function ProgressScreen() {
             )}
             {toGoal != null && toGoal > 0 && (
               <Txt v="small" tone="textMuted">
-                {tr(`Остават ${formatNumber(toGoal, 1)} кг`, `${formatNumber(toGoal, 1)} kg to go`)}
+                {tr('Остават {kg} кг', '{kg} kg to go', { kg: formatNumber(toGoal, 1) })}
               </Txt>
             )}
             {toGoal != null && toGoal <= 0 && (

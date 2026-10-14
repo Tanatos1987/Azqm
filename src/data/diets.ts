@@ -1,5 +1,5 @@
 import type { FoodItem, FoodTag } from '@/types';
-import { getLang, tr } from '@/i18n';
+import { tr, trList } from '@/i18n';
 
 export type DietId =
   | 'keto'
@@ -47,8 +47,8 @@ export interface Diet {
   fit: (food: FoodItem) => FoodFit;
 }
 
-/** Pick the Bulgarian or English list for the current language (texts are getters below, so they follow a language switch). */
-const pick = <T,>(bg: T, en: T): T => (getLang() === 'en' ? en : bg);
+/** The list in the current language (texts are getters below, so they follow a language switch). */
+const pick = (bg: string[], en: string[]): string[] => trList(bg, en);
 
 // ---- helpers for the fit rules -------------------------------------------------
 

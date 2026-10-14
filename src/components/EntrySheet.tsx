@@ -50,7 +50,7 @@ export function EntrySheet({ entry, onClose }: { entry: FoodEntry | null; onClos
   if (!entry || !food) return <Sheet visible={false} onClose={onClose}>{null}</Sheet>;
 
   const remove = () =>
-    Alert.alert(tr('Изтриване', 'Delete'), tr(`Да изтрия ли „${entryDisplayName(entry)}“?`, `Delete “${entryDisplayName(entry)}”?`), [
+    Alert.alert(tr('Изтриване', 'Delete'), tr('Да изтрия ли „{name}“?', 'Delete “{name}”?', { name: entryDisplayName(entry) }), [
       { text: tr('Отказ', 'Cancel'), style: 'cancel' },
       {
         text: tr('Изтрий', 'Delete'),
@@ -68,7 +68,7 @@ export function EntrySheet({ entry, onClose }: { entry: FoodEntry | null; onClos
     const { id: _id, ...rest } = entry;
     await insertFoodEntry(db, { ...rest, date, timeIso: entryTimeIso(date) });
     bump();
-    toast.show(tr(`Добавено отново за днес: ${entryDisplayName(entry)}`, `Logged again for today: ${entryDisplayName(entry)}`));
+    toast.show(tr('Добавено отново за днес: {name}', 'Logged again for today: {name}', { name: entryDisplayName(entry) }));
     onClose();
   };
 

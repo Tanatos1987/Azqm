@@ -57,7 +57,7 @@ export function BarcodeScan() {
       if (!found) {
         Alert.alert(
           tr('Продуктът не е намерен', 'Product not found'),
-          tr(`Баркод ${data} го няма в OpenFoodFacts. Въведи храната ръчно.`, `Barcode ${data} isn't in OpenFoodFacts. Enter the food manually.`),
+          tr('Баркод {code} го няма в OpenFoodFacts. Въведи храната ръчно.', "Barcode {code} isn't in OpenFoodFacts. Enter the food manually.", { code: data }),
         );
         setScannedCode(null);
         return;

@@ -7,9 +7,11 @@ import { useProfile } from '@/context/ProfileContext';
 import { useSettings } from '@/context/SettingsContext';
 import { useTween } from '@/hooks/useTween';
 import { getDiet, type DietId } from '@/data/diets';
-import { useI18n, type Lang } from '@/i18n';
+import { useI18n } from '@/i18n';
+import { LanguageChips } from '@/components/LanguagePicker';
 import { makeStyles, useTheme } from '@/theme/ThemeContext';
 import { ACTIVITY_LEVELS, WEIGHT_GOALS, bmiCategory, bmiOf, computeMetrics, healthyWeightRange } from '@/utils/bodyMetrics';
+import { formatNumber } from '@/utils/date';
 import type { ActivityLevel, Sex, UserProfile, WeightGoal } from '@/types';
 
 interface ProfileFormProps {
@@ -27,7 +29,7 @@ export function ProfileForm({ initial, onSaved, askDiet, askLanguage }: ProfileF
   const t = useTheme();
   const s = useStyles();
   const { tr } = useI18n();
-  const { dietId: currentDiet, language, update } = useSettings();
+  const { dietId: currentDiet } = useSettings();
   const [step, setStep] = useState<'form' | 'diet' | 'result'>('form');
   const [sex, setSex] = useState<Sex>(initial?.sex ?? 'female');
   const [age, setAge] = useState(initial ? String(initial.age) : '');
@@ -81,7 +83,7 @@ export function ProfileForm({ initial, onSaved, askDiet, askLanguage }: ProfileF
             setStep('result');
           }}
         />
-        <Button label={tr(`Продължи с „${getDiet(dietId).name}“`, `Continue with “${getDiet(dietId).name}”`)} onPress={() => setStep('result')} style={{ marginTop: 8 }} />
+        <Button label={tr('Продължи с „{diet}“', 'Continue with “{diet}”', { diet: getDiet(dietId).name })} onPress={() => setStep('result')} style={{ marginTop: 8 }} />
         <Button label={tr('Назад', 'Back')} variant="ghost" onPress={() => setStep('form')} />
       </ScrollView>
     );
@@ -98,15 +100,7 @@ export function ProfileForm({ initial, onSaved, askDiet, askLanguage }: ProfileF
           <Txt v="label" tone="textMuted" style={{ marginBottom: 8 }}>
             {tr('Език', 'Language')}
           </Txt>
-          {/* Option labels stay in their own language in both modes. */}
-          <Segmented<Lang>
-            value={language}
-            onChange={(v) => update({ language: v })}
-            options={[
-              { label: 'Български', value: 'bg' },
-              { label: 'English', value: 'en' },
-            ]}
-          />
+          <LanguageChips />
         </Card>
       )}
 
@@ -223,8 +217,8 @@ function ProfileResult({ profile, dietId, saveDiet, onBack, onSaved }: { profile
             onChange={setPhase}
             style={{ alignSelf: 'stretch', marginBottom: 8 }}
             options={[
-              { label: tr(`Сега · ${profile.weightKg} кг`, `Now · ${profile.weightKg} kg`), value: 'now' },
-              { label: tr(`Цел · ${Math.round(goalWeight!)} кг`, `Goal · ${Math.round(goalWeight!)} kg`), value: 'goal' },
+              { label: tr('Сега · {kg} кг', 'Now · {kg} kg', { kg: formatNumber(profile.weightKg, 1) }), value: 'now' },
+              { label: tr('Цел · {kg} кг', 'Goal · {kg} kg', { kg: Math.round(goalWeight!) }), value: 'goal' },
             ]}
           />
         )}
@@ -234,10 +228,11 @@ function ProfileResult({ profile, dietId, saveDiet, onBack, onSaved }: { profile
           {category.label}
         </Txt>
         <Txt v="small" tone="textMuted" center style={{ marginTop: 6 }}>
-          {tr(
-            `Здравословно тегло за ръст ${profile.heightCm} см: ${Math.round(healthyMin)}–${Math.round(healthyMax)} кг`,
-            `Healthy weight for ${profile.heightCm} cm: ${Math.round(healthyMin)}–${Math.round(healthyMax)} kg`
-          )}
+          {tr('Здравословно тегло за ръст {height} см: {min}–{max} кг', 'Healthy weight for {height} cm: {min}–{max} kg', {
+            height: profile.heightCm,
+            min: Math.round(healthyMin),
+            max: Math.round(healthyMax),
+          })}
         </Txt>
       </Card>
 

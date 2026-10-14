@@ -11,9 +11,11 @@ import { useDataRefresh } from '@/context/DataRefreshContext';
 import { useToast } from '@/context/ToastContext';
 import { getDiet } from '@/data/diets';
 import { importDatabase, wipeDatabase } from '@/db/queries';
-import { useI18n, type Lang } from '@/i18n';
+import { useI18n } from '@/i18n';
+import { LanguageButton, LanguageRow } from '@/components/LanguagePicker';
 import { useTheme, type TextScaleKey, type ThemePref } from '@/theme/ThemeContext';
 import { ACTIVITY_LEVELS, computeMetrics } from '@/utils/bodyMetrics';
+import { formatNumber } from '@/utils/date';
 import { exportBackup, exportCsv, exportExcel, pickBackup } from '@/utils/export';
 import type { VisionProvider } from '@/types';
 
@@ -77,8 +79,9 @@ export default function SettingsScreen() {
         Alert.alert(
           tr('Възстановяване', 'Restore'),
           tr(
-            `Копието съдържа ${count} записа на храни. Всички сегашни данни ще бъдат заменени. Продължаваш ли?`,
-            `The backup contains ${count} food ${count === 1 ? 'entry' : 'entries'}. All current data will be replaced. Continue?`
+            'Копието съдържа {n} {n|запис|записа} на храни. Всички сегашни данни ще бъдат заменени. Продължаваш ли?',
+            'The backup contains {n} food {n|entry|entries}. All current data will be replaced. Continue?',
+            { n: count }
           ),
           [
             { text: tr('Отказ', 'Cancel'), style: 'cancel', onPress: () => resolve() },
@@ -131,6 +134,7 @@ export default function SettingsScreen() {
           <ChevronLeftIcon size={24} color={t.c.text} />
         </IconButton>
       }
+      right={<LanguageButton />}
     >
       <SectionHeader title={tr('Профил и режим', 'Profile and diet')} />
       <Card onPress={() => router.push('/profile')}>
@@ -139,10 +143,12 @@ export default function SettingsScreen() {
           <View style={{ flex: 1 }}>
             <Txt v="bodyStrong">
               {profile
-                ? tr(
-                    `${profile.sex === 'male' ? 'Мъж' : 'Жена'}, ${profile.age} г. · ${profile.heightCm} см · ${profile.weightKg} кг`,
-                    `${profile.sex === 'male' ? 'Male' : 'Female'}, ${profile.age} y · ${profile.heightCm} cm · ${profile.weightKg} kg`
-                  )
+                ? tr('{sex}, {age} г. · {height} см · {kg} кг', '{sex}, {age} y · {height} cm · {kg} kg', {
+                    sex: profile.sex === 'male' ? tr('Мъж', 'Male') : tr('Жена', 'Female'),
+                    age: profile.age,
+                    height: profile.heightCm,
+                    kg: formatNumber(profile.weightKg, 1),
+                  })
                 : tr('Няма профил', 'No profile')}
             </Txt>
             <Txt v="small" tone="textMuted">
@@ -170,15 +176,7 @@ export default function SettingsScreen() {
         <Txt v="label" tone="textMuted" style={{ marginBottom: 8 }}>
           {tr('Език', 'Language')}
         </Txt>
-        {/* Option labels stay in their own language in both modes. */}
-        <Segmented<Lang>
-          value={settings.language}
-          onChange={(v) => update({ language: v })}
-          options={[
-            { label: 'Български', value: 'bg' },
-            { label: 'English', value: 'en' },
-          ]}
-        />
+        <LanguageRow />
       </Card>
       <Card>
         <Txt v="label" tone="textMuted" style={{ marginBottom: 8 }}>

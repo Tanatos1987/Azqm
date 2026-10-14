@@ -104,7 +104,8 @@ export function Screen({ title, subtitle, right, left, children, scroll, scrollP
             {left}
             <View style={{ flex: 1 }}>
               {title ? (
-                <Txt v="h1" numberOfLines={1}>
+                // Long translations ("Lebensmittel hinzufügen") wrap to a second line, then shrink a little.
+                <Txt v="h1" numberOfLines={2} adjustsFontSizeToFit minimumFontScale={0.8}>
                   {title}
                 </Txt>
               ) : null}
@@ -187,7 +188,7 @@ export function Button({ label, variant = 'primary', icon, small, style, flex, d
       style={({ pressed }) => [s.button, small && s.buttonSmall, { backgroundColor: bg }, flex && { flex: 1 }, (pressed || disabled) && { opacity: disabled ? 0.45 : 0.8 }, style]}
     >
       {icon}
-      <Txt v={small ? 'smallStrong' : 'bodyStrong'} color={fg} numberOfLines={1}>
+      <Txt v={small ? 'smallStrong' : 'bodyStrong'} color={fg} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.75}>
         {label}
       </Txt>
     </Pressable>
@@ -235,7 +236,7 @@ export function Segmented<T extends string>({ options, value, onChange, style }:
         const active = o.value === value;
         return (
           <Pressable key={o.value} onPress={() => onChange(o.value)} style={[s.segment, active && { backgroundColor: t.c.accent }]}>
-            <Txt v="smallStrong" color={active ? t.c.onAccent : t.c.textMuted} numberOfLines={1} center>
+            <Txt v="smallStrong" color={active ? t.c.onAccent : t.c.textMuted} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.75} center>
               {o.label}
             </Txt>
           </Pressable>

@@ -56,12 +56,12 @@ function DietCard({ diet, selected, open, onToggle, onSelect, selectLabel }: { d
           <Txt v="small">{diet.description}</Txt>
           {diet.carbCapG != null && (
             <Txt v="smallStrong" tone="carbs">
-              {tr(`До ${diet.carbCapG} г нетни въглехидрати на ден`, `Up to ${diet.carbCapG} g net carbs a day`)}
+              {tr('До {g} г нетни въглехидрати на ден', 'Up to {g} g net carbs a day', { g: diet.carbCapG })}
             </Txt>
           )}
           {diet.fastingHours != null && (
             <Txt v="smallStrong" tone="accent">
-              {tr(`Таймерът за пост се настройва на ${diet.fastingHours} ч`, `The fasting timer is set to ${diet.fastingHours} h`)}
+              {tr('Таймерът за пост се настройва на {h} ч', 'The fasting timer is set to {h} h', { h: diet.fastingHours })}
             </Txt>
           )}
           <List title={tr('✅ Яж', '✅ Eat')} items={diet.eat} />

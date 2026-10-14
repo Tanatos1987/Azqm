@@ -39,7 +39,8 @@
     "lint": "expo lint",
     "typecheck": "tsc --noEmit",
     "foods:fetch": "node scripts/fetch-usda.mjs",
-    "foods:build": "node scripts/build-foods.mjs"
+    "foods:build": "node scripts/build-foods.mjs",
+    "i18n:check": "node scripts/i18n.mjs check"
   },
   "private": true
 }

@@ -4,7 +4,7 @@ import * as SecureStore from 'expo-secure-store';
 import type { DailyGoals, VisionProvider } from '@/types';
 import type { DietId } from '@/data/diets';
 import type { TextScaleKey, ThemePref } from '@/theme/ThemeContext';
-import { deviceLang, type Lang } from '@/i18n';
+import { deviceLang, isLang, type Lang } from '@/i18n';
 
 const SETTINGS_KEY = 'azqm_settings_v1';
 // expo-secure-store, not AsyncStorage: this is a credential, not app state.
@@ -60,7 +60,8 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
         const [stored, storedKey] = await Promise.all([AsyncStorage.getItem(SETTINGS_KEY), SecureStore.getItemAsync(API_KEY_STORE_KEY)]);
         if (stored) {
           // Installs from before 1.1.0 have no language saved — they keep Bulgarian.
-          const next = { ...DEFAULTS, ...JSON.parse(stored) };
+          const next: AppSettings = { ...DEFAULTS, ...JSON.parse(stored) };
+          if (!isLang(next.language)) next.language = deviceLang();
           latest.current = next;
           setSettings(next);
         } else {
