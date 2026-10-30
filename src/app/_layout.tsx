@@ -9,6 +9,7 @@ import { migrateDbIfNeeded } from '@/db/schema';
 import { SettingsProvider, useSettings } from '@/context/SettingsContext';
 import { DataRefreshProvider } from '@/context/DataRefreshContext';
 import { ProfileProvider, useProfile } from '@/context/ProfileContext';
+import { ProProvider } from '@/context/ProContext';
 import { SelectedDateProvider } from '@/context/SelectedDateContext';
 import { ToastProvider } from '@/context/ToastContext';
 import { ThemeProvider, useTheme } from '@/theme/ThemeContext';
@@ -43,7 +44,9 @@ export default function RootLayout() {
                 <ProfileProvider>
                   <SelectedDateProvider>
                     <ToastProvider>
-                      <RootNavigator />
+                      <ProProvider>
+                        <RootNavigator />
+                      </ProProvider>
                     </ToastProvider>
                   </SelectedDateProvider>
                 </ProfileProvider>
@@ -84,6 +87,10 @@ function RootNavigator() {
           <Stack.Screen name="settings" />
           <Stack.Screen name="diet" />
           <Stack.Screen name="profile" options={{ presentation: 'modal', animation: 'slide_from_bottom' }} />
+          <Stack.Screen name="support" />
+          <Stack.Screen name="progress-photos" />
+          <Stack.Screen name="progress-compare" />
+          <Stack.Screen name="progress-camera" options={{ presentation: 'fullScreenModal', animation: 'slide_from_bottom', contentStyle: { backgroundColor: '#000' } }} />
         </Stack.Protected>
         <Stack.Protected guard={!hasProfile}>
           <Stack.Screen name="onboarding" />

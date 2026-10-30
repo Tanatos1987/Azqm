@@ -10,6 +10,8 @@ import type {
   NewFoodEntry,
   NewHydrationEntry,
   Nutrients,
+  PhotoPose,
+  ProgressPhoto,
   WeightEntry,
 } from '@/types';
 import { emptyNutrients, fillNutrients, NUTRIENT_KEYS } from '@/data/nutrients';
@@ -224,6 +226,34 @@ export async function deleteWeightEntry(db: SQLiteDatabase, date: string) {
   await db.runAsync('DELETE FROM weight_entries WHERE date = ?', date);
 }
 
+// ---- progress photos ----------------------------------------------------------------
+
+function mapPhotoRow(row: any): ProgressPhoto {
+  return { id: row.id, date: row.date, timeIso: row.time_iso, pose: row.pose, file: row.file, width: row.width, height: row.height };
+}
+
+/** Oldest first. */
+export async function getProgressPhotos(db: SQLiteDatabase): Promise<ProgressPhoto[]> {
+  const rows = await db.getAllAsync('SELECT * FROM progress_photos ORDER BY date ASC, time_iso ASC');
+  return rows.map(mapPhotoRow);
+}
+
+export async function addProgressPhoto(db: SQLiteDatabase, p: { date: string; timeIso: string; pose: PhotoPose; file: string; width: number; height: number }) {
+  await db.runAsync(
+    'INSERT OR IGNORE INTO progress_photos (date, time_iso, pose, file, width, height) VALUES (?, ?, ?, ?, ?, ?)',
+    p.date,
+    p.timeIso,
+    p.pose,
+    p.file,
+    p.width,
+    p.height
+  );
+}
+
+export async function deleteProgressPhoto(db: SQLiteDatabase, id: number) {
+  await db.runAsync('DELETE FROM progress_photos WHERE id = ?', id);
+}
+
 // ---- hydration ----------------------------------------------------------------------
 
 function mapHydrationRow(row: any): HydrationEntry {
@@ -360,8 +390,10 @@ export async function importDatabase(db: SQLiteDatabase, data: BackupData) {
   });
 }
 
+/** Deletes every diary table and the progress photo rows (the caller deletes the photo files). */
 export async function wipeDatabase(db: SQLiteDatabase) {
   await db.withTransactionAsync(async () => {
     for (const t of BACKUP_TABLES) await db.runAsync(`DELETE FROM ${t}`);
+    await db.runAsync('DELETE FROM progress_photos');
   });
 }

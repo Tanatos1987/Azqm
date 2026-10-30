@@ -1,7 +1,7 @@
 import type { SQLiteDatabase } from 'expo-sqlite';
 import { NUTRIENT_KEYS } from '@/data/nutrients';
 
-const DB_VERSION = 1;
+const DB_VERSION = 2;
 
 export const nutrientColumn = (key: string) => `n_${key}`;
 const NUTRIENT_COLUMNS_SQL = NUTRIENT_KEYS.map((k) => `${nutrientColumn(k)} REAL NOT NULL DEFAULT 0`).join(',\n        ');
@@ -70,6 +70,22 @@ export async function migrateDbIfNeeded(db: SQLiteDatabase) {
         end_iso TEXT,
         goal_hours REAL NOT NULL
       );
+    `);
+  }
+
+  if (version < 2) {
+    // Progress photos (1.3.0). The images are files in the app's documents folder; rows hold the file names.
+    await db.execAsync(`
+      CREATE TABLE IF NOT EXISTS progress_photos (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        date TEXT NOT NULL,
+        time_iso TEXT NOT NULL,
+        pose TEXT NOT NULL,
+        file TEXT NOT NULL UNIQUE,
+        width INTEGER NOT NULL DEFAULT 0,
+        height INTEGER NOT NULL DEFAULT 0
+      );
+      CREATE INDEX IF NOT EXISTS idx_progress_photos_date ON progress_photos(date);
     `);
   }
 

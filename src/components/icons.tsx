@@ -332,3 +332,56 @@ export function GlobeIcon({ size = D.size, color = D.color, strokeWidth = D.stro
     </Svg>
   );
 }
+
+export function LockIcon({ size = D.size, color = D.color, strokeWidth = D.strokeWidth }: IconProps) {
+  return (
+    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+      <Rect x={5} y={10.5} width={14} height={10} rx={2.5} {...line(color, strokeWidth)} />
+      <Path d="M8 10.5V8a4 4 0 0 1 8 0v2.5" {...line(color, strokeWidth)} />
+      <Circle cx={12} cy={15.5} r={1.4} fill={color} />
+    </Svg>
+  );
+}
+
+export function HeartIcon({ size = D.size, color = D.color, strokeWidth = D.strokeWidth, filled }: IconProps & { filled?: boolean }) {
+  return (
+    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+      <Path d="M12 20s-7.5-4.6-7.5-10.2A4.3 4.3 0 0 1 12 7.1a4.3 4.3 0 0 1 7.5 2.7C19.5 15.4 12 20 12 20z" {...line(color, strokeWidth)} fill={filled ? color : 'none'} />
+    </Svg>
+  );
+}
+
+/** Switch between the front and back camera. */
+export function FlipCameraIcon({ size = D.size, color = D.color, strokeWidth = D.strokeWidth }: IconProps) {
+  return (
+    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+      <Path d="M4 12a8 8 0 0 1 13.7-5.6" {...line(color, strokeWidth)} />
+      <Polyline points="18.5,3 18.5,7 14.5,7" {...line(color, strokeWidth)} />
+      <Path d="M20 12a8 8 0 0 1-13.7 5.6" {...line(color, strokeWidth)} />
+      <Polyline points="5.5,21 5.5,17 9.5,17" {...line(color, strokeWidth)} />
+    </Svg>
+  );
+}
+
+export function TimerIcon({ size = D.size, color = D.color, strokeWidth = D.strokeWidth }: IconProps) {
+  return (
+    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+      <Circle cx={12} cy={13.5} r={7.5} {...line(color, strokeWidth)} />
+      <Line x1={12} y1={13.5} x2={12} y2={9.5} {...line(color, strokeWidth)} />
+      <Line x1={10} y1={3} x2={14} y2={3} {...line(color, strokeWidth)} />
+      <Line x1={18.5} y1={6} x2={17.2} y2={7.3} {...line(color, strokeWidth)} />
+    </Svg>
+  );
+}
+
+/** Two frames side by side with a divider: before / after. */
+export function CompareIcon({ size = D.size, color = D.color, strokeWidth = D.strokeWidth }: IconProps) {
+  return (
+    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+      <Rect x={3} y={5} width={18} height={14} rx={2.5} {...line(color, strokeWidth)} />
+      <Line x1={12} y1={2.5} x2={12} y2={21.5} {...line(color, strokeWidth)} />
+      <Polyline points="8,10 6,12 8,14" {...line(color, strokeWidth)} />
+      <Polyline points="16,10 18,12 16,14" {...line(color, strokeWidth)} />
+    </Svg>
+  );
+}

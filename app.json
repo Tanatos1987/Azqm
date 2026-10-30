@@ -2,7 +2,7 @@
   "expo": {
     "name": "Azqm",
     "slug": "azqm",
-    "version": "1.2.0",
+    "version": "1.3.0",
     "scheme": "azqm",
     "orientation": "default",
     "icon": "./assets/icon.png",
@@ -15,7 +15,7 @@
       "supportsTablet": true,
       "bundleIdentifier": "com.tanatos.azqm",
       "infoPlist": {
-        "NSCameraUsageDescription": "Камерата се използва за сканиране на баркодове и снимане на храна."
+        "NSCameraUsageDescription": "Камерата се използва за сканиране на баркодове, снимане на храна и снимки за прогрес."
       }
     },
     "android": {
@@ -52,7 +52,7 @@
       [
         "expo-camera",
         {
-          "cameraPermission": "Камерата се използва за сканиране на баркодове и снимане на храна.",
+          "cameraPermission": "Камерата се използва за сканиране на баркодове, снимане на храна и снимки за прогрес.",
           "microphonePermission": false,
           "recordAudioAndroid": false,
           "barcodeScannerEnabled": true
@@ -94,6 +94,12 @@
               "./assets/fonts/Manrope_800ExtraBold.ttf"
             ]
           }
+        }
+      ],
+      [
+        "expo-iap",
+        {
+          "android": { "store": "play" }
         }
       ]
     ],

@@ -1,18 +1,21 @@
 import React, { useCallback, useEffect, useState } from 'react';
-import { Alert, Pressable, View } from 'react-native';
+import { Alert, Image, Pressable, StyleSheet, View } from 'react-native';
 import { useSQLiteContext } from 'expo-sqlite';
 import { router } from 'expo-router';
 import { Button, Card, IconButton, Input, Row, Screen, SectionHeader, Txt } from '@/components/ui';
 import { BodyFigure } from '@/components/BodyFigure';
 import { LineChart } from '@/components/charts/LineChart';
-import { CheckIcon, TrashIcon, UserIcon } from '@/components/icons';
+import { CameraIcon, CheckIcon, CompareIcon, TrashIcon, UserIcon } from '@/components/icons';
+import { ProLock } from '@/components/ProLock';
 import { useProfile } from '@/context/ProfileContext';
 import { useDataRefresh } from '@/context/DataRefreshContext';
-import { deleteWeightEntry, getWeightEntries } from '@/db/queries';
+import { usePro } from '@/context/ProContext';
+import { deleteWeightEntry, getProgressPhotos, getWeightEntries } from '@/db/queries';
 import { useTheme } from '@/theme/ThemeContext';
 import { bmiCategory, bmiOf, healthyWeightRange } from '@/utils/bodyMetrics';
 import { formatDateLabel, formatNumber, shortDate } from '@/utils/date';
-import type { WeightEntry } from '@/types';
+import { POSES, photoUri, poseLabel } from '@/utils/progressPhotos';
+import type { ProgressPhoto, WeightEntry } from '@/types';
 import { useI18n } from '@/i18n';
 
 export default function ProgressScreen() {
@@ -21,10 +24,16 @@ export default function ProgressScreen() {
   const { profile, updateWeight, saveProfile } = useProfile();
   const { version, bump } = useDataRefresh();
   const { tr } = useI18n();
+  const { isPro } = usePro();
   const [weights, setWeights] = useState<WeightEntry[]>([]);
+  const [photos, setPhotos] = useState<ProgressPhoto[]>([]);
   const [weightDraft, setWeightDraft] = useState('');
 
-  const load = useCallback(async () => setWeights(await getWeightEntries(db)), [db]);
+  const load = useCallback(async () => {
+    const [w, p] = await Promise.all([getWeightEntries(db), getProgressPhotos(db)]);
+    setWeights(w);
+    setPhotos(p);
+  }, [db]);
 
   useEffect(() => {
     // Refetch whenever data changes; setState happens after the awaited query.
@@ -151,6 +160,17 @@ export default function ProgressScreen() {
         )}
       </Card>
 
+      <SectionHeader
+        title={tr('Снимки за прогрес', 'Progress photos')}
+        action={isPro && photos.length > 0 ? tr('Всички', 'All') : undefined}
+        onAction={() => router.push('/progress-photos')}
+      />
+      {isPro ? (
+        <PhotosCard photos={photos} />
+      ) : (
+        <ProLock emoji="📸" title={tr('Снимки за прогрес', 'Progress photos')} text={tr('Снимай се по време на режима и виж как се променя тялото ти.', 'Take photos during your diet and see how your body changes.')} />
+      )}
+
       {weights.length > 0 && (
         <>
           <SectionHeader title={tr('Последни измервания', 'Recent measurements')} />
@@ -187,3 +207,46 @@ export default function ProgressScreen() {
     </Screen>
   );
 }
+
+/** The latest photo of each pose, and the way to take more or compare. */
+function PhotosCard({ photos }: { photos: ProgressPhoto[] }) {
+  const t = useTheme();
+  const { tr } = useI18n();
+  const latest = POSES.map((pose) => [...photos].reverse().find((p) => p.pose === pose)).filter((p): p is ProgressPhoto => p != null);
+  return (
+    <Card style={{ gap: 12 }}>
+      {latest.length > 0 ? (
+        <Pressable onPress={() => router.push('/progress-photos')}>
+          <Row gap={8}>
+            {latest.map((p) => (
+              <View key={p.id} style={[styles.thumb, { backgroundColor: t.c.surfaceAlt }]}>
+                <Image source={{ uri: photoUri(p.file) }} style={StyleSheet.absoluteFill} resizeMode="cover" resizeMethod="resize" />
+                <View style={styles.thumbLabel}>
+                  <Txt v="caption" color="#FFFFFF" numberOfLines={1}>
+                    {poseLabel(p.pose)} · {formatDateLabel(p.date)}
+                  </Txt>
+                </View>
+              </View>
+            ))}
+          </Row>
+        </Pressable>
+      ) : (
+        <Txt tone="textMuted">
+          {tr(
+            'Снимай се отпред, отстрани и отзад в началото на режима и после веднъж седмично. Снимките остават само на телефона.',
+            'Take a front, side and back photo when you start your diet and then once a week. The photos stay on your phone only.'
+          )}
+        </Txt>
+      )}
+      <Row gap={10}>
+        <Button label={tr('Снимай', 'Take photo')} icon={<CameraIcon size={20} color={t.c.onAccent} />} flex onPress={() => router.push('/progress-camera')} />
+        {photos.length >= 2 ? <Button label={tr('Сравни', 'Compare')} variant="secondary" icon={<CompareIcon size={20} color={t.c.text} />} flex onPress={() => router.push('/progress-compare')} /> : null}
+      </Row>
+    </Card>
+  );
+}
+
+const styles = StyleSheet.create({
+  thumb: { flex: 1, aspectRatio: 3 / 4, borderRadius: 12, overflow: 'hidden', maxWidth: '33%' },
+  thumbLabel: { position: 'absolute', left: 0, right: 0, bottom: 0, paddingVertical: 3, paddingHorizontal: 4, alignItems: 'center', backgroundColor: 'rgba(0,0,0,0.45)' },
+});

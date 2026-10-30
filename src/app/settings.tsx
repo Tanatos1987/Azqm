@@ -4,8 +4,9 @@ import { router } from 'expo-router';
 import { useSQLiteContext } from 'expo-sqlite';
 import Constants from 'expo-constants';
 import { Button, Card, IconButton, Input, Row, Screen, SectionHeader, Segmented, Txt } from '@/components/ui';
-import { ChevronLeftIcon, ChevronRightIcon, DownloadIcon, FileIcon, TrashIcon, UploadIcon, UserIcon } from '@/components/icons';
+import { ChevronLeftIcon, ChevronRightIcon, DownloadIcon, FileIcon, HeartIcon, TrashIcon, UploadIcon, UserIcon } from '@/components/icons';
 import { defaultModelFor, useSettings } from '@/context/SettingsContext';
+import { usePro } from '@/context/ProContext';
 import { useProfile } from '@/context/ProfileContext';
 import { useDataRefresh } from '@/context/DataRefreshContext';
 import { useToast } from '@/context/ToastContext';
@@ -17,6 +18,7 @@ import { useTheme, type TextScaleKey, type ThemePref } from '@/theme/ThemeContex
 import { ACTIVITY_LEVELS, computeMetrics } from '@/utils/bodyMetrics';
 import { formatNumber } from '@/utils/date';
 import { exportBackup, exportCsv, exportExcel, pickBackup } from '@/utils/export';
+import { deleteAllPhotoFiles } from '@/utils/progressPhotos';
 import type { VisionProvider } from '@/types';
 
 export default function SettingsScreen() {
@@ -28,6 +30,7 @@ export default function SettingsScreen() {
   const { profile, restoreProfile } = useProfile();
   const { bump } = useDataRefresh();
   const toast = useToast();
+  const { isPro } = usePro();
   const diet = getDiet(settings.dietId);
   const [busy, setBusy] = useState<string | null>(null);
   const [goalsDraft, setGoalsDraft] = useState(() => toDraft(goals));
@@ -106,8 +109,8 @@ export default function SettingsScreen() {
     Alert.alert(
       tr('Изтриване на всички данни', 'Delete all data'),
       tr(
-        'Дневникът, теглото, водата, гладуванията и „Мои храни“ ще бъдат изтрити безвъзвратно. Направи първо резервно копие.',
-        'Your diary, weight, water, fasts and “My foods” will be deleted permanently. Make a backup first.'
+        'Дневникът, теглото, водата, гладуванията, „Мои храни“ и снимките за прогрес ще бъдат изтрити безвъзвратно. Направи първо резервно копие.',
+        'Your diary, weight, water, fasts, “My foods” and progress photos will be deleted permanently. Make a backup first.'
       ),
       [
         { text: tr('Отказ', 'Cancel'), style: 'cancel' },
@@ -116,6 +119,7 @@ export default function SettingsScreen() {
           style: 'destructive',
           onPress: async () => {
             await wipeDatabase(db);
+            deleteAllPhotoFiles();
             bump();
             toast.show(tr('Всички данни са изтрити', 'All data deleted'));
           },
@@ -136,6 +140,19 @@ export default function SettingsScreen() {
       }
       right={<LanguageButton />}
     >
+      <Card onPress={() => router.push('/support')} style={{ marginTop: 8 }}>
+        <Row gap={12}>
+          <HeartIcon size={24} color={t.c.accent} filled={isPro} />
+          <View style={{ flex: 1 }}>
+            <Txt v="bodyStrong">{tr('Подкрепи Azqm', 'Support Azqm')}</Txt>
+            <Txt v="small" tone="textMuted">
+              {isPro ? tr('Pro е отключен — благодаря! 💚', 'Pro is unlocked — thank you! 💚') : tr('Еднократна сума по избор отключва Pro', 'A one-time amount of your choice unlocks Pro')}
+            </Txt>
+          </View>
+          <ChevronRightIcon size={20} color={t.c.textMuted} />
+        </Row>
+      </Card>
+
       <SectionHeader title={tr('Профил и режим', 'Profile and diet')} />
       <Card onPress={() => router.push('/profile')}>
         <Row gap={12}>

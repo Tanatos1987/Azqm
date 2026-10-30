@@ -54,7 +54,7 @@ function diaryRows(entries: FoodEntry[]): Cell[][] {
   ];
 }
 
-async function writeAndShare(name: string, content: string | Uint8Array, mimeType: string, dialogTitle: string) {
+export async function writeAndShare(name: string, content: string | Uint8Array, mimeType: string, dialogTitle: string) {
   const file = new File(Paths.cache, name);
   file.create({ overwrite: true });
   file.write(content);

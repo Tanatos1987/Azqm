@@ -1,3 +1,18 @@
+## Azqm 1.3.0
+
+**Инсталиране:** от Google Play. `Azqm.aab` е за качване в Play Console и не се инсталира на телефона.
+
+### Какво е новото
+- **Снимки за прогрес (Pro):** снимай се отпред, отстрани и отзад и виж как се променя тялото по време на режима. При снимане полупрозрачен контур от предишната снимка помага да застанеш по същия начин, има самоснимачка (3 или 10 с) и предна/задна камера. Снимките са подредени по дати с теглото от съответния ден.
+- **Сравнение преди и след (Pro):** плъзгач върху две снимки или една до друга, с датите, разликата в дни и в килограми.
+- **Снимките остават само на телефона** — не отиват в галерията и не се качват никъде. За нов телефон: „Запази архив (.zip)“ и „Добави снимки от архив“.
+- **Подкрепи Azqm:** Azqm остава безплатно и без реклами. Еднократна сума по избор (кафе, обяд или голяма благодарност) отключва Pro завинаги, на всички телефони с този Google акаунт. Всичко, което имаше досега, си остава безплатно.
+
+### What's new
+- **Progress photos (Pro):** take front, side and back photos and see how your body changes on your diet. A faint outline of your previous photo helps you stand the same way, with a self-timer (3 or 10 s) and front/back camera. Photos are grouped by date with that day's weight.
+- **Before and after (Pro):** a slider across two photos or side by side, with the dates and the difference in days and kilograms.
+- **Photos stay on your phone only** — not in your gallery, never uploaded. For a new phone: "Save archive (.zip)" and "Add photos from an archive".
+- **Support Azqm:** Azqm stays free and ad-free. A one-time amount of your choice (a coffee, a lunch or a big thank you) unlocks Pro for good, on every phone with your Google account. Everything the app had before stays free.
 ## Azqm 1.2.0
 
 **Инсталиране:** само от Google Play, през поканата за изпитатели. `Azqm.aab` е за качване в Play Console и не се инсталира на телефона.

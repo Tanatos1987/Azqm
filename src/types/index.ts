@@ -93,6 +93,19 @@ export interface WeightEntry {
   weightKg: number;
 }
 
+export type PhotoPose = 'front' | 'side' | 'back';
+
+/** A progress photo (Pro). The image lives in <documents>/progress-photos/<file>; only the name is in the DB. */
+export interface ProgressPhoto {
+  id: number;
+  date: string; // YYYY-MM-DD
+  timeIso: string;
+  pose: PhotoPose;
+  file: string;
+  width: number;
+  height: number;
+}
+
 /** Sum of every diary entry of one day. */
 export interface DaySummary {
   date: string;
