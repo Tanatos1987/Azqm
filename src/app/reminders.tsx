@@ -11,8 +11,8 @@ import {
   DEFAULT_REMINDERS,
   ensurePermission,
   fromMinutes,
-  hasPermission,
   loadReminders,
+  permissionState,
   remindersTeaser,
   saveReminders,
   scheduleDaily,
@@ -32,13 +32,13 @@ export default function RemindersScreen() {
   const { tr } = useI18n();
   const { isPro } = usePro();
   const [s, setS] = useState<ReminderSettings>(DEFAULT_REMINDERS);
-  const [allowed, setAllowed] = useState<boolean | null>(null);
+  const [permission, setPermission] = useState<'granted' | 'ask' | 'denied' | null>(null);
 
   useEffect(() => {
     loadReminders().then(setS);
-    hasPermission()
-      .then(setAllowed)
-      .catch(() => setAllowed(false));
+    permissionState()
+      .then(setPermission)
+      .catch(() => setPermission(null));
   }, []);
 
   const back = (
@@ -59,7 +59,7 @@ export default function RemindersScreen() {
   const apply = async (next: ReminderSettings, turningOn = false) => {
     if (turningOn) {
       const ok = await ensurePermission().catch(() => false);
-      setAllowed(ok);
+      setPermission(ok ? 'granted' : await permissionState().catch(() => 'denied' as const));
       if (!ok) {
         Alert.alert(
           tr('Известията са спрени', 'Notifications are off'),
@@ -79,10 +79,14 @@ export default function RemindersScreen() {
   };
 
   const toggle = (key: keyof ReminderSettings) => (on: boolean) => apply({ ...s, [key]: { ...s[key], on } }, on);
+  // Before any reminder is on, Android simply asks when one is switched on; warn only when it can't ask any more,
+  // or when reminders are on but notifications were turned off in the phone's settings later.
+  const anyOn = s.weighIn.on || s.water.on || s.meals.on || s.fastEnd.on;
+  const blocked = permission === 'denied' || (permission === 'ask' && anyOn);
 
   return (
     <Screen title={tr('Напомняния', 'Reminders')} subtitle={tr('Известия на самия телефон — без интернет и без акаунт', 'Notifications from the phone itself — no internet, no account')} scroll left={back}>
-      {allowed === false && (
+      {blocked && (
         <Card style={{ backgroundColor: t.c.warningSoft, gap: 8 }}>
           <Txt v="bodyStrong" tone="warning">
             {tr('Известията за Azqm са изключени', 'Notifications for Azqm are off')}

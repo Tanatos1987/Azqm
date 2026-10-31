@@ -80,6 +80,12 @@ export async function hasPermission(): Promise<boolean> {
   return (await Notifications.getPermissionsAsync()).granted;
 }
 
+/** 'ask': not decided yet — Android shows its prompt when a reminder is switched on; 'denied': only the phone's settings can allow them. */
+export async function permissionState(): Promise<'granted' | 'ask' | 'denied'> {
+  const p = await Notifications.getPermissionsAsync();
+  return p.granted ? 'granted' : p.canAskAgain ? 'ask' : 'denied';
+}
+
 const toMinutes = (hhmm: string) => {
   const [h, m] = hhmm.split(':').map(Number);
   return (h || 0) * 60 + (m || 0);
