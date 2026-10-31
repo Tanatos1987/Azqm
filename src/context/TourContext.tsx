@@ -208,12 +208,14 @@ function TourOverlay({ step, number, total, rect, onNext, onBack, onSkip }: { st
   const welcome = !step.target;
   const last = number === total;
   // Tab bar icons are small: open the window over the whole tab (icon and label).
-  const hole =
+  const raw =
     rect && frame
       ? step.target?.startsWith('tab-')
         ? { x: rect.x + rect.w / 2 - 34 - frame.x, y: rect.y - 8 - frame.y, w: 68, h: rect.h + 30 }
         : { x: rect.x - 6 - frame.x, y: rect.y - 6 - frame.y, w: rect.w + 12, h: rect.h + 12 }
       : null;
+  // Kept inside the screen, so the ring around the last tab isn't cut off.
+  const hole = raw && frame ? { ...raw, x: Math.max(2, raw.x), w: Math.min(frame.w - 2, raw.x + raw.w) - Math.max(2, raw.x) } : null;
   // The card goes on the roomier side of the window; the welcome card sits in the middle.
   const cardPlace: ViewStyle | null = !frame
     ? null
