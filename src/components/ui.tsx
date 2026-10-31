@@ -126,16 +126,21 @@ export function Screen({ title, subtitle, right, left, children, scroll, scrollP
   );
 }
 
+/** rgba(…, 0.12) and the like: Android draws a card's elevation shadow through such a background as a grey box. */
+const SEE_THROUGH = /^rgba\(.*,\s*(0?\.\d+|0)\s*\)$/;
+
 export function Card({ children, style, onPress, tight }: { children: React.ReactNode; style?: StyleProp<ViewStyle>; onPress?: () => void; tight?: boolean }) {
   const s = useStyles();
+  const bg = StyleSheet.flatten(style)?.backgroundColor;
+  const flat = typeof bg === 'string' && SEE_THROUGH.test(bg) ? s.flat : null;
   if (onPress) {
     return (
-      <Pressable onPress={onPress} style={({ pressed }) => [s.card, tight && s.cardTight, pressed && s.pressed, style]}>
+      <Pressable onPress={onPress} style={({ pressed }) => [s.card, tight && s.cardTight, flat, pressed && s.pressed, style]}>
         {children}
       </Pressable>
     );
   }
-  return <View style={[s.card, tight && s.cardTight, style]}>{children}</View>;
+  return <View style={[s.card, tight && s.cardTight, flat, style]}>{children}</View>;
 }
 
 export function SectionHeader({ title, action, onAction, style }: { title: string; action?: string; onAction?: () => void; style?: StyleProp<ViewStyle> }) {
@@ -339,6 +344,7 @@ const useStyles = makeStyles((t) => ({
     elevation: t.dark ? 0 : 1,
   },
   cardTight: { padding: 14 },
+  flat: { elevation: 0, shadowOpacity: 0 },
   pressed: { opacity: 0.85 },
   sectionHeader: { flexDirection: 'row', alignItems: 'center', marginTop: 8, marginBottom: 10 },
   divider: { height: StyleSheet.hairlineWidth, backgroundColor: t.c.border, marginVertical: 12 },

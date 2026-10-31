@@ -3,7 +3,7 @@
  * starts right here. Opened from the Today banner and by the occasional start-up prompt (which passes the number of
  * diary days at a milestone).
  */
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { ActivityIndicator, View } from 'react-native';
 import { router } from 'expo-router';
 import { Button, Row, Sheet, Txt } from '@/components/ui';
@@ -14,6 +14,8 @@ import { makeStyles, useTheme } from '@/theme/ThemeContext';
 import { useI18n } from '@/i18n';
 
 const LAST_STEP = 2;
+/** How long to wait for prices before saying Google Play didn't answer (as on the support screen). */
+const PRICE_TIMEOUT_MS = 12000;
 
 export function SupportWizard({ milestoneDays, onClose }: { milestoneDays?: number; onClose: () => void }) {
   const t = useTheme();
@@ -21,7 +23,13 @@ export function SupportWizard({ milestoneDays, onClose }: { milestoneDays?: numb
   const { tr } = useI18n();
   const { products, busy, buy, storeReady } = usePro();
   const [step, setStep] = useState(0);
+  const [waitedLong, setWaitedLong] = useState(false);
   const tiers = supportTiers();
+
+  useEffect(() => {
+    const timer = setTimeout(() => setWaitedLong(true), PRICE_TIMEOUT_MS);
+    return () => clearTimeout(timer);
+  }, []);
 
   return (
     <Sheet visible onClose={onClose}>
@@ -85,7 +93,7 @@ export function SupportWizard({ milestoneDays, onClose }: { milestoneDays?: numb
             ))
           ) : (
             <View style={[s.tier, { justifyContent: 'center' }]}>
-              {storeReady ? (
+              {storeReady && !waitedLong ? (
                 <ActivityIndicator color={t.c.accent} />
               ) : (
                 <Txt tone="textMuted" center>
