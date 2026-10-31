@@ -998,5 +998,12 @@
  "Side view": "Yandan",
  "Back view": "Arkadan",
  "No photos yet.": "Henüz fotoğraf yok.",
- "The file is not an Azqm photo archive.": "Dosya bir Azqm fotoğraf arşivi değil."
+ "The file is not an Azqm photo archive.": "Dosya bir Azqm fotoğraf arşivi değil.",
+ "A one-time amount of your choice unlocks Pro: progress photos and more.": "Seçtiğin tek seferlik bir tutar Pro'yu açar: ilerleme fotoğrafları ve daha fazlası.",
+ "Hide for a few days": "Birkaç günlüğüne gizle",
+ "{n} {n|day|days} with Azqm!": "Azqm ile {n} {n|gün|gün}!",
+ "Azqm is free and ad-free": "Azqm ücretsiz ve reklamsız",
+ "That’s how many days you’ve kept your food diary — well done! If Azqm helps you, support it with a one-time amount of your choice. It unlocks Pro for good.": "Beslenme günlüğünü bu kadar gündür tutuyorsun, harika! Azqm sana yardımcı oluyorsa, seçtiğin tek seferlik bir tutarla destekle. Pro'yu kalıcı olarak açar.",
+ "No sign-up, and your data stays on your phone. If the app helps you, support it with a one-time amount of your choice. It unlocks Pro for good.": "Kayıt yok ve verilerin telefonunda kalır. Uygulama sana yardımcı oluyorsa, seçtiğin tek seferlik bir tutarla destekle. Pro'yu kalıcı olarak açar.",
+ "Not now": "Şimdi değil"
 }

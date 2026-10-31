@@ -998,5 +998,12 @@
  "Side view": "Сбоку",
  "Back view": "Сзади",
  "No photos yet.": "Пока нет фото.",
- "The file is not an Azqm photo archive.": "Файл не является архивом фото Azqm."
+ "The file is not an Azqm photo archive.": "Файл не является архивом фото Azqm.",
+ "A one-time amount of your choice unlocks Pro: progress photos and more.": "Разовая сумма на твой выбор открывает Pro: фото прогресса и не только.",
+ "Hide for a few days": "Скрыть на несколько дней",
+ "{n} {n|day|days} with Azqm!": "{n} {n|день|дня|дней} с Azqm!",
+ "Azqm is free and ad-free": "Azqm бесплатное и без рекламы",
+ "That’s how many days you’ve kept your food diary — well done! If Azqm helps you, support it with a one-time amount of your choice. It unlocks Pro for good.": "Столько дней ты уже ведёшь дневник питания — отлично! Если Azqm тебе помогает, поддержи его разовой суммой на твой выбор. Она навсегда открывает Pro.",
+ "No sign-up, and your data stays on your phone. If the app helps you, support it with a one-time amount of your choice. It unlocks Pro for good.": "Без регистрации, а твои данные остаются на телефоне. Если приложение тебе помогает, поддержи его разовой суммой на твой выбор. Она навсегда открывает Pro.",
+ "Not now": "Не сейчас"
 }

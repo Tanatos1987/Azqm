@@ -998,5 +998,12 @@
  "Side view": "De profil",
  "Back view": "De dos",
  "No photos yet.": "Pas encore de photos.",
- "The file is not an Azqm photo archive.": "Ce fichier n'est pas une archive de photos Azqm."
+ "The file is not an Azqm photo archive.": "Ce fichier n'est pas une archive de photos Azqm.",
+ "A one-time amount of your choice unlocks Pro: progress photos and more.": "Un montant unique de ton choix débloque Pro : photos de progrès et plus encore.",
+ "Hide for a few days": "Masquer quelques jours",
+ "{n} {n|day|days} with Azqm!": "{n} {n|jour|jours} avec Azqm !",
+ "Azqm is free and ad-free": "Azqm est gratuit et sans pub",
+ "That’s how many days you’ve kept your food diary — well done! If Azqm helps you, support it with a one-time amount of your choice. It unlocks Pro for good.": "C'est le nombre de jours où tu as tenu ton journal alimentaire, bravo ! Si Azqm t'aide, soutiens-le avec un montant unique de ton choix. Il débloque Pro pour toujours.",
+ "No sign-up, and your data stays on your phone. If the app helps you, support it with a one-time amount of your choice. It unlocks Pro for good.": "Sans inscription, et tes données restent sur ton téléphone. Si l'appli t'aide, soutiens-la avec un montant unique de ton choix. Il débloque Pro pour toujours.",
+ "Not now": "Pas maintenant"
 }

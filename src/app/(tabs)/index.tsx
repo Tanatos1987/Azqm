@@ -7,6 +7,7 @@ import { ProgressRing } from '@/components/ProgressRing';
 import { DateSwitcher } from '@/components/DateSwitcher';
 import { FoodEntryRow } from '@/components/FoodEntryRow';
 import { EntrySheet } from '@/components/EntrySheet';
+import { SupportBanner } from '@/components/SupportNudge';
 import { ChevronRightIcon, CopyIcon, DropletIcon, FastingIcon, PlusIcon, SettingsIcon, WarningIcon } from '@/components/icons';
 import { useSettings } from '@/context/SettingsContext';
 import { useProfile } from '@/context/ProfileContext';
@@ -124,6 +125,8 @@ export default function TodayScreen() {
       <Txt v="small" tone="textMuted" style={{ marginBottom: 10 }}>
         {formatLongDate(date)}
       </Txt>
+
+      <SupportBanner />
 
       <Pressable onPress={() => router.push('/diet')} style={({ pressed }) => [s.dietChip, pressed && { opacity: 0.8 }]}>
         <View style={{ flex: 1 }}>

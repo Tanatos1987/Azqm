@@ -1,8 +1,9 @@
 import React from 'react';
 import { Text } from 'react-native';
-import { Tabs } from 'expo-router';
+import { Tabs, router } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { AddIcon, AnalysisIcon, FastingIcon, ProgressIcon, TodayIcon } from '@/components/icons';
+import { AddIcon, AnalysisIcon, FastingIcon, HeartIcon, ProgressIcon, TodayIcon } from '@/components/icons';
+import { usePro } from '@/context/ProContext';
 import { FONT, useTheme } from '@/theme/ThemeContext';
 import { useI18n } from '@/i18n';
 
@@ -10,6 +11,7 @@ export default function TabsLayout() {
   const t = useTheme();
   const insets = useSafeAreaInsets();
   const { tr } = useI18n();
+  const { isPro, loaded } = usePro();
   return (
     <Tabs
       screenOptions={{
@@ -46,6 +48,22 @@ export default function TabsLayout() {
       <Tabs.Screen name="analysis" options={{ title: tr('Анализ', 'Analysis'), tabBarIcon: ({ color }) => <AnalysisIcon size={26} color={color} /> }} />
       <Tabs.Screen name="progress" options={{ title: tr('Прогрес', 'Progress'), tabBarIcon: ({ color }) => <ProgressIcon size={26} color={color} /> }} />
       <Tabs.Screen name="fasting" options={{ title: tr('Пост', 'Fasting'), tabBarIcon: ({ color }) => <FastingIcon size={26} color={color} /> }} />
+      {/* Until the user has Pro: a sixth tab, always in the accent colour, that opens the support screen. */}
+      <Tabs.Screen
+        name="pro"
+        options={{
+          title: tr('Подкрепи', 'Support'),
+          href: loaded && !isPro ? undefined : null,
+          tabBarInactiveTintColor: t.c.accent,
+          tabBarIcon: () => <HeartIcon size={26} color={t.c.accent} filled />,
+        }}
+        listeners={{
+          tabPress: (e) => {
+            e.preventDefault();
+            router.push('/support');
+          },
+        }}
+      />
     </Tabs>
   );
 }

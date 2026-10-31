@@ -137,6 +137,12 @@ export async function getFoodUseCounts(db: SQLiteDatabase, sinceDate: string): P
   return new Map(rows.map((r) => [r.food_id, r.c]));
 }
 
+/** Number of days with at least one diary entry. */
+export async function getLoggedDayCount(db: SQLiteDatabase): Promise<number> {
+  const row = await db.getFirstAsync<{ n: number }>('SELECT COUNT(DISTINCT date) AS n FROM food_entries');
+  return row?.n ?? 0;
+}
+
 // ---- favorites & custom foods --------------------------------------------------------
 
 export async function getFavoriteIds(db: SQLiteDatabase): Promise<string[]> {

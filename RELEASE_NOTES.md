@@ -1,3 +1,17 @@
+## Azqm 1.3.1
+
+**Инсталиране:** от Google Play. `Azqm.aab` е за качване в Play Console и не се инсталира на телефона.
+
+### Какво е новото
+- **„Подкрепи“ в долното меню:** 💚 раздел, който отваря „Подкрепи Azqm“. Изчезва, щом Pro е отключен.
+- **Банер на „Днес“** с покана за подкрепа; ✕ го скрива за 3 дни.
+- **Покана при старт** от време на време (от третия ден, най-много веднъж на 4 дни) и при 7, 30, 100 и 365 дни с дневник.
+
+### What's new
+- **"Support" in the bottom menu:** a 💚 tab that opens "Support Azqm". It disappears once Pro is unlocked.
+- **A banner on "Today"** inviting you to support the app; ✕ hides it for 3 days.
+- **An occasional invitation on start** (from the third day, at most every 4 days) and at 7, 30, 100 and 365 diary days.
+
 ## Azqm 1.3.0
 
 **Инсталиране:** от Google Play. `Azqm.aab` е за качване в Play Console и не се инсталира на телефона.

@@ -1,9 +1,9 @@
 import React, { useEffect, useState } from 'react';
 import { ActivityIndicator, Alert, View } from 'react-native';
 import { router } from 'expo-router';
-import { Button, Card, IconButton, Row, Screen, SectionHeader, Txt } from '@/components/ui';
+import { Button, Card, IconButton, Row, Screen, SectionHeader, Segmented, Txt } from '@/components/ui';
 import { ChevronLeftIcon, HeartIcon } from '@/components/icons';
-import { SUPPORT_SKUS, usePro } from '@/context/ProContext';
+import { PREVIEW, SUPPORT_SKUS, usePro } from '@/context/ProContext';
 import { useToast } from '@/context/ToastContext';
 import { useTheme } from '@/theme/ThemeContext';
 import { useI18n } from '@/i18n';
@@ -15,7 +15,7 @@ export default function SupportScreen() {
   const t = useTheme();
   const { tr } = useI18n();
   const toast = useToast();
-  const { isPro, storeReady, products, busy, buy, restore } = usePro();
+  const { isPro, storeReady, products, busy, buy, restore, setPreviewPro } = usePro();
   const [waitedLong, setWaitedLong] = useState(false);
 
   useEffect(() => {
@@ -113,6 +113,22 @@ export default function SupportScreen() {
           'Payment goes through Google Play; Azqm never sees your card details. Support is one-time and applies to every phone with this Google account.'
         )}
       </Txt>
+      {PREVIEW && (
+        // Test switch, Preview builds only (not translated): see the app as a free user does.
+        <Card style={{ marginTop: 14, gap: 10 }}>
+          <Txt v="smallStrong" tone="textMuted">
+            Azqm Preview
+          </Txt>
+          <Segmented<'pro' | 'free'>
+            value={isPro ? 'pro' : 'free'}
+            onChange={(v) => setPreviewPro(v === 'pro')}
+            options={[
+              { label: 'Pro', value: 'pro' },
+              { label: 'Free', value: 'free' },
+            ]}
+          />
+        </Card>
+      )}
     </Screen>
   );
 }

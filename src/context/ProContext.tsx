@@ -20,7 +20,9 @@ export const SUPPORT_SKUS: readonly string[] = ['support_small', 'support_medium
 
 const STORE_KEY = 'azqm.pro';
 /** "Azqm Preview" builds (CI, app id …preview) aren't in Google Play and can't buy, so they get Pro for testing. */
-const PREVIEW = Constants.expoConfig?.android?.package?.endsWith('.preview') ?? false;
+export const PREVIEW = Constants.expoConfig?.android?.package?.endsWith('.preview') ?? false;
+/** Preview builds can switch their Pro off to test what free users see (banner, support tab, locked features). */
+const PREVIEW_FREE_KEY = 'azqm.preview-free';
 
 const isSupport = (p: Purchase) => SUPPORT_SKUS.includes(p.productId);
 
@@ -35,18 +37,24 @@ interface ProValue {
   buy: (sku: string) => Promise<void>;
   /** Asks Google Play for earlier purchases; null when Google Play couldn't be reached. */
   restore: () => Promise<boolean | null>;
+  /** Preview builds only: turn the free Pro on or off. */
+  setPreviewPro: (on: boolean) => void;
 }
 
 const ProContext = createContext<ProValue | null>(null);
 
 export function ProProvider({ children }: { children: React.ReactNode }) {
   const [owned, setOwned] = useState(false);
+  const [previewFree, setPreviewFree] = useState(false);
   const [loaded, setLoaded] = useState(false);
   const [busy, setBusy] = useState(false);
 
   useEffect(() => {
-    AsyncStorage.getItem(STORE_KEY)
-      .then((v) => setOwned(v === '1'))
+    AsyncStorage.multiGet([STORE_KEY, PREVIEW_FREE_KEY])
+      .then(([[, pro], [, free]]) => {
+        setOwned(pro === '1');
+        setPreviewFree(free === '1');
+      })
       .catch(() => {})
       .finally(() => setLoaded(true));
   }, []);
@@ -54,6 +62,11 @@ export function ProProvider({ children }: { children: React.ReactNode }) {
   const remember = useCallback((value: boolean) => {
     setOwned(value);
     AsyncStorage.setItem(STORE_KEY, value ? '1' : '0').catch(() => {});
+  }, []);
+
+  const setPreviewPro = useCallback((on: boolean) => {
+    setPreviewFree(!on);
+    AsyncStorage.setItem(PREVIEW_FREE_KEY, on ? '0' : '1').catch(() => {});
   }, []);
 
   const { connected, products, fetchProducts, requestPurchase, finishTransaction } = useIAP({
@@ -133,8 +146,8 @@ export function ProProvider({ children }: { children: React.ReactNode }) {
 
   const value = useMemo<ProValue>(() => {
     const support = products.filter((p) => SUPPORT_SKUS.includes(p.id)).sort((a, b) => SUPPORT_SKUS.indexOf(a.id) - SUPPORT_SKUS.indexOf(b.id));
-    return { isPro: PREVIEW || owned, loaded, storeReady: connected, products: support, busy, buy, restore };
-  }, [owned, loaded, connected, products, busy, buy, restore]);
+    return { isPro: (PREVIEW && !previewFree) || owned, loaded, storeReady: connected, products: support, busy, buy, restore, setPreviewPro };
+  }, [owned, previewFree, loaded, connected, products, busy, buy, restore, setPreviewPro]);
 
   return <ProContext.Provider value={value}>{children}</ProContext.Provider>;
 }
