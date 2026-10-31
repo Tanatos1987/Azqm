@@ -17,6 +17,7 @@ import { useI18n } from '@/i18n';
 const TOUR_KEY = 'azqm.tour';
 /** Time for a programmatic scroll to settle before the target is measured again. */
 const SCROLL_SETTLE_MS = 400;
+const MEASURE_TIMEOUT_MS = 500;
 
 interface Rect {
   x: number;
@@ -43,8 +44,15 @@ interface TourValue {
 
 const TourContext = createContext<TourValue | null>(null);
 
+/** null when the view has no size — or never answers (a view that is going away doesn't call back). */
 const measure = (node: View) =>
-  new Promise<Rect | null>((resolve) => node.measureInWindow((x, y, w, h) => resolve(w > 0 && h > 0 ? { x, y, w, h } : null)));
+  new Promise<Rect | null>((resolve) => {
+    const timer = setTimeout(() => resolve(null), MEASURE_TIMEOUT_MS);
+    node.measureInWindow((x, y, w, h) => {
+      clearTimeout(timer);
+      resolve(w > 0 && h > 0 ? { x, y, w, h } : null);
+    });
+  });
 const wait = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
 export function TourProvider({ children }: { children: React.ReactNode }) {
