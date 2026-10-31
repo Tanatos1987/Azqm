@@ -3,8 +3,10 @@ import { ActivityIndicator, Alert, View } from 'react-native';
 import { router } from 'expo-router';
 import { Button, Card, IconButton, Row, Screen, SectionHeader, Segmented, Txt } from '@/components/ui';
 import { ChevronLeftIcon, HeartIcon } from '@/components/icons';
-import { PREVIEW, SUPPORT_SKUS, usePro } from '@/context/ProContext';
+import { PerkRow } from '@/components/PerkRow';
+import { PREVIEW, usePro } from '@/context/ProContext';
 import { useToast } from '@/context/ToastContext';
+import { donationBenefits, proPerks, supportTiers } from '@/data/pro';
 import { useTheme } from '@/theme/ThemeContext';
 import { useI18n } from '@/i18n';
 
@@ -23,12 +25,8 @@ export default function SupportScreen() {
     return () => clearTimeout(timer);
   }, []);
 
-  // Our own names for the three amounts; the prices come from Google Play in the buyer's currency.
-  const tiers: Record<string, { emoji: string; name: string }> = {
-    [SUPPORT_SKUS[0]]: { emoji: '☕', name: tr('Кафе', 'A coffee') },
-    [SUPPORT_SKUS[1]]: { emoji: '🥗', name: tr('Обяд', 'A lunch') },
-    [SUPPORT_SKUS[2]]: { emoji: '💚', name: tr('Голяма благодарност', 'A big thank you') },
-  };
+  // The prices come from Google Play in the buyer's currency.
+  const tiers = supportTiers();
 
   const onRestore = async () => {
     const found = await restore();
@@ -62,12 +60,18 @@ export default function SupportScreen() {
         </Txt>
       </Card>
 
+      <SectionHeader title={tr('Защо да подкрепиш Azqm?', 'Why support Azqm?')} />
+      <Card style={{ gap: 12 }}>
+        {donationBenefits().map((p) => (
+          <PerkRow key={p.title} {...p} />
+        ))}
+      </Card>
+
       <SectionHeader title={tr('Какво включва Pro', 'What Pro includes')} />
       <Card style={{ gap: 12 }}>
-        <Perk emoji="📸" title={tr('Снимки за прогрес', 'Progress photos')} text={tr('Отпред, отстрани и отзад, с контур от предишната снимка и самоснимачка.', 'Front, side and back, with an outline of your previous photo and a self-timer.')} />
-        <Perk emoji="↔️" title={tr('Сравнение преди и след', 'Before and after')} text={tr('Плъзгач върху две снимки, с датите и теглото.', 'A slider across two photos, with the dates and your weight.')} />
-        <Perk emoji="🔒" title={tr('Само на телефона ти', 'Only on your phone')} text={tr('Снимките не отиват в галерията и не се качват никъде.', 'Photos don’t go to your gallery and are never uploaded.')} />
-        <Perk emoji="✨" title={tr('Бъдещите Pro функции', 'Future Pro features')} text={tr('Без абонамент и без доплащане.', 'No subscription, nothing more to pay.')} />
+        {proPerks().map((p) => (
+          <PerkRow key={p.title} {...p} />
+        ))}
       </Card>
 
       <SectionHeader title={isPro ? tr('Подкрепи още', 'Support again') : tr('Избери сума', 'Choose an amount')} />
@@ -130,19 +134,5 @@ export default function SupportScreen() {
         </Card>
       )}
     </Screen>
-  );
-}
-
-function Perk({ emoji, title, text }: { emoji: string; title: string; text: string }) {
-  return (
-    <Row gap={12} style={{ alignItems: 'flex-start' }}>
-      <Txt style={{ fontSize: 22, width: 30 }}>{emoji}</Txt>
-      <View style={{ flex: 1 }}>
-        <Txt v="bodyStrong">{title}</Txt>
-        <Txt v="small" tone="textMuted">
-          {text}
-        </Txt>
-      </View>
-    </Row>
   );
 }

@@ -1,17 +1,20 @@
 /**
  * Asks for support while the user has no Pro (the "Подкрепи" tab is the always-visible way in, see the tab layout):
- * a banner at the top of the Today screen — its × hides it for a few days — and, now and then on start, a sheet:
- * first on the third day, then at most every fourth day, plus once at each diary milestone (7 / 30 / 100 / 365 days
- * with entries). Everything disappears once Pro is unlocked.
+ * a banner at the top of the Today screen — tapping it opens the support wizard, its × hides it for a few days —
+ * and, now and then on start, the wizard by itself: first on the third day, then at most every fourth day, plus
+ * once at each diary milestone (7 / 30 / 100 / 365 days with entries). Never on the start that shows the tour.
+ * Everything disappears once Pro is unlocked.
  */
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { Pressable, View } from 'react-native';
-import { router, useIsFocused } from 'expo-router';
+import { useIsFocused } from 'expo-router';
 import { useSQLiteContext } from 'expo-sqlite';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { Button, Card, Row, Sheet, Txt } from '@/components/ui';
+import { Card, Row, Txt } from '@/components/ui';
 import { CloseIcon, HeartIcon } from '@/components/icons';
+import { SupportWizard } from '@/components/SupportWizard';
 import { usePro } from '@/context/ProContext';
+import { useTour } from '@/context/TourContext';
 import { getLoggedDayCount } from '@/db/queries';
 import { makeStyles, useTheme } from '@/theme/ThemeContext';
 import { shiftDateKey, todayKey } from '@/utils/date';
@@ -19,18 +22,18 @@ import { useI18n } from '@/i18n';
 
 const NUDGE_KEY = 'azqm.nudge';
 const BANNER_SNOOZE_DAYS = 3;
-/** Days after the first start (or after the update that added this) before the first sheet. */
+/** Days after the first start (or after the update that added this) before the first prompt. */
 const PROMPT_AFTER_DAYS = 2;
 const PROMPT_EVERY_DAYS = 4;
 const MILESTONES = [7, 30, 100, 365];
-/** Let the Today screen settle before the sheet slides up. */
+/** Let the Today screen settle before the wizard slides up. */
 const PROMPT_DELAY_MS = 1500;
 
 interface NudgeState {
   /** First day the app ran with these nudges. */
   since: string;
   bannerHiddenUntil?: string;
-  /** Day the sheet was last shown. */
+  /** Day the wizard last opened by itself. */
   promptOn?: string;
   /** Highest milestone already shown. */
   milestone?: number;
@@ -43,10 +46,11 @@ export function SupportBanner() {
   const db = useSQLiteContext();
   const { tr } = useI18n();
   const { isPro, loaded } = usePro();
+  const tour = useTour();
   const focused = useIsFocused();
   const [state, setState] = useState<NudgeState | null>(null);
-  /** null: closed; 0: the plain sheet; > 0: the milestone sheet with the number of diary days. */
-  const [prompt, setPrompt] = useState<number | null>(null);
+  /** null: closed; 0: the wizard; > 0: the wizard opened at a milestone, with the number of diary days. */
+  const [wizard, setWizard] = useState<number | null>(null);
   const checked = useRef(false);
 
   useEffect(() => {
@@ -66,9 +70,9 @@ export function SupportBanner() {
     AsyncStorage.setItem(NUDGE_KEY, JSON.stringify(next)).catch(() => {});
   }, []);
 
-  // Once per app start, while the Today screen is on top.
+  // Once per app start, while the Today screen is on top and the tour isn't (or wasn't) showing.
   useEffect(() => {
-    if (!state || !loaded || isPro || !focused || checked.current) return;
+    if (!state || !loaded || isPro || !focused || checked.current || tour.seenAtStart !== true || tour.active) return;
     const timer = setTimeout(async () => {
       checked.current = true;
       const today = todayKey();
@@ -76,28 +80,24 @@ export function SupportBanner() {
       const days = await getLoggedDayCount(db).catch(() => 0);
       const reached = MILESTONES.filter((m) => days >= m).pop() ?? 0;
       if (reached > (state.milestone ?? 0)) {
-        setPrompt(days);
+        setWizard(days);
         save({ ...state, promptOn: today, milestone: reached });
       } else if (shiftDateKey(state.since, PROMPT_AFTER_DAYS) <= today && (!state.promptOn || shiftDateKey(state.promptOn, PROMPT_EVERY_DAYS) <= today)) {
-        setPrompt(0);
+        setWizard(0);
         save({ ...state, promptOn: today });
       }
     }, PROMPT_DELAY_MS);
     return () => clearTimeout(timer);
-  }, [state, loaded, isPro, focused, db, save]);
+  }, [state, loaded, isPro, focused, tour.seenAtStart, tour.active, db, save]);
 
   if (!loaded || isPro || !state) return null;
 
-  const openSupport = () => {
-    setPrompt(null);
-    router.push('/support');
-  };
   const bannerHidden = state.bannerHiddenUntil != null && todayKey() < state.bannerHiddenUntil;
 
   return (
     <>
       {!bannerHidden && (
-        <Card onPress={openSupport} tight style={s.banner}>
+        <Card onPress={() => setWizard(0)} tight style={s.banner}>
           <Row gap={12}>
             <View style={s.bubble}>
               <HeartIcon size={22} color={t.c.accent} filled />
@@ -118,33 +118,7 @@ export function SupportBanner() {
           </Row>
         </Card>
       )}
-
-      <Sheet visible={prompt !== null} onClose={() => setPrompt(null)}>
-        <View style={{ alignItems: 'center', gap: 8, marginBottom: 16 }}>
-          <Txt style={{ fontSize: 44 }}>{prompt ? '🎉' : '💚'}</Txt>
-          <Txt v="h2" center>
-            {prompt ? tr('{n} {n|ден|дни} с Azqm!', '{n} {n|day|days} with Azqm!', { n: prompt }) : tr('Azqm е безплатно и без реклами', 'Azqm is free and ad-free')}
-          </Txt>
-          <Txt tone="textMuted" center>
-            {prompt
-              ? tr(
-                  'Толкова дни вече водиш дневник — браво! Ако Azqm ти помага, подкрепи го с еднократна сума по избор. Тя отключва Pro завинаги.',
-                  'That’s how many days you’ve kept your food diary — well done! If Azqm helps you, support it with a one-time amount of your choice. It unlocks Pro for good.'
-                )
-              : tr(
-                  'Без регистрация, а данните ти остават на телефона. Ако приложението ти помага, подкрепи го с еднократна сума по избор. Тя отключва Pro завинаги.',
-                  'No sign-up, and your data stays on your phone. If the app helps you, support it with a one-time amount of your choice. It unlocks Pro for good.'
-                )}
-          </Txt>
-        </View>
-        <View style={s.perks}>
-          <Txt>📸 {tr('Снимки за прогрес', 'Progress photos')}</Txt>
-          <Txt>↔️ {tr('Сравнение преди и след', 'Before and after')}</Txt>
-          <Txt>✨ {tr('Бъдещите Pro функции', 'Future Pro features')}</Txt>
-        </View>
-        <Button label={tr('Подкрепи Azqm', 'Support Azqm')} icon={<HeartIcon size={20} color={t.c.onAccent} filled />} onPress={openSupport} />
-        <Button label={tr('Не сега', 'Not now')} variant="ghost" onPress={() => setPrompt(null)} style={{ marginTop: 6 }} />
-      </Sheet>
+      {wizard !== null && <SupportWizard milestoneDays={wizard || undefined} onClose={() => setWizard(null)} />}
     </>
   );
 }
@@ -152,5 +126,4 @@ export function SupportBanner() {
 const useStyles = makeStyles((t) => ({
   banner: { backgroundColor: t.c.accentSoft, borderColor: t.c.accent },
   bubble: { width: 40, height: 40, borderRadius: 20, alignItems: 'center', justifyContent: 'center', backgroundColor: t.c.surface },
-  perks: { backgroundColor: t.c.surfaceAlt, borderRadius: 16, padding: 14, gap: 8, marginBottom: 16 },
 }));

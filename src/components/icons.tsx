@@ -351,6 +351,17 @@ export function HeartIcon({ size = D.size, color = D.color, strokeWidth = D.stro
   );
 }
 
+/** Help: a question mark in a circle. */
+export function HelpIcon({ size = D.size, color = D.color, strokeWidth = D.strokeWidth }: IconProps) {
+  return (
+    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+      <Circle cx={12} cy={12} r={9} {...line(color, strokeWidth)} />
+      <Path d="M9.6 9.5a2.5 2.5 0 0 1 4.9.7c0 1.7-2.5 2.2-2.5 3.8" {...line(color, strokeWidth)} />
+      <Circle cx={12} cy={17.2} r={1.1} fill={color} />
+    </Svg>
+  );
+}
+
 /** Switch between the front and back camera. */
 export function FlipCameraIcon({ size = D.size, color = D.color, strokeWidth = D.strokeWidth }: IconProps) {
   return (

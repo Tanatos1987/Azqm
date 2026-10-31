@@ -4,6 +4,7 @@ import { router } from 'expo-router';
 import { useSQLiteContext } from 'expo-sqlite';
 import { Bar, Button, Card, EmptyState, Row, Screen, SectionHeader, Segmented, Txt } from '@/components/ui';
 import { BarChart } from '@/components/charts/BarChart';
+import { HelpButton } from '@/components/HelpButton';
 import { InfoIcon, LeafIcon, WarningIcon } from '@/components/icons';
 import { useSettings } from '@/context/SettingsContext';
 import { useProfile } from '@/context/ProfileContext';
@@ -116,7 +117,7 @@ export default function AnalysisScreen() {
   const weekly = profile && avg.kcal > 0 && !diet.noCalories ? weeklyWeightChange(avg.kcal, tdeeOf(profile)) : null;
 
   return (
-    <Screen title={tr('Анализ', 'Analysis')} subtitle={tr('Средни стойности и какво ти липсва', 'Averages and what you are missing')} scroll>
+    <Screen title={tr('Анализ', 'Analysis')} subtitle={tr('Средни стойности и какво ти липсва', 'Averages and what you are missing')} scroll right={<HelpButton section="analysis" />}>
       <Segmented<Period>
         value={period}
         onChange={setPeriod}

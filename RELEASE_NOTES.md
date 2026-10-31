@@ -3,14 +3,16 @@
 **Инсталиране:** от Google Play. `Azqm.aab` е за качване в Play Console и не се инсталира на телефона.
 
 ### Какво е новото
+- **Кратко въведение:** при първото отваряне обиколка осветява бутоните един по един и обяснява за какво е всеки; може да се пропусне.
+- **Помощ:** бутон „Помощ“ на „Днес“, „?“ в Анализ, Прогрес и Пост и ред в Настройки — обяснение на всички функции и „Покажи обиколката отново“.
 - **„Подкрепи“ в долното меню:** 💚 раздел, който отваря „Подкрепи Azqm“. Изчезва, щом Pro е отключен.
-- **Банер на „Днес“** с покана за подкрепа; ✕ го скрива за 3 дни.
-- **Покана при старт** от време на време (от третия ден, най-много веднъж на 4 дни) и при 7, 30, 100 и 365 дни с дневник.
+- **Съветник за подкрепа** в 3 стъпки: защо да подкрепиш Azqm, какво получаваш с Pro и избор на сума направо от него. Отваря се от банера на „Днес“ (✕ го скрива за 3 дни) и от време на време при старт (от третия ден, най-много веднъж на 4 дни, и при 7, 30, 100 и 365 дни с дневник).
 
 ### What's new
+- **A short tour:** on first start it highlights the buttons one by one and says what each does; you can skip it.
+- **Help:** a "Help" button on "Today", "?" on Analysis, Progress and Fasting and a row in Settings — every feature explained, plus "Show the tour again".
 - **"Support" in the bottom menu:** a 💚 tab that opens "Support Azqm". It disappears once Pro is unlocked.
-- **A banner on "Today"** inviting you to support the app; ✕ hides it for 3 days.
-- **An occasional invitation on start** (from the third day, at most every 4 days) and at 7, 30, 100 and 365 diary days.
+- **A support wizard** in 3 steps: why support Azqm, what you get with Pro, and picking an amount right there. It opens from the banner on "Today" (✕ hides it for 3 days) and now and then on start (from the third day, at most every 4 days, and at 7, 30, 100 and 365 diary days).
 
 ## Azqm 1.3.0
 

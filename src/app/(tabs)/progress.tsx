@@ -4,6 +4,7 @@ import { useSQLiteContext } from 'expo-sqlite';
 import { router } from 'expo-router';
 import { Button, Card, IconButton, Input, Row, Screen, SectionHeader, Txt } from '@/components/ui';
 import { BodyFigure } from '@/components/BodyFigure';
+import { HelpButton } from '@/components/HelpButton';
 import { LineChart } from '@/components/charts/LineChart';
 import { CameraIcon, CheckIcon, CompareIcon, TrashIcon, UserIcon } from '@/components/icons';
 import { ProLock } from '@/components/ProLock';
@@ -95,9 +96,12 @@ export default function ProgressScreen() {
       subtitle={tr('Тегло и индекс на телесна маса', 'Weight and body mass index')}
       scroll
       right={
-        <IconButton onPress={() => router.push('/profile')} accessibilityLabel={tr('Профил', 'Profile')}>
-          <UserIcon size={22} color={t.c.text} />
-        </IconButton>
+        <Row gap={10}>
+          <HelpButton section="progress" />
+          <IconButton onPress={() => router.push('/profile')} accessibilityLabel={tr('Профил', 'Profile')}>
+            <UserIcon size={22} color={t.c.text} />
+          </IconButton>
+        </Row>
       }
     >
       <Card>

@@ -3,6 +3,7 @@ import { Alert, Pressable, ScrollView, View } from 'react-native';
 import { useSQLiteContext } from 'expo-sqlite';
 import { Bar, Button, Card, Chip, Row, Screen, SectionHeader, Txt } from '@/components/ui';
 import { ProgressRing } from '@/components/ProgressRing';
+import { HelpButton } from '@/components/HelpButton';
 import { CheckIcon, DropletIcon, TrashIcon, WarningIcon } from '@/components/icons';
 import { useSettings } from '@/context/SettingsContext';
 import { useProfile } from '@/context/ProfileContext';
@@ -127,6 +128,7 @@ export default function FastingScreen() {
       title={tr('Пост', 'Fasting')}
       subtitle={tr('Интервално хранене и гладуване · цел {h} ч', 'Intermittent and extended fasting · goal {h} h', { h: timer.goalHours })}
       scroll
+      right={<HelpButton section="fasting" />}
     >
       <Card style={{ alignItems: 'center', paddingVertical: 24 }}>
         <ProgressRing size={230} strokeWidth={16} progress={timer.progress} color={timer.isGoalReached ? t.c.success : t.c.accent}>

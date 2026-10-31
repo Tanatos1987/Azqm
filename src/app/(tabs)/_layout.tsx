@@ -4,6 +4,7 @@ import { Tabs, router } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { AddIcon, AnalysisIcon, FastingIcon, HeartIcon, ProgressIcon, TodayIcon } from '@/components/icons';
 import { usePro } from '@/context/ProContext';
+import { TourTarget } from '@/context/TourContext';
 import { FONT, useTheme } from '@/theme/ThemeContext';
 import { useI18n } from '@/i18n';
 
@@ -44,10 +45,51 @@ export default function TabsLayout() {
       }}
     >
       <Tabs.Screen name="index" options={{ title: tr('Днес', 'Today'), tabBarIcon: ({ color }) => <TodayIcon size={26} color={color} /> }} />
-      <Tabs.Screen name="add" options={{ title: tr('Добави', 'Add'), tabBarIcon: ({ color }) => <AddIcon size={26} color={color} /> }} />
-      <Tabs.Screen name="analysis" options={{ title: tr('Анализ', 'Analysis'), tabBarIcon: ({ color }) => <AnalysisIcon size={26} color={color} /> }} />
-      <Tabs.Screen name="progress" options={{ title: tr('Прогрес', 'Progress'), tabBarIcon: ({ color }) => <ProgressIcon size={26} color={color} /> }} />
-      <Tabs.Screen name="fasting" options={{ title: tr('Пост', 'Fasting'), tabBarIcon: ({ color }) => <FastingIcon size={26} color={color} /> }} />
+      {/* TourTarget: the first-run tour points at these tabs. */}
+      <Tabs.Screen
+        name="add"
+        options={{
+          title: tr('Добави', 'Add'),
+          tabBarIcon: ({ color }) => (
+            <TourTarget id="tab-add">
+              <AddIcon size={26} color={color} />
+            </TourTarget>
+          ),
+        }}
+      />
+      <Tabs.Screen
+        name="analysis"
+        options={{
+          title: tr('Анализ', 'Analysis'),
+          tabBarIcon: ({ color }) => (
+            <TourTarget id="tab-analysis">
+              <AnalysisIcon size={26} color={color} />
+            </TourTarget>
+          ),
+        }}
+      />
+      <Tabs.Screen
+        name="progress"
+        options={{
+          title: tr('Прогрес', 'Progress'),
+          tabBarIcon: ({ color }) => (
+            <TourTarget id="tab-progress">
+              <ProgressIcon size={26} color={color} />
+            </TourTarget>
+          ),
+        }}
+      />
+      <Tabs.Screen
+        name="fasting"
+        options={{
+          title: tr('Пост', 'Fasting'),
+          tabBarIcon: ({ color }) => (
+            <TourTarget id="tab-fasting">
+              <FastingIcon size={26} color={color} />
+            </TourTarget>
+          ),
+        }}
+      />
       {/* Until the user has Pro: a sixth tab, always in the accent colour, that opens the support screen. */}
       <Tabs.Screen
         name="pro"
@@ -55,7 +97,11 @@ export default function TabsLayout() {
           title: tr('Подкрепи', 'Support'),
           href: loaded && !isPro ? undefined : null,
           tabBarInactiveTintColor: t.c.accent,
-          tabBarIcon: () => <HeartIcon size={26} color={t.c.accent} filled />,
+          tabBarIcon: () => (
+            <TourTarget id="tab-pro">
+              <HeartIcon size={26} color={t.c.accent} filled />
+            </TourTarget>
+          ),
         }}
         listeners={{
           tabPress: (e) => {

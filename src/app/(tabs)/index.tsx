@@ -1,6 +1,6 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { Pressable, View } from 'react-native';
-import { router } from 'expo-router';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { Pressable, ScrollView, View } from 'react-native';
+import { router, useIsFocused } from 'expo-router';
 import { useSQLiteContext } from 'expo-sqlite';
 import { Bar, Button, Card, EmptyState, IconButton, Row, Screen, Txt } from '@/components/ui';
 import { ProgressRing } from '@/components/ProgressRing';
@@ -8,7 +8,8 @@ import { DateSwitcher } from '@/components/DateSwitcher';
 import { FoodEntryRow } from '@/components/FoodEntryRow';
 import { EntrySheet } from '@/components/EntrySheet';
 import { SupportBanner } from '@/components/SupportNudge';
-import { ChevronRightIcon, CopyIcon, DropletIcon, FastingIcon, PlusIcon, SettingsIcon, WarningIcon } from '@/components/icons';
+import { ChevronRightIcon, CopyIcon, DropletIcon, FastingIcon, HelpIcon, PlusIcon, SettingsIcon, WarningIcon } from '@/components/icons';
+import { TourTarget, useTour, useTourScroller } from '@/context/TourContext';
 import { useSettings } from '@/context/SettingsContext';
 import { useProfile } from '@/context/ProfileContext';
 import { useDataRefresh } from '@/context/DataRefreshContext';
@@ -40,6 +41,28 @@ export default function TodayScreen() {
   const { lang, tr } = useI18n();
   const fasting = useFasting(30000);
   const diet = getDiet(settings.dietId);
+  const tour = useTour();
+  const focused = useIsFocused();
+
+  // The tour scrolls this screen to bring its buttons into view.
+  const scrollRef = useRef<ScrollView>(null);
+  const scrollY = useRef(0);
+  const scroller = useMemo(
+    () => ({
+      scrollBy: (dy: number) => scrollRef.current?.scrollTo({ y: Math.max(0, scrollY.current + dy), animated: true }),
+      scrollToTop: () => scrollRef.current?.scrollTo({ y: 0, animated: false }),
+    }),
+    []
+  );
+  useTourScroller(scroller);
+
+  // First time on Today (after onboarding, or after the update that added the tour): show the tour once.
+  const { seen: tourSeen, active: tourActive, start: startTour } = tour;
+  useEffect(() => {
+    if (!focused || tourSeen !== false || tourActive) return;
+    const timer = setTimeout(startTour, 900);
+    return () => clearTimeout(timer);
+  }, [focused, tourSeen, tourActive, startTour]);
 
   const [entries, setEntries] = useState<FoodEntry[]>([]);
   const [water, setWater] = useState<HydrationTotals>(EMPTY_WATER);
@@ -108,6 +131,13 @@ export default function TodayScreen() {
   return (
     <Screen
       scroll
+      scrollRef={scrollRef}
+      scrollProps={{
+        onScroll: (e) => {
+          scrollY.current = e.nativeEvent.contentOffset.y;
+        },
+        scrollEventThrottle: 32,
+      }}
       left={
         <Txt v="h2" tone="accent" style={{ fontWeight: '800' }}>
           Azqm
@@ -115,135 +145,155 @@ export default function TodayScreen() {
       }
       right={
         <Row gap={10}>
-          <DateSwitcher compact />
-          <IconButton onPress={() => router.push('/settings')} accessibilityLabel={tr('Настройки', 'Settings')}>
-            <SettingsIcon size={22} color={t.c.text} />
-          </IconButton>
+          <TourTarget id="today-date">
+            <DateSwitcher compact />
+          </TourTarget>
+          <TourTarget id="today-settings">
+            <IconButton onPress={() => router.push('/settings')} accessibilityLabel={tr('Настройки', 'Settings')}>
+              <SettingsIcon size={22} color={t.c.text} />
+            </IconButton>
+          </TourTarget>
         </Row>
       }
     >
-      <Txt v="small" tone="textMuted" style={{ marginBottom: 10 }}>
-        {formatLongDate(date)}
-      </Txt>
+      <Row style={{ marginBottom: 10, justifyContent: 'space-between' }}>
+        <Txt v="small" tone="textMuted" style={{ flexShrink: 1 }}>
+          {formatLongDate(date)}
+        </Txt>
+        <TourTarget id="today-help">
+          <Pressable onPress={() => router.push('/help')} hitSlop={8} style={({ pressed }) => [s.helpPill, pressed && { opacity: 0.75 }]} accessibilityLabel={tr('Помощ', 'Help')}>
+            <HelpIcon size={16} color={t.c.accent} />
+            <Txt v="smallStrong" tone="accent">
+              {tr('Помощ', 'Help')}
+            </Txt>
+          </Pressable>
+        </TourTarget>
+      </Row>
 
       <SupportBanner />
 
-      <Pressable onPress={() => router.push('/diet')} style={({ pressed }) => [s.dietChip, pressed && { opacity: 0.8 }]}>
-        <View style={{ flex: 1 }}>
+      <TourTarget id="today-diet" style={{ marginBottom: 14 }}>
+        <Pressable onPress={() => router.push('/diet')} style={({ pressed }) => [s.dietChip, pressed && { opacity: 0.8 }]}>
+          <View style={{ flex: 1 }}>
+            <Txt v="caption" tone="textMuted">
+              {tr('Хранителен режим', 'Diet')}
+            </Txt>
+            <Txt v="bodyStrong">{diet.name}</Txt>
+          </View>
           <Txt v="caption" tone="textMuted">
-            {tr('Хранителен режим', 'Diet')}
+            {tr('Смени', 'Change')}
           </Txt>
-          <Txt v="bodyStrong">{diet.name}</Txt>
-        </View>
-        <Txt v="caption" tone="textMuted">
-          {tr('Смени', 'Change')}
-        </Txt>
-        <ChevronRightIcon size={18} color={t.c.textMuted} />
-      </Pressable>
+          <ChevronRightIcon size={18} color={t.c.textMuted} />
+        </Pressable>
+      </TourTarget>
 
-      {diet.noCalories ? (
-        <Card>
-          <Txt v="h3" style={{ marginBottom: 6 }}>
-            {tr('Лечебно гладуване', 'Therapeutic fasting')}
-          </Txt>
-          <Txt tone="textMuted">
-            {fasting.isFasting
-              ? tr('В пост от {duration} (цел {h} ч).', 'Fasting for {duration} (goal {h} h).', {
-                  duration: formatDuration(fasting.elapsedMs, false),
-                  h: fasting.goalHours,
-                })
-              : tr('Таймерът не е пуснат — започни поста от раздел „Пост“.', 'The timer isn’t running — start your fast from the “Fasting” tab.')}
-          </Txt>
-          <Txt v="small" tone="warning" style={{ marginTop: 10 }}>
-            {tr(
-              'Пий вода и електролити. При слабост, сърцебиене или замайване прекъсни гладуването.',
-              'Drink water and take electrolytes. Stop fasting if you feel weak, dizzy or your heart is racing.'
-            )}
-          </Txt>
-          <Button label={tr('Към таймера', 'Go to timer')} variant="secondary" small onPress={() => router.navigate('/fasting')} style={{ marginTop: 12, alignSelf: 'flex-start' }} />
-        </Card>
-      ) : (
-        <Card>
-          <Row gap={16} style={{ alignItems: 'center' }}>
-            <ProgressRing size={136} strokeWidth={13} progress={goals.calories > 0 ? totals.kcal / goals.calories : 0} color={remaining < 0 ? t.c.warning : t.c.accent}>
-              <Txt v="h1" style={{ fontVariant: ['tabular-nums'] }}>
-                {formatNumber(totals.kcal)}
-              </Txt>
-              <Txt v="caption" tone="textMuted">
-                {tr('от', 'of')} {formatNumber(goals.calories)} {tr('ккал', 'kcal')}
-              </Txt>
-            </ProgressRing>
-            <View style={{ flex: 1, gap: 12 }}>
-              <View>
+      <TourTarget id="today-summary" style={{ marginBottom: 14 }}>
+        {diet.noCalories ? (
+          <Card style={{ marginBottom: 0 }}>
+            <Txt v="h3" style={{ marginBottom: 6 }}>
+              {tr('Лечебно гладуване', 'Therapeutic fasting')}
+            </Txt>
+            <Txt tone="textMuted">
+              {fasting.isFasting
+                ? tr('В пост от {duration} (цел {h} ч).', 'Fasting for {duration} (goal {h} h).', {
+                    duration: formatDuration(fasting.elapsedMs, false),
+                    h: fasting.goalHours,
+                  })
+                : tr('Таймерът не е пуснат — започни поста от раздел „Пост“.', 'The timer isn’t running — start your fast from the “Fasting” tab.')}
+            </Txt>
+            <Txt v="small" tone="warning" style={{ marginTop: 10 }}>
+              {tr(
+                'Пий вода и електролити. При слабост, сърцебиене или замайване прекъсни гладуването.',
+                'Drink water and take electrolytes. Stop fasting if you feel weak, dizzy or your heart is racing.'
+              )}
+            </Txt>
+            <Button label={tr('Към таймера', 'Go to timer')} variant="secondary" small onPress={() => router.navigate('/fasting')} style={{ marginTop: 12, alignSelf: 'flex-start' }} />
+          </Card>
+        ) : (
+          <Card style={{ marginBottom: 0 }}>
+            <Row gap={16} style={{ alignItems: 'center' }}>
+              <ProgressRing size={136} strokeWidth={13} progress={goals.calories > 0 ? totals.kcal / goals.calories : 0} color={remaining < 0 ? t.c.warning : t.c.accent}>
+                <Txt v="h1" style={{ fontVariant: ['tabular-nums'] }}>
+                  {formatNumber(totals.kcal)}
+                </Txt>
                 <Txt v="caption" tone="textMuted">
-                  {remaining >= 0 ? tr('Остават', 'Remaining') : tr('Над целта', 'Over goal')}
+                  {tr('от', 'of')} {formatNumber(goals.calories)} {tr('ккал', 'kcal')}
                 </Txt>
-                <Txt v="h2" tone={remaining >= 0 ? 'text' : 'warning'}>
-                  {formatNumber(Math.abs(remaining))} {tr('ккал', 'kcal')}
-                </Txt>
+              </ProgressRing>
+              <View style={{ flex: 1, gap: 12 }}>
+                <View>
+                  <Txt v="caption" tone="textMuted">
+                    {remaining >= 0 ? tr('Остават', 'Remaining') : tr('Над целта', 'Over goal')}
+                  </Txt>
+                  <Txt v="h2" tone={remaining >= 0 ? 'text' : 'warning'}>
+                    {formatNumber(Math.abs(remaining))} {tr('ккал', 'kcal')}
+                  </Txt>
+                </View>
+                <MacroBar label={tr('Протеин', 'Protein')} value={totals.protein} goal={goals.protein} color={t.c.protein} />
+                <MacroBar label={tr('Мазнини', 'Fat')} value={totals.fat} goal={goals.fat} color={t.c.fat} />
+                <MacroBar label={diet.carbBasis === 'net' ? tr('Нетни въгл.', 'Net carbs') : tr('Въглехидрати', 'Carbs')} value={carbs} goal={goals.carbs} color={t.c.carbs} strictMax={diet.carbCapG != null} />
               </View>
-              <MacroBar label={tr('Протеин', 'Protein')} value={totals.protein} goal={goals.protein} color={t.c.protein} />
-              <MacroBar label={tr('Мазнини', 'Fat')} value={totals.fat} goal={goals.fat} color={t.c.fat} />
-              <MacroBar label={diet.carbBasis === 'net' ? tr('Нетни въгл.', 'Net carbs') : tr('Въглехидрати', 'Carbs')} value={carbs} goal={goals.carbs} color={t.c.carbs} strictMax={diet.carbCapG != null} />
-            </View>
-          </Row>
-          {split && (
-            <Txt v="caption" tone="textMuted" style={{ marginTop: 14 }}>
-              {tr('Разпределение днес: Б', 'Today’s split: P')} {Math.round(split.p * 100)}% · {tr('М', 'F')} {Math.round(split.f * 100)}% · {tr('В', 'C')} {Math.round(split.c * 100)}% (
-              {tr('цел', 'goal')} {Math.round(diet.split.protein * 100)}/{Math.round(diet.split.fat * 100)}/{Math.round(diet.split.carbs * 100)}) · {tr('Фибри', 'Fiber')}{' '}
-              {formatNumber(totals.fiber)} {tr('г', 'g')}
-            </Txt>
-          )}
-        </Card>
-      )}
+            </Row>
+            {split && (
+              <Txt v="caption" tone="textMuted" style={{ marginTop: 14 }}>
+                {tr('Разпределение днес: Б', 'Today’s split: P')} {Math.round(split.p * 100)}% · {tr('М', 'F')} {Math.round(split.f * 100)}% · {tr('В', 'C')} {Math.round(split.c * 100)}% (
+                {tr('цел', 'goal')} {Math.round(diet.split.protein * 100)}/{Math.round(diet.split.fat * 100)}/{Math.round(diet.split.carbs * 100)}) · {tr('Фибри', 'Fiber')}{' '}
+                {formatNumber(totals.fiber)} {tr('г', 'g')}
+              </Txt>
+            )}
+          </Card>
+        )}
+      </TourTarget>
 
-      <Row gap={10} style={{ marginBottom: 14, alignItems: 'stretch' }}>
-        <Card style={s.tile} tight>
-          <Row gap={6}>
-            <DropletIcon size={18} color={t.c.water} />
+      <TourTarget id="today-tiles" style={{ marginBottom: 14 }}>
+        <Row gap={10} style={{ alignItems: 'stretch' }}>
+          <Card style={s.tile} tight>
+            <Row gap={6}>
+              <DropletIcon size={18} color={t.c.water} />
+              <Txt v="caption" tone="textMuted">
+                {tr('Вода', 'Water')}
+              </Txt>
+            </Row>
+            <Txt v="h3" style={{ marginTop: 6 }}>
+              {formatNumber(water.waterMl / 1000, 2)} / {formatNumber(waterGoal / 1000, 1)} {tr('л', 'L')}
+            </Txt>
+            <Bar value={water.waterMl} max={waterGoal} color={t.c.water} height={6} style={{ marginVertical: 8 }} />
+            <Pressable onPress={() => addWater(250)} style={s.tileBtn} hitSlop={6}>
+              <PlusIcon size={16} color={t.c.water} />
+              <Txt v="smallStrong" color={t.c.water}>
+                250 {tr('мл', 'ml')}
+              </Txt>
+            </Pressable>
+          </Card>
+          <Card style={s.tile} tight onPress={() => router.navigate('/fasting')}>
+            <Row gap={6}>
+              <FastingIcon size={18} color={t.c.accent} />
+              <Txt v="caption" tone="textMuted">
+                {tr('Пост', 'Fasting')}
+              </Txt>
+            </Row>
+            <Txt v="h3" style={{ marginTop: 6 }}>
+              {fasting.isFasting ? formatDuration(fasting.elapsedMs, false) : tr('не е пуснат', 'not started')}
+            </Txt>
+            <Txt v="caption" tone="textMuted" style={{ marginTop: 6 }}>
+              {fasting.isFasting ? tr('цел {h} ч', 'goal {h} h', { h: fasting.goalHours }) : tr('цел {h} ч · старт', 'goal {h} h · start', { h: settings.fastingGoalHours })}
+            </Txt>
+          </Card>
+          <Card style={s.tile} tight onPress={() => router.navigate('/analysis')}>
             <Txt v="caption" tone="textMuted">
-              {tr('Вода', 'Water')}
+              {tr('Средно 7 дни', '7-day average')}
             </Txt>
-          </Row>
-          <Txt v="h3" style={{ marginTop: 6 }}>
-            {formatNumber(water.waterMl / 1000, 2)} / {formatNumber(waterGoal / 1000, 1)} {tr('л', 'L')}
-          </Txt>
-          <Bar value={water.waterMl} max={waterGoal} color={t.c.water} height={6} style={{ marginVertical: 8 }} />
-          <Pressable onPress={() => addWater(250)} style={s.tileBtn} hitSlop={6}>
-            <PlusIcon size={16} color={t.c.water} />
-            <Txt v="smallStrong" color={t.c.water}>
-              250 {tr('мл', 'ml')}
+            <Txt v="h3" style={{ marginTop: 6 }}>
+              {avg7.days ? formatNumber(avg7.kcal) : '—'}
             </Txt>
-          </Pressable>
-        </Card>
-        <Card style={s.tile} tight onPress={() => router.navigate('/fasting')}>
-          <Row gap={6}>
-            <FastingIcon size={18} color={t.c.accent} />
-            <Txt v="caption" tone="textMuted">
-              {tr('Пост', 'Fasting')}
+            <Txt v="caption" tone="textMuted" style={{ marginTop: 6 }}>
+              {avg7.days
+                ? tr('ккал/ден · {n} {n|ден|дни}', 'kcal/day · {n} {n|day|days}', { n: avg7.days })
+                : tr('още няма дни', 'no days yet')}
             </Txt>
-          </Row>
-          <Txt v="h3" style={{ marginTop: 6 }}>
-            {fasting.isFasting ? formatDuration(fasting.elapsedMs, false) : tr('не е пуснат', 'not started')}
-          </Txt>
-          <Txt v="caption" tone="textMuted" style={{ marginTop: 6 }}>
-            {fasting.isFasting ? tr('цел {h} ч', 'goal {h} h', { h: fasting.goalHours }) : tr('цел {h} ч · старт', 'goal {h} h · start', { h: settings.fastingGoalHours })}
-          </Txt>
-        </Card>
-        <Card style={s.tile} tight onPress={() => router.navigate('/analysis')}>
-          <Txt v="caption" tone="textMuted">
-            {tr('Средно 7 дни', '7-day average')}
-          </Txt>
-          <Txt v="h3" style={{ marginTop: 6 }}>
-            {avg7.days ? formatNumber(avg7.kcal) : '—'}
-          </Txt>
-          <Txt v="caption" tone="textMuted" style={{ marginTop: 6 }}>
-            {avg7.days
-              ? tr('ккал/ден · {n} {n|ден|дни}', 'kcal/day · {n} {n|day|days}', { n: avg7.days })
-              : tr('още няма дни', 'no days yet')}
-          </Txt>
-        </Card>
-      </Row>
+          </Card>
+        </Row>
+      </TourTarget>
 
       {alerts.length > 0 && (
         <Card style={{ backgroundColor: t.c.warningSoft }} onPress={() => router.navigate('/analysis')}>
@@ -261,7 +311,9 @@ export default function TodayScreen() {
         </Card>
       )}
 
-      <Button label={tr('Добави храна', 'Add food')} icon={<PlusIcon size={22} color={t.c.onAccent} />} onPress={() => router.navigate('/add')} style={{ marginBottom: 14 }} />
+      <TourTarget id="today-add" style={{ marginBottom: 14 }}>
+        <Button label={tr('Добави храна', 'Add food')} icon={<PlusIcon size={22} color={t.c.onAccent} />} onPress={() => router.navigate('/add')} />
+      </TourTarget>
 
       {entries.length === 0 ? (
         <Card>
@@ -332,8 +384,8 @@ const useStyles = makeStyles((t) => ({
     borderRadius: 18,
     paddingHorizontal: 16,
     paddingVertical: 12,
-    marginBottom: 14,
   },
+  helpPill: { flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 10, paddingVertical: 4, borderRadius: 12, backgroundColor: t.c.accentSoft },
   tile: { flex: 1, marginBottom: 0, justifyContent: 'space-between' },
   tileBtn: { flexDirection: 'row', alignItems: 'center', gap: 4, alignSelf: 'flex-start' },
 }));

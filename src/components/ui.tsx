@@ -78,13 +78,15 @@ interface ScreenProps {
   children: React.ReactNode;
   scroll?: boolean;
   scrollProps?: ScrollViewProps;
+  scrollRef?: React.Ref<ScrollView>;
   padded?: boolean;
 }
 
-export function Screen({ title, subtitle, right, left, children, scroll, scrollProps, padded = true }: ScreenProps) {
+export function Screen({ title, subtitle, right, left, children, scroll, scrollProps, scrollRef, padded = true }: ScreenProps) {
   const s = useStyles();
   const body = scroll ? (
     <ScrollView
+      ref={scrollRef}
       keyboardShouldPersistTaps="handled"
       showsVerticalScrollIndicator={false}
       {...scrollProps}

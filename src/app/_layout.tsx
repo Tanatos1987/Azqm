@@ -12,6 +12,7 @@ import { ProfileProvider, useProfile } from '@/context/ProfileContext';
 import { ProProvider } from '@/context/ProContext';
 import { SelectedDateProvider } from '@/context/SelectedDateContext';
 import { ToastProvider } from '@/context/ToastContext';
+import { TourProvider } from '@/context/TourContext';
 import { ThemeProvider, useTheme } from '@/theme/ThemeContext';
 import { I18nProvider } from '@/i18n';
 
@@ -45,7 +46,9 @@ export default function RootLayout() {
                   <SelectedDateProvider>
                     <ToastProvider>
                       <ProProvider>
-                        <RootNavigator />
+                        <TourProvider>
+                          <RootNavigator />
+                        </TourProvider>
                       </ProProvider>
                     </ToastProvider>
                   </SelectedDateProvider>
@@ -88,6 +91,7 @@ function RootNavigator() {
           <Stack.Screen name="diet" />
           <Stack.Screen name="profile" options={{ presentation: 'modal', animation: 'slide_from_bottom' }} />
           <Stack.Screen name="support" />
+          <Stack.Screen name="help" />
           <Stack.Screen name="progress-photos" />
           <Stack.Screen name="progress-compare" />
           <Stack.Screen name="progress-camera" options={{ presentation: 'fullScreenModal', animation: 'slide_from_bottom', contentStyle: { backgroundColor: '#000' } }} />
