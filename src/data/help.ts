@@ -217,8 +217,12 @@ export function helpSections(): HelpSection[] {
         {
           emoji: '🎨',
           title: tr('Изглед', 'Appearance'),
-          text: tr('Тъмна или светла тема, размер на текста и език.', 'Dark or light theme, text size and language.'),
+          text: tr(
+            'Теми (цветове, шрифтове и форми), размер на текста и език. Класическата тема е и светла.',
+            'Themes (colours, fonts and shapes), text size and language. The Classic theme also comes in light.'
+          ),
         },
+        PRO_FEATURES.themes(),
         {
           emoji: '💾',
           title: tr('Данни', 'Data'),

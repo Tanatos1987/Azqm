@@ -5,7 +5,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { AddIcon, AnalysisIcon, FastingIcon, HeartIcon, ProgressIcon, TodayIcon } from '@/components/icons';
 import { usePro } from '@/context/ProContext';
 import { TourTarget } from '@/context/TourContext';
-import { FONT, useTheme } from '@/theme/ThemeContext';
+import { useTheme } from '@/theme/ThemeContext';
 import { useI18n } from '@/i18n';
 
 export default function TabsLayout() {
@@ -24,7 +24,7 @@ export default function TabsLayout() {
         tabBarInactiveTintColor: t.c.textMuted,
         tabBarStyle: {
           backgroundColor: t.c.surface,
-          borderTopColor: t.c.border,
+          borderTopColor: t.c.cardBorder,
           height: 64 + insets.bottom,
           paddingTop: 6,
           paddingBottom: Math.max(insets.bottom, 8),
@@ -36,7 +36,7 @@ export default function TabsLayout() {
             adjustsFontSizeToFit
             minimumFontScale={0.7}
             maxFontSizeMultiplier={1.4}
-            style={{ fontFamily: FONT, fontSize: 12 * Math.min(t.scale, 1.15), fontWeight: '600', color }}
+            style={{ fontFamily: t.font.body, fontSize: 12 * Math.min(t.scale, 1.15), fontWeight: '600', color }}
           >
             {children}
           </Text>

@@ -48,7 +48,7 @@ export function BarChart({ data, color, goal, overColor, height = 180, showValue
                   y={PAD.top + plotH - h}
                   width={barW}
                   height={Math.max(h, 0)}
-                  rx={Math.min(7, barW / 2)}
+                  rx={Math.min(t.shape.bar, barW / 2)}
                   fill={d.value === 0 ? t.c.surfaceAlt : over ? overColor ?? t.c.warning : color}
                 />
               );

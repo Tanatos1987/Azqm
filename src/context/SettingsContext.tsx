@@ -4,6 +4,7 @@ import * as SecureStore from 'expo-secure-store';
 import type { DailyGoals, VisionProvider } from '@/types';
 import type { DietId } from '@/data/diets';
 import type { TextScaleKey, ThemePref } from '@/theme/ThemeContext';
+import { DEFAULT_THEME_ID, isThemeId, type ThemeId } from '@/theme/themes';
 import { deviceLang, isLang, type Lang } from '@/i18n';
 
 const SETTINGS_KEY = 'azqm_settings_v1';
@@ -13,6 +14,9 @@ const API_KEY_STORE_KEY = 'azqm_vision_api_key_v1';
 export interface AppSettings {
   dietId: DietId;
   goals: DailyGoals;
+  /** colours, fonts and shapes (Настройки → Теми); Pro themes fall back to the free default without Pro */
+  themeId: ThemeId;
+  /** dark / light / system — for the Classic theme */
   themePref: ThemePref;
   textScale: TextScaleKey;
   language: Lang;
@@ -28,6 +32,7 @@ export function defaultModelFor(provider: VisionProvider): string {
 const DEFAULTS: AppSettings = {
   dietId: 'keto',
   goals: { calories: 1800, protein: 110, fat: 140, carbs: 25 },
+  themeId: DEFAULT_THEME_ID,
   themePref: 'system',
   textScale: 'normal',
   language: 'bg',
@@ -60,8 +65,12 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
         const [stored, storedKey] = await Promise.all([AsyncStorage.getItem(SETTINGS_KEY), SecureStore.getItemAsync(API_KEY_STORE_KEY)]);
         if (stored) {
           // Installs from before 1.1.0 have no language saved — they keep Bulgarian.
-          const next: AppSettings = { ...DEFAULTS, ...JSON.parse(stored) };
+          const saved = JSON.parse(stored);
+          const next: AppSettings = { ...DEFAULTS, ...saved };
           if (!isLang(next.language)) next.language = deviceLang();
+          // Before themes (1.5.0) there was only dark / light: whoever picked light keeps it in the Classic theme,
+          // everyone else gets the new default.
+          if (!isThemeId(saved.themeId)) next.themeId = next.themePref === 'light' ? 'classic' : DEFAULT_THEME_ID;
           latest.current = next;
           setSettings(next);
         } else {

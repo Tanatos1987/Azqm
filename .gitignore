@@ -42,3 +42,6 @@ yarn-error.*
 
 # USDA raw data (scripts/fetch-usda.mjs)
 .usda/
+
+# variable fonts downloaded by scripts/build-fonts.py
+scripts/.font-src/

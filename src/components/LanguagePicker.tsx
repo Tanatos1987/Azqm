@@ -138,10 +138,10 @@ const useStyles = makeStyles((t) => ({
     gap: 6,
     height: 44,
     paddingHorizontal: 12,
-    borderRadius: 22,
+    borderRadius: Math.min(t.shape.chip + 2, 22),
     backgroundColor: t.c.surface,
-    borderWidth: t.dark ? 0 : 1,
-    borderColor: t.c.border,
+    borderWidth: t.shape.border ? 1 : 0,
+    borderColor: t.c.cardBorder,
   },
   select: {
     flexDirection: 'row',

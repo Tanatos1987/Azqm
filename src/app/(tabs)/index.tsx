@@ -8,7 +8,7 @@ import { DateSwitcher } from '@/components/DateSwitcher';
 import { FoodEntryRow } from '@/components/FoodEntryRow';
 import { EntrySheet } from '@/components/EntrySheet';
 import { SupportBanner } from '@/components/SupportNudge';
-import { ChevronRightIcon, CopyIcon, DropletIcon, FastingIcon, HelpIcon, PlusIcon, SettingsIcon, WarningIcon } from '@/components/icons';
+import { ChevronRightIcon, CopyIcon, DropletIcon, FastingIcon, HelpIcon, PlusIcon, SettingsIcon, UtensilsIcon, WarningIcon } from '@/components/icons';
 import { TourTarget, useTour, useTourScroller } from '@/context/TourContext';
 import { useSettings } from '@/context/SettingsContext';
 import { useProfile } from '@/context/ProfileContext';
@@ -212,8 +212,8 @@ export default function TodayScreen() {
         ) : (
           <Card style={{ marginBottom: 0 }}>
             <Row gap={16} style={{ alignItems: 'center' }}>
-              <ProgressRing size={136} strokeWidth={13} progress={goals.calories > 0 ? totals.kcal / goals.calories : 0} color={remaining < 0 ? t.c.warning : t.c.accent}>
-                <Txt v="h1" style={{ fontVariant: ['tabular-nums'] }}>
+              <ProgressRing size={136} strokeWidth={13} progress={goals.calories > 0 ? totals.kcal / goals.calories : 0} colors={remaining < 0 ? [t.c.warning, t.c.danger] : t.ring}>
+                <Txt v="h1" num>
                   {formatNumber(totals.kcal)}
                 </Txt>
                 <Txt v="caption" tone="textMuted">
@@ -225,13 +225,13 @@ export default function TodayScreen() {
                   <Txt v="caption" tone="textMuted">
                     {remaining >= 0 ? tr('Остават', 'Remaining') : tr('Над целта', 'Over goal')}
                   </Txt>
-                  <Txt v="h2" tone={remaining >= 0 ? 'text' : 'warning'}>
+                  <Txt v="h2" num tone={remaining >= 0 ? 'text' : 'warning'}>
                     {formatNumber(Math.abs(remaining))} {tr('ккал', 'kcal')}
                   </Txt>
                 </View>
                 <MacroBar label={tr('Протеин', 'Protein')} value={totals.protein} goal={goals.protein} color={t.c.protein} />
                 <MacroBar label={tr('Мазнини', 'Fat')} value={totals.fat} goal={goals.fat} color={t.c.fat} />
-                <MacroBar label={diet.carbBasis === 'net' ? tr('Нетни въгл.', 'Net carbs') : tr('Въглехидрати', 'Carbs')} value={carbs} goal={goals.carbs} color={t.c.carbs} strictMax={diet.carbCapG != null} />
+                <MacroBar label={diet.carbBasis === 'net' ? tr('Нетни въгл.', 'Net carbs') : tr('Въглехидрати', 'Carbs')} value={carbs} goal={goals.carbs} color={t.c.carbs} limit={diet.carbCapG != null} />
               </View>
             </Row>
             {split && (
@@ -254,7 +254,7 @@ export default function TodayScreen() {
                 {tr('Вода', 'Water')}
               </Txt>
             </Row>
-            <Txt v="h3" style={{ marginTop: 6 }}>
+            <Txt v="h3" num style={{ marginTop: 6 }}>
               {formatNumber(water.waterMl / 1000, 2)} / {formatNumber(waterGoal / 1000, 1)} {tr('л', 'L')}
             </Txt>
             <Bar value={water.waterMl} max={waterGoal} color={t.c.water} height={6} style={{ marginVertical: 8 }} />
@@ -267,12 +267,12 @@ export default function TodayScreen() {
           </Card>
           <Card style={s.tile} tight onPress={() => router.navigate('/fasting')}>
             <Row gap={6}>
-              <FastingIcon size={18} color={t.c.accent} />
+              <FastingIcon size={18} color={t.c.fast} />
               <Txt v="caption" tone="textMuted">
                 {tr('Пост', 'Fasting')}
               </Txt>
             </Row>
-            <Txt v="h3" style={{ marginTop: 6 }}>
+            <Txt v="h3" num={fasting.isFasting} color={fasting.isFasting ? t.c.fast : undefined} style={{ marginTop: 6 }}>
               {fasting.isFasting ? formatDuration(fasting.elapsedMs, false) : tr('не е пуснат', 'not started')}
             </Txt>
             <Txt v="caption" tone="textMuted" style={{ marginTop: 6 }}>
@@ -283,7 +283,7 @@ export default function TodayScreen() {
             <Txt v="caption" tone="textMuted">
               {tr('Средно 7 дни', '7-day average')}
             </Txt>
-            <Txt v="h3" style={{ marginTop: 6 }}>
+            <Txt v="h3" num style={{ marginTop: 6 }}>
               {avg7.days ? formatNumber(avg7.kcal) : '—'}
             </Txt>
             <Txt v="caption" tone="textMuted" style={{ marginTop: 6 }}>
@@ -318,7 +318,8 @@ export default function TodayScreen() {
       {entries.length === 0 ? (
         <Card>
           <EmptyState
-            emoji="🍽️"
+            icon={<UtensilsIcon size={34} color={t.c.accent2} />}
+            tint={t.c.accent2}
             title={tr('Още няма записи за този ден', 'Nothing logged for this day yet')}
             text={tr('Добави храна от базата, с баркод или ръчно.', 'Add food from the database, by barcode or manually.')}
           >
@@ -356,21 +357,22 @@ export default function TodayScreen() {
   );
 }
 
-function MacroBar({ label, value, goal, color, strictMax }: { label: string; value: number; goal: number; color: string; strictMax?: boolean }) {
+/** `limit`: the goal is a cap (keto-style carbs) — the bar turns red from 85 % of it. */
+function MacroBar({ label, value, goal, color, limit }: { label: string; value: number; goal: number; color: string; limit?: boolean }) {
   const t = useTheme();
   const { tr } = useI18n();
-  const over = goal > 0 && value > goal * 1.05;
+  const near = limit && goal > 0 && value > goal * 0.85;
   return (
     <View>
       <Row style={{ justifyContent: 'space-between', marginBottom: 4 }}>
         <Txt v="caption" tone="textMuted">
           {label}
         </Txt>
-        <Txt v="caption" style={{ fontWeight: '700' }} color={over && strictMax ? t.c.warning : undefined}>
+        <Txt v="caption" num style={{ fontSize: 13, fontWeight: '700' }} color={near ? t.c.danger : undefined}>
           {formatNumber(value)} / {formatNumber(goal)} {tr('г', 'g')}
         </Txt>
       </Row>
-      <Bar value={value} max={goal} color={over && strictMax ? t.c.warning : color} height={8} />
+      <Bar value={value} max={goal} color={near ? t.c.danger : color} height={8} />
     </View>
   );
 }
@@ -381,11 +383,11 @@ const useStyles = makeStyles((t) => ({
     alignItems: 'center',
     gap: 8,
     backgroundColor: t.c.accentSoft,
-    borderRadius: 18,
+    borderRadius: t.shape.radius,
     paddingHorizontal: 16,
     paddingVertical: 12,
   },
-  helpPill: { flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 10, paddingVertical: 4, borderRadius: 12, backgroundColor: t.c.accentSoft },
+  helpPill: { flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 10, paddingVertical: 4, borderRadius: t.shape.chip, backgroundColor: t.c.accentSoft },
   tile: { flex: 1, marginBottom: 0, justifyContent: 'space-between' },
   tileBtn: { flexDirection: 'row', alignItems: 'center', gap: 4, alignSelf: 'flex-start' },
 }));

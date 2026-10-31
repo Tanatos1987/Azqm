@@ -32,6 +32,6 @@ export function DateSwitcher({ compact }: { compact?: boolean }) {
 }
 
 const useStyles = makeStyles((t) => ({
-  wrap: { flexDirection: 'row', alignItems: 'center', backgroundColor: t.c.surface, borderRadius: 22, paddingHorizontal: 4, paddingVertical: 2, borderWidth: t.dark ? 0 : 1, borderColor: t.c.border },
+  wrap: { flexDirection: 'row', alignItems: 'center', backgroundColor: t.c.surface, borderRadius: Math.min(t.shape.chip + 2, 22), paddingHorizontal: 4, paddingVertical: 2, borderWidth: t.shape.border ? 1 : 0, borderColor: t.c.cardBorder },
   btn: { padding: 8 },
 }));

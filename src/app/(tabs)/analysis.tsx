@@ -2,10 +2,10 @@ import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { Pressable, View } from 'react-native';
 import { router } from 'expo-router';
 import { useSQLiteContext } from 'expo-sqlite';
-import { Bar, Button, Card, EmptyState, Row, Screen, SectionHeader, Segmented, Txt } from '@/components/ui';
+import { Bar, Button, Card, Dot, EmptyState, Row, Screen, SectionHeader, Segmented, Txt } from '@/components/ui';
 import { BarChart } from '@/components/charts/BarChart';
 import { HelpButton } from '@/components/HelpButton';
-import { InfoIcon, LeafIcon, WarningIcon } from '@/components/icons';
+import { ChartIcon, InfoIcon, LeafIcon, WarningIcon } from '@/components/icons';
 import { useSettings } from '@/context/SettingsContext';
 import { useProfile } from '@/context/ProfileContext';
 import { useDataRefresh } from '@/context/DataRefreshContext';
@@ -15,6 +15,7 @@ import { getDiet } from '@/data/diets';
 import { FOODS } from '@/data/foods';
 import { NUTRIENT_META, formatAmount, netCarbsOf } from '@/data/nutrients';
 import { makeStyles, useTheme } from '@/theme/ThemeContext';
+import { onColor } from '@/theme/themes';
 import type { DaySummary, FoodEntry, HydrationTotals } from '@/types';
 import {
   analyzeNutrients,
@@ -133,7 +134,7 @@ export default function AnalysisScreen() {
       {days.length === 0 ? (
         <Card>
           <EmptyState
-            emoji="📊"
+            icon={<ChartIcon size={36} color={t.c.accent} color2={t.c.accent2} strokeWidth={2} />}
             title={tr('Още няма данни за този период', 'No data for this period yet')}
             text={tr(
               'Записвай храната си няколко дни и тук ще видиш средния прием, дефицитите и излишъците.',
@@ -200,12 +201,14 @@ export default function AnalysisScreen() {
               <>
                 <SplitBar label={tr('Ти', 'You')} p={split.p} f={split.f} c={split.c} />
                 <SplitBar label={tr('Цел', 'Goal')} p={diet.split.protein} f={diet.split.fat} c={diet.split.carbs} />
+                {/* The colours depend on the theme, so a legend instead of naming them. */}
+                <Row gap={14} style={{ marginTop: 6, flexWrap: 'wrap' }}>
+                  <LegendItem color={t.c.protein} label={tr('Протеин', 'Protein')} />
+                  <LegendItem color={t.c.fat} label={tr('Мазнини', 'Fat')} />
+                  <LegendItem color={t.c.carbs} label={diet.carbBasis === 'net' ? tr('Нетни въгл.', 'Net carbs') : tr('Въглехидрати', 'Carbs')} />
+                </Row>
                 <Txt v="caption" tone="textMuted" style={{ marginTop: 6 }}>
-                  {tr(
-                    'Дял от калориите: синьо — протеин, оранжево — мазнини, розово — въглехидрати. Цел: „{diet}“.',
-                    'Share of calories: blue — protein, orange — fat, pink — carbs. Goal: “{diet}”.',
-                    { diet: diet.name }
-                  )}
+                  {tr('Дял от калориите. Цел: „{diet}“.', 'Share of calories. Goal: “{diet}”.', { diet: diet.name })}
                 </Txt>
               </>
             )}
@@ -301,7 +304,7 @@ function MacroStat({ label, value, color }: { label: string; value: number; colo
   const { tr } = useI18n();
   return (
     <View style={{ alignItems: 'center', flex: 1 }}>
-      <Txt v="h2" color={color}>
+      <Txt v="h2" num color={color}>
         {formatNumber(value)}
       </Txt>
       <Txt v="caption" tone="textMuted">
@@ -311,16 +314,28 @@ function MacroStat({ label, value, color }: { label: string; value: number; colo
   );
 }
 
+function LegendItem({ color, label }: { color: string; label: string }) {
+  return (
+    <Row gap={6}>
+      <Dot color={color} size={9} />
+      <Txt v="caption" tone="textMuted">
+        {label}
+      </Txt>
+    </Row>
+  );
+}
+
 function SplitBar({ label, p, f, c }: { label: string; p: number; f: number; c: number }) {
   const t = useTheme();
   const total = p + f + c || 1;
-  const seg = (v: number, color: string) => (v > 0 ? <View style={{ flex: v / total, backgroundColor: color, alignItems: 'center', justifyContent: 'center' }}>{v / total > 0.09 ? <Txt v="caption" color="#fff" style={{ fontWeight: '700' }}>{Math.round((v / total) * 100)}%</Txt> : null}</View> : null);
+  // Dark text on the light colours (amber fat), white on the deep ones.
+  const seg = (v: number, color: string) => (v > 0 ? <View style={{ flex: v / total, backgroundColor: color, alignItems: 'center', justifyContent: 'center' }}>{v / total > 0.09 ? <Txt v="caption" color={onColor(color)} style={{ fontWeight: '700' }}>{Math.round((v / total) * 100)}%</Txt> : null}</View> : null);
   return (
     <Row gap={10} style={{ marginBottom: 8 }}>
       <Txt v="caption" tone="textMuted" style={{ width: 34 }}>
         {label}
       </Txt>
-      <View style={{ flex: 1, height: 24, borderRadius: 12, overflow: 'hidden', flexDirection: 'row', backgroundColor: t.c.track }}>
+      <View style={{ flex: 1, height: 24, borderRadius: Math.min(12, t.shape.control), overflow: 'hidden', flexDirection: 'row', backgroundColor: t.c.track }}>
         {seg(p, t.c.protein)}
         {seg(f, t.c.fat)}
         {seg(c, t.c.carbs)}

@@ -12,6 +12,7 @@ import { FAST_STAGES, formatDuration, useFasting } from '@/hooks/useFasting';
 import { deleteFast, getFasts, getHydrationTotals, insertHydrationEntry } from '@/db/queries';
 import { getDiet } from '@/data/diets';
 import { useTheme } from '@/theme/ThemeContext';
+import { mix } from '@/theme/themes';
 import type { FastRecord, HydrationTotals } from '@/types';
 import { formatDayMonth, formatNumber, todayKey } from '@/utils/date';
 import { waterGoalMl } from '@/utils/bodyMetrics';
@@ -131,8 +132,13 @@ export default function FastingScreen() {
       right={<HelpButton section="fasting" />}
     >
       <Card style={{ alignItems: 'center', paddingVertical: 24 }}>
-        <ProgressRing size={230} strokeWidth={16} progress={timer.progress} color={timer.isGoalReached ? t.c.success : t.c.accent}>
-          <Txt v="h1" style={{ fontVariant: ['tabular-nums'] }}>
+        <ProgressRing
+          size={230}
+          strokeWidth={16}
+          progress={timer.progress}
+          colors={timer.isGoalReached ? [t.c.success, mix(t.c.success, '#FFFFFF', 0.3)] : [t.c.fast, mix(t.c.fast, '#FFFFFF', 0.35)]}
+        >
+          <Txt v="h1" num>
             {formatDuration(timer.elapsedMs)}
           </Txt>
           <Txt v="small" tone="textMuted" style={{ marginTop: 2 }}>

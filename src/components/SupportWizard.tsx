@@ -17,12 +17,13 @@ const LAST_STEP = 2;
 /** How long to wait for prices before saying Google Play didn't answer (as on the support screen). */
 const PRICE_TIMEOUT_MS = 12000;
 
-export function SupportWizard({ milestoneDays, onClose }: { milestoneDays?: number; onClose: () => void }) {
+/** `initialStep` 1: start at what Pro gives (the theme picker's "unlock" button). */
+export function SupportWizard({ milestoneDays, initialStep = 0, onClose }: { milestoneDays?: number; initialStep?: number; onClose: () => void }) {
   const t = useTheme();
   const s = useStyles();
   const { tr } = useI18n();
   const { products, busy, buy, storeReady } = usePro();
-  const [step, setStep] = useState(0);
+  const [step, setStep] = useState(initialStep);
   const [waitedLong, setWaitedLong] = useState(false);
   const tiers = supportTiers();
 

@@ -10,7 +10,7 @@ import { ReminderSync } from '@/components/ReminderSync';
 import { SettingsProvider, useSettings } from '@/context/SettingsContext';
 import { DataRefreshProvider } from '@/context/DataRefreshContext';
 import { ProfileProvider, useProfile } from '@/context/ProfileContext';
-import { ProProvider } from '@/context/ProContext';
+import { ProProvider, usePro } from '@/context/ProContext';
 import { SelectedDateProvider } from '@/context/SelectedDateContext';
 import { ToastProvider } from '@/context/ToastContext';
 import { TourProvider } from '@/context/TourContext';
@@ -41,21 +41,22 @@ export default function RootLayout() {
       <SQLiteProvider databaseName="azqm.db" onInit={migrateDbIfNeeded}>
         <SettingsProvider>
           <LanguageGate>
-            <ThemeProvider>
-              <DataRefreshProvider>
-                <ProfileProvider>
-                  <SelectedDateProvider>
-                    <ToastProvider>
-                      <ProProvider>
+            {/* Pro sits above the theme: Pro themes need it. */}
+            <ProProvider>
+              <ThemeProvider>
+                <DataRefreshProvider>
+                  <ProfileProvider>
+                    <SelectedDateProvider>
+                      <ToastProvider>
                         <TourProvider>
                           <RootNavigator />
                         </TourProvider>
-                      </ProProvider>
-                    </ToastProvider>
-                  </SelectedDateProvider>
-                </ProfileProvider>
-              </DataRefreshProvider>
-            </ThemeProvider>
+                      </ToastProvider>
+                    </SelectedDateProvider>
+                  </ProfileProvider>
+                </DataRefreshProvider>
+              </ThemeProvider>
+            </ProProvider>
           </LanguageGate>
         </SettingsProvider>
       </SQLiteProvider>
@@ -72,8 +73,10 @@ function RootNavigator() {
   const t = useTheme();
   const settings = useSettings();
   const { loaded, profile } = useProfile();
-  // Render nothing until stored state is read, so onboarding doesn't flash for existing users.
-  if (!loaded || !settings.loaded) return null;
+  const pro = usePro();
+  // Render nothing until stored state is read, so onboarding doesn't flash for existing users and a Pro theme
+  // doesn't start in the free one (the saved Pro state is read from the phone, not from Google Play).
+  if (!loaded || !settings.loaded || !pro.loaded) return null;
   const hasProfile = profile !== null;
 
   return (
@@ -98,6 +101,7 @@ function RootNavigator() {
           <Stack.Screen name="recipes" />
           <Stack.Screen name="recipe" />
           <Stack.Screen name="reminders" />
+          <Stack.Screen name="themes" />
           <Stack.Screen name="progress-photos" />
           <Stack.Screen name="progress-compare" />
           <Stack.Screen name="progress-camera" options={{ presentation: 'fullScreenModal', animation: 'slide_from_bottom', contentStyle: { backgroundColor: '#000' } }} />

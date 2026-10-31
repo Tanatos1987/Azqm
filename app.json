@@ -1,8 +1,8 @@
-{
+﻿{
   "expo": {
     "name": "Azqm",
     "slug": "azqm",
-    "version": "1.4.0",
+    "version": "1.5.0",
     "scheme": "azqm",
     "orientation": "default",
     "icon": "./assets/icon.png",
@@ -74,6 +74,23 @@
           "android": {
             "fonts": [
               {
+                "fontFamily": "Inter",
+                "fontDefinitions": [
+                  { "path": "./assets/fonts/Inter_400Regular.ttf", "weight": 400 },
+                  { "path": "./assets/fonts/Inter_500Medium.ttf", "weight": 500 },
+                  { "path": "./assets/fonts/Inter_600SemiBold.ttf", "weight": 600 },
+                  { "path": "./assets/fonts/Inter_700Bold.ttf", "weight": 700 }
+                ]
+              },
+              {
+                "fontFamily": "Onest",
+                "fontDefinitions": [
+                  { "path": "./assets/fonts/Onest_600SemiBold.ttf", "weight": 600 },
+                  { "path": "./assets/fonts/Onest_700Bold.ttf", "weight": 700 },
+                  { "path": "./assets/fonts/Onest_800ExtraBold.ttf", "weight": 800 }
+                ]
+              },
+              {
                 "fontFamily": "Manrope",
                 "fontDefinitions": [
                   { "path": "./assets/fonts/Manrope_400Regular.ttf", "weight": 400 },
@@ -82,16 +99,55 @@
                   { "path": "./assets/fonts/Manrope_700Bold.ttf", "weight": 700 },
                   { "path": "./assets/fonts/Manrope_800ExtraBold.ttf", "weight": 800 }
                 ]
+              },
+              {
+                "fontFamily": "Tektur",
+                "fontDefinitions": [
+                  { "path": "./assets/fonts/Tektur_600SemiBold.ttf", "weight": 600 },
+                  { "path": "./assets/fonts/Tektur_700Bold.ttf", "weight": 700 },
+                  { "path": "./assets/fonts/Tektur_800ExtraBold.ttf", "weight": 800 }
+                ]
+              },
+              {
+                "fontFamily": "Montserrat",
+                "fontDefinitions": [
+                  { "path": "./assets/fonts/Montserrat_400Regular.ttf", "weight": 400 },
+                  { "path": "./assets/fonts/Montserrat_500Medium.ttf", "weight": 500 },
+                  { "path": "./assets/fonts/Montserrat_600SemiBold.ttf", "weight": 600 },
+                  { "path": "./assets/fonts/Montserrat_700Bold.ttf", "weight": 700 }
+                ]
+              },
+              {
+                "fontFamily": "AzqmSerif",
+                "fontDefinitions": [
+                  { "path": "./assets/fonts/AzqmSerif_700Bold.ttf", "weight": 700 },
+                  { "path": "./assets/fonts/AzqmSerif_800ExtraBold.ttf", "weight": 800 }
+                ]
+              },
+              {
+                "fontFamily": "Unbounded",
+                "fontDefinitions": [
+                  { "path": "./assets/fonts/Unbounded_700Bold.ttf", "weight": 700 },
+                  { "path": "./assets/fonts/Unbounded_800ExtraBold.ttf", "weight": 800 }
+                ]
+              },
+              {
+                "fontFamily": "Exo2",
+                "fontDefinitions": [
+                  { "path": "./assets/fonts/Exo2_400Regular.ttf", "weight": 400 },
+                  { "path": "./assets/fonts/Exo2_500Medium.ttf", "weight": 500 },
+                  { "path": "./assets/fonts/Exo2_600SemiBold.ttf", "weight": 600 },
+                  { "path": "./assets/fonts/Exo2_700Bold.ttf", "weight": 700 }
+                ]
+              },
+              {
+                "fontFamily": "WixMadeforDisplay",
+                "fontDefinitions": [
+                  { "path": "./assets/fonts/WixMadeforDisplay_600SemiBold.ttf", "weight": 600 },
+                  { "path": "./assets/fonts/WixMadeforDisplay_700Bold.ttf", "weight": 700 },
+                  { "path": "./assets/fonts/WixMadeforDisplay_800ExtraBold.ttf", "weight": 800 }
+                ]
               }
-            ]
-          },
-          "ios": {
-            "fonts": [
-              "./assets/fonts/Manrope_400Regular.ttf",
-              "./assets/fonts/Manrope_500Medium.ttf",
-              "./assets/fonts/Manrope_600SemiBold.ttf",
-              "./assets/fonts/Manrope_700Bold.ttf",
-              "./assets/fonts/Manrope_800ExtraBold.ttf"
             ]
           }
         }

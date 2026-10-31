@@ -1,6 +1,11 @@
 export interface Palette {
   bg: string;
+  /** opaque panels: sheets, tab bar, buttons on the background */
   surface: string;
+  /** card background (see-through in the glass theme, else the same as `surface`) */
+  card: string;
+  /** the 1 px line around cards */
+  cardBorder: string;
   surfaceAlt: string;
   border: string;
   text: string;
@@ -10,11 +15,15 @@ export interface Palette {
   /** text/icon color drawn on top of `accent` */
   onAccent: string;
   accentSoft: string;
+  /** second brand colour: ring gradient end, two-tone icons */
+  accent2: string;
   protein: string;
   fat: string;
   carbs: string;
   fiber: string;
   water: string;
+  /** fasting timer and the fasting tile */
+  fast: string;
   danger: string;
   dangerSoft: string;
   warning: string;
@@ -26,9 +35,12 @@ export interface Palette {
   shadow: string;
 }
 
+/** The original Azqm colours — the free "Classic" theme, which still follows Settings → dark / light / system. */
 export const darkPalette: Palette = {
   bg: '#0E1116',
   surface: '#171B22',
+  card: '#171B22',
+  cardBorder: '#2C3340',
   surfaceAlt: '#222833',
   border: '#2C3340',
   text: '#F3F5F8',
@@ -37,11 +49,13 @@ export const darkPalette: Palette = {
   accent: '#3DDC84',
   onAccent: '#05210F',
   accentSoft: 'rgba(61,220,132,0.15)',
+  accent2: '#3DDC84',
   protein: '#5B9DFF',
   fat: '#FFB020',
   carbs: '#FF6FAE',
   fiber: '#A594FF',
   water: '#38BDF8',
+  fast: '#3DDC84',
   danger: '#FF6B6B',
   dangerSoft: 'rgba(255,107,107,0.15)',
   warning: '#FFC145',
@@ -56,6 +70,8 @@ export const darkPalette: Palette = {
 export const lightPalette: Palette = {
   bg: '#F3F5F8',
   surface: '#FFFFFF',
+  card: '#FFFFFF',
+  cardBorder: '#DCE1E8',
   surfaceAlt: '#EBEEF3',
   border: '#DCE1E8',
   text: '#121720',
@@ -64,11 +80,13 @@ export const lightPalette: Palette = {
   accent: '#15A04A',
   onAccent: '#FFFFFF',
   accentSoft: 'rgba(21,160,74,0.12)',
+  accent2: '#15A04A',
   protein: '#2563EB',
   fat: '#D97706',
   carbs: '#DB2777',
   fiber: '#7C3AED',
   water: '#0284C7',
+  fast: '#15A04A',
   danger: '#DC2626',
   dangerSoft: 'rgba(220,38,38,0.1)',
   warning: '#B45309',

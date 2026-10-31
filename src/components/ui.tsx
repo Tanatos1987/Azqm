@@ -1,6 +1,6 @@
 /**
- * Shared UI building blocks. Everything reads the active theme (dark/light, text size), so screens only
- * describe layout. <Txt> applies the app font and the user's text-size setting to every label.
+ * Shared UI building blocks. Everything reads the active theme (colours, fonts, shapes, text size), so screens only
+ * describe layout. <Txt> applies the theme's fonts and the user's text-size setting to every label.
  */
 import React from 'react';
 import {
@@ -22,7 +22,9 @@ import {
   type ViewStyle,
 } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
-import { FONT, TYPE, makeStyles, useTheme, type TypeVariant } from '@/theme/ThemeContext';
+import Svg, { Defs, LinearGradient, Rect, Stop } from 'react-native-svg';
+import { TYPE, makeStyles, useTheme, type TypeVariant } from '@/theme/ThemeContext';
+import { alpha, type Theme } from '@/theme/themes';
 import type { Palette } from '@/theme/palette';
 
 /** Widest the content column gets on tablets and in landscape. */
@@ -37,18 +39,28 @@ interface TxtProps extends TextProps {
   tone?: Tone;
   color?: string;
   center?: boolean;
+  /** a big number: drawn in the theme's number font (`display` and `num` always are) */
+  num?: boolean;
 }
 
-export function Txt({ v = 'body', tone = 'text', color, center, style, ...rest }: TxtProps) {
+/** Which of the theme's fonts a text uses, and its size factor. */
+function fontOf(t: Theme, v: TypeVariant, num?: boolean): { family: string; factor: number } {
+  if (num || v === 'display' || v === 'num') return { family: t.font.num, factor: t.font.numScale };
+  if (v === 'h1' || v === 'h2' || v === 'h3') return { family: t.font.display, factor: t.font.displayScale };
+  return { family: t.font.body, factor: 1 };
+}
+
+export function Txt({ v = 'body', tone = 'text', color, center, num, style, ...rest }: TxtProps) {
   const t = useTheme();
   const flat = StyleSheet.flatten([TYPE[v] as TextStyle, style]) ?? {};
-  const fontSize = (flat.fontSize ?? 16) * t.scale;
-  const lineHeight = flat.lineHeight != null ? flat.lineHeight * t.scale : undefined;
+  const { family, factor } = fontOf(t, v, num);
+  const fontSize = (flat.fontSize ?? 16) * t.scale * factor;
+  const lineHeight = flat.lineHeight != null ? flat.lineHeight * t.scale * factor : undefined;
   return (
     <Text
       maxFontSizeMultiplier={1.4}
       {...rest}
-      style={[{ fontFamily: FONT, color: t.c[tone] }, flat, { fontSize, lineHeight }, color ? { color } : null, center ? { textAlign: 'center' } : null]}
+      style={[{ fontFamily: family, color: t.c[tone] }, flat, { fontSize, lineHeight }, color ? { color } : null, center ? { textAlign: 'center' } : null]}
     />
   );
 }
@@ -83,6 +95,7 @@ interface ScreenProps {
 }
 
 export function Screen({ title, subtitle, right, left, children, scroll, scrollProps, scrollRef, padded = true }: ScreenProps) {
+  const t = useTheme();
   const s = useStyles();
   const body = scroll ? (
     <ScrollView
@@ -100,6 +113,7 @@ export function Screen({ title, subtitle, right, left, children, scroll, scrollP
   // left/right: in landscape the camera cutout or the 3-button navigation bar sits at the side.
   return (
     <SafeAreaView style={s.safe} edges={['top', 'left', 'right']}>
+      {t.fx.bgGradient && <GradientFill colors={t.fx.bgGradient} />}
       <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
         {(title || right || left) && (
           <View style={[s.header, s.padX, s.column]}>
@@ -123,6 +137,21 @@ export function Screen({ title, subtitle, right, left, children, scroll, scrollP
         {body}
       </KeyboardAvoidingView>
     </SafeAreaView>
+  );
+}
+
+/** Top-to-bottom gradient behind a screen (the glass theme). */
+export function GradientFill({ colors, style }: { colors: readonly [string, string]; style?: StyleProp<ViewStyle> }) {
+  return (
+    <Svg style={[StyleSheet.absoluteFill, style]} pointerEvents="none">
+      <Defs>
+        <LinearGradient id="screen-bg" x1="0" y1="0" x2="0.35" y2="1">
+          <Stop offset="0" stopColor={colors[0]} />
+          <Stop offset="1" stopColor={colors[1]} />
+        </LinearGradient>
+      </Defs>
+      <Rect x="0" y="0" width="100%" height="100%" fill="url(#screen-bg)" />
+    </Svg>
   );
 }
 
@@ -192,7 +221,15 @@ export function Button({ label, variant = 'primary', icon, small, style, flex, d
     <Pressable
       disabled={disabled}
       {...rest}
-      style={({ pressed }) => [s.button, small && s.buttonSmall, { backgroundColor: bg }, flex && { flex: 1 }, (pressed || disabled) && { opacity: disabled ? 0.45 : 0.8 }, style]}
+      style={({ pressed }) => [
+        s.button,
+        small && s.buttonSmall,
+        { backgroundColor: bg },
+        variant === 'primary' && !disabled && s.buttonGlow,
+        flex && { flex: 1 },
+        (pressed || disabled) && { opacity: disabled ? 0.45 : 0.8 },
+        style,
+      ]}
     >
       {icon}
       <Txt v={small ? 'smallStrong' : 'bodyStrong'} color={fg} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.75}>
@@ -281,10 +318,16 @@ export function Badge({ label, color, soft }: { label: string; color: string; so
   );
 }
 
-export function EmptyState({ emoji, title, text, children }: { emoji: string; title: string; text?: string; children?: React.ReactNode }) {
+/** `icon` (a vector icon) sits in a soft circle of `tint` (default: the accent); `emoji` is the old style. */
+export function EmptyState({ emoji, icon, tint, title, text, children }: { emoji?: string; icon?: React.ReactNode; tint?: string; title: string; text?: string; children?: React.ReactNode }) {
+  const t = useTheme();
   return (
     <View style={{ alignItems: 'center', paddingVertical: 28, paddingHorizontal: 16, gap: 6 }}>
-      <Text style={{ fontSize: 40 }}>{emoji}</Text>
+      {icon ? (
+        <View style={{ width: 76, height: 76, borderRadius: 38, alignItems: 'center', justifyContent: 'center', marginBottom: 8, backgroundColor: alpha(tint ?? t.c.accent, 0.12) }}>{icon}</View>
+      ) : (
+        <Text style={{ fontSize: 40 }}>{emoji}</Text>
+      )}
       <Txt v="h3" center>
         {title}
       </Txt>
@@ -326,33 +369,34 @@ export function Sheet({ visible, onClose, children, title }: { visible: boolean;
 
 const useStyles = makeStyles((t) => ({
   safe: { flex: 1, backgroundColor: t.c.bg },
-  padX: { paddingHorizontal: 16 },
+  padX: { paddingHorizontal: t.shape.screen },
   // Tablets, foldables and landscape: keep a readable column instead of stretching cards across the screen.
   column: { width: '100%', maxWidth: CONTENT_MAX_WIDTH, alignSelf: 'center' },
   header: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingTop: 10, paddingBottom: 14 },
   card: {
-    backgroundColor: t.c.surface,
-    borderRadius: 22,
-    padding: 18,
-    marginBottom: 14,
-    borderWidth: t.dark ? 0 : StyleSheet.hairlineWidth,
-    borderColor: t.c.border,
+    backgroundColor: t.c.card,
+    borderRadius: t.shape.radius,
+    padding: t.shape.padding,
+    marginBottom: t.shape.gap,
+    borderWidth: t.shape.border,
+    borderColor: t.c.cardBorder,
     shadowColor: t.c.shadow,
-    shadowOpacity: t.dark ? 0 : 0.06,
+    shadowOpacity: t.fx.elevation ? 0.06 : 0,
     shadowRadius: 10,
     shadowOffset: { width: 0, height: 3 },
-    elevation: t.dark ? 0 : 1,
+    elevation: t.fx.elevation ? 1 : 0,
+    boxShadow: t.fx.cardShadow,
   },
-  cardTight: { padding: 14 },
-  flat: { elevation: 0, shadowOpacity: 0 },
+  cardTight: { padding: Math.round(t.shape.padding * 0.78) },
+  flat: { elevation: 0, shadowOpacity: 0, boxShadow: [] },
   pressed: { opacity: 0.85 },
   sectionHeader: { flexDirection: 'row', alignItems: 'center', marginTop: 8, marginBottom: 10 },
   divider: { height: StyleSheet.hairlineWidth, backgroundColor: t.c.border, marginVertical: 12 },
   input: {
     backgroundColor: t.c.surfaceAlt,
     color: t.c.text,
-    fontFamily: FONT,
-    borderRadius: 14,
+    fontFamily: t.font.body,
+    borderRadius: t.shape.control,
     paddingHorizontal: 16,
     paddingVertical: 13,
     borderWidth: 1,
@@ -361,32 +405,33 @@ const useStyles = makeStyles((t) => ({
   inputBig: { fontWeight: '700', textAlign: 'center', paddingVertical: 12 },
   button: {
     minHeight: 52,
-    borderRadius: 16,
+    borderRadius: t.shape.control + 2,
     paddingHorizontal: 20,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     gap: 8,
   },
-  buttonSmall: { minHeight: 40, borderRadius: 12, paddingHorizontal: 14 },
+  buttonSmall: { minHeight: 40, borderRadius: Math.max(t.shape.control - 2, 4), paddingHorizontal: 14 },
+  buttonGlow: { boxShadow: t.fx.buttonShadow },
   chip: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
     paddingHorizontal: 14,
     paddingVertical: 9,
-    borderRadius: 20,
+    borderRadius: t.shape.chip,
     backgroundColor: t.c.surfaceAlt,
     borderWidth: 1,
     borderColor: t.c.border,
   },
-  segmented: { flexDirection: 'row', backgroundColor: t.c.surfaceAlt, borderRadius: 14, padding: 4, gap: 4 },
-  segment: { flex: 1, paddingVertical: 10, paddingHorizontal: 6, borderRadius: 11, alignItems: 'center', justifyContent: 'center' },
+  segmented: { flexDirection: 'row', backgroundColor: t.c.surfaceAlt, borderRadius: t.shape.control, padding: 4, gap: 4 },
+  segment: { flex: 1, paddingVertical: 10, paddingHorizontal: 6, borderRadius: Math.max(t.shape.control - 3, 3), alignItems: 'center', justifyContent: 'center' },
   backdrop: { flex: 1, backgroundColor: t.c.overlay },
   sheet: {
     backgroundColor: t.c.surface,
-    borderTopLeftRadius: 28,
-    borderTopRightRadius: 28,
+    borderTopLeftRadius: t.shape.radius >= 16 ? 28 : t.shape.radius + 4,
+    borderTopRightRadius: t.shape.radius >= 16 ? 28 : t.shape.radius + 4,
     paddingHorizontal: 20,
     paddingTop: 10,
     maxHeight: '88%',

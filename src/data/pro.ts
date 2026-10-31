@@ -3,6 +3,7 @@
  * Functions, not constants, so the texts follow a language switch.
  */
 import { SUPPORT_SKUS } from '@/context/ProContext';
+import { PRO_THEME_COUNT } from '@/theme/themes';
 import { tr } from '@/i18n';
 
 /** Our own names for the three amounts (Play product id → emoji and name); the prices come from Google Play. */
@@ -78,6 +79,15 @@ export const PRO_FEATURES = {
     title: tr('Напомняния', 'Reminders'),
     text: tr('Претегляне, вода, записване на храната и край на поста.', 'Weigh-in, water, logging food and the end of a fast.'),
   }),
+  themes: (): Perk => ({
+    emoji: '🎨',
+    title: tr('Премиум теми', 'Premium themes'),
+    text: tr(
+      '{n} теми с нови цветове, шрифтове и форми — пробваш ги преди покупка.',
+      '{n} themes with new colours, fonts and shapes — try them on before you buy.',
+      { n: PRO_THEME_COUNT }
+    ),
+  }),
 };
 
 /** What the donor gets: Azqm Pro, for good. */
@@ -89,6 +99,7 @@ export function proPerks(): Perk[] {
     PRO_FEATURES.trend(),
     PRO_FEATURES.recipes(),
     PRO_FEATURES.reminders(),
+    PRO_FEATURES.themes(),
     {
       emoji: '📱',
       title: tr('На всички твои телефони', 'On all your phones'),

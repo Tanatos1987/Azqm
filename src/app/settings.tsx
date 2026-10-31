@@ -4,7 +4,7 @@ import { router } from 'expo-router';
 import { useSQLiteContext } from 'expo-sqlite';
 import Constants from 'expo-constants';
 import { Button, Card, IconButton, Input, Row, Screen, SectionHeader, Segmented, Txt } from '@/components/ui';
-import { BellIcon, ChevronLeftIcon, ChevronRightIcon, DownloadIcon, FileIcon, HeartIcon, HelpIcon, TrashIcon, UploadIcon, UserIcon } from '@/components/icons';
+import { BellIcon, ChevronLeftIcon, ChevronRightIcon, DownloadIcon, FileIcon, HeartIcon, HelpIcon, PaletteIcon, TrashIcon, UploadIcon, UserIcon } from '@/components/icons';
 import { defaultModelFor, useSettings } from '@/context/SettingsContext';
 import { usePro } from '@/context/ProContext';
 import { useProfile } from '@/context/ProfileContext';
@@ -14,7 +14,8 @@ import { getDiet } from '@/data/diets';
 import { importDatabase, wipeDatabase } from '@/db/queries';
 import { useI18n } from '@/i18n';
 import { LanguageButton, LanguageRow } from '@/components/LanguagePicker';
-import { useTheme, type TextScaleKey, type ThemePref } from '@/theme/ThemeContext';
+import { useTheme, useThemeControl, type TextScaleKey, type ThemePref } from '@/theme/ThemeContext';
+import { getThemeDef } from '@/theme/themes';
 import { ACTIVITY_LEVELS, computeMetrics } from '@/utils/bodyMetrics';
 import { formatNumber } from '@/utils/date';
 import { exportBackup, exportCsv, exportExcel, pickBackup } from '@/utils/export';
@@ -31,6 +32,7 @@ export default function SettingsScreen() {
   const { bump } = useDataRefresh();
   const toast = useToast();
   const { isPro } = usePro();
+  const { activeId } = useThemeControl();
   const diet = getDiet(settings.dietId);
   const [busy, setBusy] = useState<string | null>(null);
   const [goalsDraft, setGoalsDraft] = useState(() => toDraft(goals));
@@ -152,6 +154,23 @@ export default function SettingsScreen() {
           <ChevronRightIcon size={20} color={t.c.textMuted} />
         </Row>
       </Card>
+      <Card onPress={() => router.push('/themes')}>
+        <Row gap={12}>
+          <PaletteIcon size={24} color={t.c.accent} />
+          <View style={{ flex: 1 }}>
+            <Txt v="bodyStrong">{tr('Теми', 'Themes')}</Txt>
+            <Txt v="small" tone="textMuted">
+              {getThemeDef(activeId).name()}
+            </Txt>
+          </View>
+          <Row gap={4}>
+            {[t.c.accent, t.c.accent2, t.c.protein].map((color, i) => (
+              <View key={i} style={{ width: 12, height: 12, borderRadius: 6, backgroundColor: color }} />
+            ))}
+          </Row>
+          <ChevronRightIcon size={20} color={t.c.textMuted} />
+        </Row>
+      </Card>
       <Card onPress={() => router.push('/reminders')}>
         <Row gap={12}>
           <BellIcon size={24} color={t.c.accent} />
@@ -220,19 +239,24 @@ export default function SettingsScreen() {
         <LanguageRow />
       </Card>
       <Card>
-        <Txt v="label" tone="textMuted" style={{ marginBottom: 8 }}>
-          {tr('Тема', 'Theme')}
-        </Txt>
-        <Segmented<ThemePref>
-          value={settings.themePref}
-          onChange={(v) => update({ themePref: v })}
-          options={[
-            { label: tr('Като телефона', 'System'), value: 'system' },
-            { label: tr('Тъмна', 'Dark'), value: 'dark' },
-            { label: tr('Светла', 'Light'), value: 'light' },
-          ]}
-        />
-        <Txt v="label" tone="textMuted" style={{ marginTop: 18, marginBottom: 8 }}>
+        {/* Only the Classic theme has a dark and a light version; the others are picked in Themes. */}
+        {activeId === 'classic' && (
+          <>
+            <Txt v="label" tone="textMuted" style={{ marginBottom: 8 }}>
+              {tr('Класическа тема', 'Classic theme')}
+            </Txt>
+            <Segmented<ThemePref>
+              value={settings.themePref}
+              onChange={(v) => update({ themePref: v })}
+              options={[
+                { label: tr('Като телефона', 'System'), value: 'system' },
+                { label: tr('Тъмна', 'Dark'), value: 'dark' },
+                { label: tr('Светла', 'Light'), value: 'light' },
+              ]}
+            />
+          </>
+        )}
+        <Txt v="label" tone="textMuted" style={{ marginTop: activeId === 'classic' ? 18 : 0, marginBottom: 8 }}>
           {tr('Размер на текста', 'Text size')}
         </Txt>
         <Segmented<TextScaleKey>

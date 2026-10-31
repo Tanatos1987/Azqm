@@ -395,6 +395,32 @@ export function TimerIcon({ size = D.size, color = D.color, strokeWidth = D.stro
   );
 }
 
+/** An empty day: fork and knife. */
+export function UtensilsIcon({ size = D.size, color = D.color, strokeWidth = D.strokeWidth }: IconProps) {
+  return (
+    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+      <Path d="M4.5 3v5.5a2.5 2.5 0 0 0 2.5 2.5h0a2.5 2.5 0 0 0 2.5-2.5V3" {...line(color, strokeWidth)} />
+      <Line x1={7} y1={3} x2={7} y2={21} {...line(color, strokeWidth)} />
+      <Path d="M19.5 15V3c-2.8 0-4.5 2.6-4.5 6.5V15h4.5z" {...line(color, strokeWidth)} />
+      <Line x1={19.5} y1={15} x2={19.5} y2={21} {...line(color, strokeWidth)} />
+    </Svg>
+  );
+}
+
+/** Analysis with no data yet: bars in one colour, the trend line in a second (two-tone). */
+export function ChartIcon({ size = D.size, color = D.color, color2 = color, strokeWidth = D.strokeWidth }: IconProps & { color2?: ColorValue }) {
+  return (
+    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+      <Path d="M3 3v16.5A1.5 1.5 0 0 0 4.5 21H21" {...line(color, strokeWidth)} />
+      <Line x1={8} y1={17} x2={8} y2={14} {...line(color, strokeWidth * 1.25)} />
+      <Line x1={12.5} y1={17} x2={12.5} y2={11} {...line(color, strokeWidth * 1.25)} />
+      <Line x1={17} y1={17} x2={17} y2={13} {...line(color, strokeWidth * 1.25)} />
+      <Polyline points="6.5,10 11,5.5 14.5,8.5 20.5,3.5" {...line(color2, strokeWidth)} />
+      <Polyline points="16.5,3.5 20.5,3.5 20.5,7.5" {...line(color2, strokeWidth)} />
+    </Svg>
+  );
+}
+
 /** Two frames side by side with a divider: before / after. */
 export function CompareIcon({ size = D.size, color = D.color, strokeWidth = D.strokeWidth }: IconProps) {
   return (

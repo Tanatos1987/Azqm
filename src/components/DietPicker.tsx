@@ -114,7 +114,7 @@ function List({ title, items }: { title: string; items: string[] }) {
 }
 
 const useStyles = makeStyles((t) => ({
-  card: { backgroundColor: t.c.surface, borderRadius: 20, padding: 16, marginBottom: 10, borderWidth: 1, borderColor: t.dark ? 'transparent' : t.c.border },
+  card: { backgroundColor: t.c.card, borderRadius: Math.min(t.shape.radius, 20), padding: 16, marginBottom: 10, borderWidth: 1, borderColor: t.shape.border ? t.c.cardBorder : 'transparent' },
   head: { flexDirection: 'row', alignItems: 'center', gap: 10 },
   current: { flexDirection: 'row', alignItems: 'center', gap: 3, backgroundColor: t.c.accent, paddingHorizontal: 8, paddingVertical: 2, borderRadius: 10 },
 }));
