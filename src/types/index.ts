@@ -106,6 +106,36 @@ export interface ProgressPhoto {
   height: number;
 }
 
+export type MeasureKey = 'waist' | 'hips' | 'chest' | 'arm' | 'thigh' | 'neck';
+
+/** Body measurements of one day in cm (Pro); any of them may be missing. */
+export interface BodyMeasurement {
+  date: string; // YYYY-MM-DD
+  values: Partial<Record<MeasureKey, number>>;
+}
+
+/** One ingredient of a dish, with a copy of its nutrients in case the food is deleted later. */
+export interface RecipeItem {
+  foodId: string;
+  name: string;
+  grams: number;
+  per100: Nutrients;
+  hasMicros: boolean;
+}
+
+/**
+ * A dish made of foods (Pro). It is also saved as a custom food with the same id — that is what the diary logs;
+ * the recipe row keeps the ingredients so the dish can be edited.
+ */
+export interface Recipe {
+  id: string;
+  name: string;
+  servings: number;
+  /** weight of the finished dish; null = the sum of the ingredients */
+  cookedGrams: number | null;
+  items: RecipeItem[];
+}
+
 /** Sum of every diary entry of one day. */
 export interface DaySummary {
   date: string;

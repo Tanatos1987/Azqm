@@ -6,6 +6,7 @@ import * as ScreenOrientation from 'expo-screen-orientation';
 import { SQLiteProvider } from 'expo-sqlite';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { migrateDbIfNeeded } from '@/db/schema';
+import { ReminderSync } from '@/components/ReminderSync';
 import { SettingsProvider, useSettings } from '@/context/SettingsContext';
 import { DataRefreshProvider } from '@/context/DataRefreshContext';
 import { ProfileProvider, useProfile } from '@/context/ProfileContext';
@@ -78,6 +79,7 @@ function RootNavigator() {
   return (
     <>
       <StatusBar style={t.dark ? 'light' : 'dark'} />
+      {hasProfile && <ReminderSync />}
       <Stack
         screenOptions={{
           headerShown: false,
@@ -92,6 +94,10 @@ function RootNavigator() {
           <Stack.Screen name="profile" options={{ presentation: 'modal', animation: 'slide_from_bottom' }} />
           <Stack.Screen name="support" />
           <Stack.Screen name="help" />
+          <Stack.Screen name="measurements" />
+          <Stack.Screen name="recipes" />
+          <Stack.Screen name="recipe" />
+          <Stack.Screen name="reminders" />
           <Stack.Screen name="progress-photos" />
           <Stack.Screen name="progress-compare" />
           <Stack.Screen name="progress-camera" options={{ presentation: 'fullScreenModal', animation: 'slide_from_bottom', contentStyle: { backgroundColor: '#000' } }} />

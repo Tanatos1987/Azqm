@@ -1,7 +1,7 @@
 import type { SQLiteDatabase } from 'expo-sqlite';
 import { NUTRIENT_KEYS } from '@/data/nutrients';
 
-const DB_VERSION = 2;
+const DB_VERSION = 3;
 
 export const nutrientColumn = (key: string) => `n_${key}`;
 const NUTRIENT_COLUMNS_SQL = NUTRIENT_KEYS.map((k) => `${nutrientColumn(k)} REAL NOT NULL DEFAULT 0`).join(',\n        ');
@@ -86,6 +86,33 @@ export async function migrateDbIfNeeded(db: SQLiteDatabase) {
         height INTEGER NOT NULL DEFAULT 0
       );
       CREATE INDEX IF NOT EXISTS idx_progress_photos_date ON progress_photos(date);
+    `);
+  }
+
+  if (version < 3) {
+    // Body measurements in cm, one row per day, and "my dishes" (1.4.0). A dish is also a row of custom_foods with
+    // the same id; `items` is the JSON list of its ingredients.
+    await db.execAsync(`
+      CREATE TABLE IF NOT EXISTS body_measurements (
+        date TEXT PRIMARY KEY NOT NULL,
+        time_iso TEXT NOT NULL,
+        waist REAL,
+        hips REAL,
+        chest REAL,
+        arm REAL,
+        thigh REAL,
+        neck REAL
+      );
+
+      CREATE TABLE IF NOT EXISTS recipes (
+        id TEXT PRIMARY KEY NOT NULL,
+        name TEXT NOT NULL,
+        servings REAL NOT NULL DEFAULT 1,
+        cooked_grams REAL,
+        items TEXT NOT NULL,
+        created_iso TEXT NOT NULL,
+        updated_iso TEXT NOT NULL
+      );
     `);
   }
 

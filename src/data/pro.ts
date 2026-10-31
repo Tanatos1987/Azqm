@@ -46,24 +46,49 @@ export function donationBenefits(): Perk[] {
   ];
 }
 
+/** Each Pro feature, also listed in Help. */
+export const PRO_FEATURES = {
+  photos: (): Perk => ({
+    emoji: '📸',
+    title: tr('Снимки за прогрес', 'Progress photos'),
+    text: tr('Отпред, отстрани и отзад, с контур от предишната снимка и самоснимачка.', 'Front, side and back, with an outline of your previous photo and a self-timer.'),
+  }),
+  compare: (): Perk => ({
+    emoji: '↔️',
+    title: tr('Сравнение преди и след', 'Before and after'),
+    text: tr('Плъзгач върху две снимки, с датите и теглото.', 'A slider across two photos, with the dates and your weight.'),
+  }),
+  measurements: (): Perk => ({
+    emoji: '📏',
+    title: tr('Обиколки и % мазнини', 'Measurements and body fat'),
+    text: tr('Талия, ханш и още с графики, плюс % телесни мазнини.', 'Waist, hips and more with charts, plus body fat %.'),
+  }),
+  trend: (): Perk => ({
+    emoji: '📉',
+    title: tr('Тренд и прогноза', 'Trend and forecast'),
+    text: tr('Изгладено тегло, темп на седмица и кога ще стигнеш целта.', 'Smoothed weight, weekly pace and when you’ll reach your goal.'),
+  }),
+  recipes: (): Perk => ({
+    emoji: '🍲',
+    title: tr('Мои ястия', 'My dishes'),
+    text: tr('Ястие от продукти с грамажи и порции — добавяш порция с едно докосване.', 'A dish built from foods with amounts and servings — log a serving with one tap.'),
+  }),
+  reminders: (): Perk => ({
+    emoji: '🔔',
+    title: tr('Напомняния', 'Reminders'),
+    text: tr('Претегляне, вода, записване на храната и край на поста.', 'Weigh-in, water, logging food and the end of a fast.'),
+  }),
+};
+
 /** What the donor gets: Azqm Pro, for good. */
 export function proPerks(): Perk[] {
   return [
-    {
-      emoji: '📸',
-      title: tr('Снимки за прогрес', 'Progress photos'),
-      text: tr('Отпред, отстрани и отзад, с контур от предишната снимка и самоснимачка.', 'Front, side and back, with an outline of your previous photo and a self-timer.'),
-    },
-    {
-      emoji: '↔️',
-      title: tr('Сравнение преди и след', 'Before and after'),
-      text: tr('Плъзгач върху две снимки, с датите и теглото.', 'A slider across two photos, with the dates and your weight.'),
-    },
-    {
-      emoji: '🔒',
-      title: tr('Само на телефона ти', 'Only on your phone'),
-      text: tr('Снимките не отиват в галерията и не се качват никъде.', 'Photos don’t go to your gallery and are never uploaded.'),
-    },
+    PRO_FEATURES.photos(),
+    PRO_FEATURES.compare(),
+    PRO_FEATURES.measurements(),
+    PRO_FEATURES.trend(),
+    PRO_FEATURES.recipes(),
+    PRO_FEATURES.reminders(),
     {
       emoji: '📱',
       title: tr('На всички твои телефони', 'On all your phones'),

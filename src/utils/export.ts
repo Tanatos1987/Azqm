@@ -3,8 +3,10 @@ import { File, Paths } from 'expo-file-system';
 import * as Sharing from 'expo-sharing';
 import * as DocumentPicker from 'expo-document-picker';
 import type { FoodEntry, NutrientKey, UserProfile } from '@/types';
-import { exportDatabase, getAllFoodEntries, getAllHydration, getDaySummaries, getFasts, getWeightEntries, type BackupData } from '@/db/queries';
+import { exportDatabase, getAllFoodEntries, getAllHydration, getDaySummaries, getFasts, getMeasurements, getWeightEntries, type BackupData } from '@/db/queries';
 import { NUTRIENT_META, netCarbsOf } from '@/data/nutrients';
+import { MEASURE_KEYS, measureLabel } from '@/data/measurements';
+import { navyBodyFat } from './bodyFat';
 import type { AppSettings } from '@/context/SettingsContext';
 import { getDiet } from '@/data/diets';
 import { ACTIVITY_LEVELS, WEIGHT_GOALS, bmiOf } from './bodyMetrics';
@@ -74,11 +76,12 @@ export interface ExportContext {
 export async function exportExcel(db: SQLiteDatabase, { profile, settings }: ExportContext) {
   const entries = await getAllFoodEntries(db);
   if (entries.length === 0) throw new Error(tr('Дневникът все още е празен.', 'Your diary is still empty.'));
-  const [days, weights, hydration, fasts] = await Promise.all([
+  const [days, weights, hydration, fasts, measurements] = await Promise.all([
     getDaySummaries(db, '0000-01-01', '9999-12-31'),
     getWeightEntries(db),
     getAllHydration(db),
     getFasts(db, 10000),
+    getMeasurements(db),
   ]);
   const waterByDay = new Map<string, number>();
   for (const h of hydration) waterByDay.set(h.date, (waterByDay.get(h.date) ?? 0) + h.waterMl);
@@ -110,6 +113,22 @@ export async function exportExcel(db: SQLiteDatabase, { profile, settings }: Exp
       widths: [11, 11, 8],
       rows: [[tr('Дата', 'Date'), tr('Тегло (кг)', 'Weight (kg)'), 'BMI'], ...weights.map((w) => [w.date, w.weightKg, profile ? r(bmiOf(w.weightKg, profile.heightCm)) : null])],
     },
+    // Only when there are any (Pro).
+    ...(measurements.length > 0
+      ? [
+          {
+            name: tr('Обиколки', 'Measurements'),
+            widths: [11, ...MEASURE_KEYS.map(() => 10), 12],
+            rows: [
+              [tr('Дата', 'Date'), ...MEASURE_KEYS.map((k) => `${measureLabel(k)} (${tr('см', 'cm')})`), tr('% мазнини', 'Body fat %')],
+              ...measurements.map((m) => {
+                const bf = profile ? navyBodyFat(profile.sex, profile.heightCm, m.values) : null;
+                return [m.date, ...MEASURE_KEYS.map((k) => m.values[k] ?? null), bf != null ? r(bf) : null];
+              }),
+            ],
+          },
+        ]
+      : []),
     {
       name: tr('Вода и електролити', 'Water & electrolytes'),
       widths: [11, 7, 10, 11, 10, 12],

@@ -351,6 +351,16 @@ export function HeartIcon({ size = D.size, color = D.color, strokeWidth = D.stro
   );
 }
 
+/** Reminders: a bell. */
+export function BellIcon({ size = D.size, color = D.color, strokeWidth = D.strokeWidth }: IconProps) {
+  return (
+    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+      <Path d="M6 16.5V11a6 6 0 0 1 12 0v5.5l1.5 1.5h-15z" {...line(color, strokeWidth)} />
+      <Path d="M10 20.5a2.2 2.2 0 0 0 4 0" {...line(color, strokeWidth)} />
+    </Svg>
+  );
+}
+
 /** Help: a question mark in a circle. */
 export function HelpIcon({ size = D.size, color = D.color, strokeWidth = D.strokeWidth }: IconProps) {
   return (

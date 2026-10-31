@@ -1,5 +1,6 @@
 import React, { useCallback, useMemo, useState } from 'react';
 import { FlatList, Pressable, ScrollView, View } from 'react-native';
+import { router } from 'expo-router';
 import { Chip, EmptyState, Input, Sheet, Txt } from '@/components/ui';
 import { CloseIcon, SearchIcon } from '@/components/icons';
 import { FoodRow } from '@/components/food/FoodRow';
@@ -92,6 +93,8 @@ export function FoodSearch({ onManual }: { onManual: () => void }) {
       {/* ScrollViews shrink by default: next to the long FlatList this row got squeezed and the chips were cut in half. */}
       <ScrollView horizontal showsHorizontalScrollIndicator={false} style={s.chipRow} contentContainerStyle={s.chips} keyboardShouldPersistTaps="handled">
         <Chip label={onlyFit ? `✓ ${tr('Подходящи', 'Suitable')}` : tr('Подходящи', 'Suitable')} active={onlyFit} onPress={() => setOnlyFit((v) => !v)} color={t.c.success} />
+        {/* Opens "My dishes" (Pro); the saved dishes themselves are in the "My foods" list like any custom food. */}
+        <Chip label={`🍲 ${tr('Мои ястия', 'My dishes')}`} onPress={() => router.push('/recipes')} />
         {modes.map((m) => (
           <Chip key={m.key} label={m.label} active={mode === m.key} onPress={() => setMode(m.key)} />
         ))}

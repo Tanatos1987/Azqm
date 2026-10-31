@@ -9,12 +9,17 @@ import type {
   MealType,
   NewFoodEntry,
   NewHydrationEntry,
+  BodyMeasurement,
+  MeasureKey,
   Nutrients,
   PhotoPose,
   ProgressPhoto,
+  Recipe,
+  RecipeItem,
   WeightEntry,
 } from '@/types';
 import { emptyNutrients, fillNutrients, NUTRIENT_KEYS } from '@/data/nutrients';
+import { MEASURE_KEYS } from '@/data/measurements';
 import { nutrientColumn } from './schema';
 import { tr } from '@/i18n';
 
@@ -260,6 +265,85 @@ export async function deleteProgressPhoto(db: SQLiteDatabase, id: number) {
   await db.runAsync('DELETE FROM progress_photos WHERE id = ?', id);
 }
 
+// ---- body measurements --------------------------------------------------------------
+
+export async function getMeasurements(db: SQLiteDatabase): Promise<BodyMeasurement[]> {
+  const rows = await db.getAllAsync<Record<string, number | string | null>>('SELECT * FROM body_measurements ORDER BY date ASC');
+  return rows.map((r) => ({
+    date: String(r.date),
+    values: Object.fromEntries(MEASURE_KEYS.filter((k) => r[k] != null).map((k) => [k, Number(r[k])])) as Partial<Record<MeasureKey, number>>,
+  }));
+}
+
+/** One row per day: saving again on the same day replaces it. */
+export async function saveMeasurement(db: SQLiteDatabase, m: BodyMeasurement) {
+  await db.runAsync(
+    `INSERT OR REPLACE INTO body_measurements (date, time_iso, ${MEASURE_KEYS.join(', ')}) VALUES (?, ?, ${MEASURE_KEYS.map(() => '?').join(', ')})`,
+    m.date,
+    new Date().toISOString(),
+    ...MEASURE_KEYS.map((k) => m.values[k] ?? null)
+  );
+}
+
+export async function deleteMeasurement(db: SQLiteDatabase, date: string) {
+  await db.runAsync('DELETE FROM body_measurements WHERE date = ?', date);
+}
+
+// ---- my dishes ----------------------------------------------------------------------
+
+function mapRecipeRow(row: any): Recipe {
+  let items: RecipeItem[] = [];
+  try {
+    items = JSON.parse(row.items);
+  } catch {
+    // A damaged row still lists, without ingredients.
+  }
+  return { id: row.id, name: row.name, servings: row.servings, cookedGrams: row.cooked_grams ?? null, items };
+}
+
+export async function getRecipes(db: SQLiteDatabase): Promise<Recipe[]> {
+  const rows = await db.getAllAsync('SELECT * FROM recipes ORDER BY name COLLATE NOCASE');
+  return rows.map(mapRecipeRow);
+}
+
+export async function getRecipe(db: SQLiteDatabase, id: string): Promise<Recipe | null> {
+  const row = await db.getFirstAsync('SELECT * FROM recipes WHERE id = ?', id);
+  return row ? mapRecipeRow(row) : null;
+}
+
+/**
+ * Saves the dish and the custom food the diary logs (same id): nutrients per 100 g of the finished dish, one serving.
+ * A new dish (no id) gets one; returns it.
+ */
+export async function saveRecipe(db: SQLiteDatabase, input: Omit<Recipe, 'id'> & { id?: string }, food: { per100: Nutrients; servingGrams: number; hasMicros: boolean }): Promise<string> {
+  const recipe: Recipe = { ...input, id: input.id ?? `r-${Date.now().toString(36)}` };
+  const now = new Date().toISOString();
+  await db.withTransactionAsync(async () => {
+    await db.runAsync(
+      `INSERT INTO recipes (id, name, servings, cooked_grams, items, created_iso, updated_iso) VALUES (?, ?, ?, ?, ?, ?, ?)
+       ON CONFLICT(id) DO UPDATE SET name = excluded.name, servings = excluded.servings, cooked_grams = excluded.cooked_grams,
+         items = excluded.items, updated_iso = excluded.updated_iso`,
+      recipe.id,
+      recipe.name,
+      recipe.servings,
+      recipe.cookedGrams,
+      JSON.stringify(recipe.items),
+      now,
+      now
+    );
+    await saveCustomFood(db, { id: recipe.id, name: recipe.name, per100: food.per100, portion: { label: tr('1 порция', '1 serving'), grams: food.servingGrams }, hasMicros: food.hasMicros });
+  });
+  return recipe.id;
+}
+
+/** Deletes the dish and its custom food; diary entries already logged keep their numbers. */
+export async function deleteRecipe(db: SQLiteDatabase, id: string) {
+  await db.withTransactionAsync(async () => {
+    await db.runAsync('DELETE FROM recipes WHERE id = ?', id);
+    await deleteCustomFood(db, id);
+  });
+}
+
 // ---- hydration ----------------------------------------------------------------------
 
 function mapHydrationRow(row: any): HydrationEntry {
@@ -366,7 +450,7 @@ export interface BackupData {
   tables: Record<string, Record<string, unknown>[]>;
 }
 
-const BACKUP_TABLES = ['food_entries', 'custom_foods', 'favorites', 'weight_entries', 'hydration_entries', 'fasts'] as const;
+const BACKUP_TABLES = ['food_entries', 'custom_foods', 'favorites', 'weight_entries', 'hydration_entries', 'fasts', 'body_measurements', 'recipes'] as const;
 
 export async function exportDatabase(db: SQLiteDatabase): Promise<BackupData> {
   const tables: BackupData['tables'] = {};

@@ -4,7 +4,7 @@ import { router } from 'expo-router';
 import { useSQLiteContext } from 'expo-sqlite';
 import Constants from 'expo-constants';
 import { Button, Card, IconButton, Input, Row, Screen, SectionHeader, Segmented, Txt } from '@/components/ui';
-import { ChevronLeftIcon, ChevronRightIcon, DownloadIcon, FileIcon, HeartIcon, HelpIcon, TrashIcon, UploadIcon, UserIcon } from '@/components/icons';
+import { BellIcon, ChevronLeftIcon, ChevronRightIcon, DownloadIcon, FileIcon, HeartIcon, HelpIcon, TrashIcon, UploadIcon, UserIcon } from '@/components/icons';
 import { defaultModelFor, useSettings } from '@/context/SettingsContext';
 import { usePro } from '@/context/ProContext';
 import { useProfile } from '@/context/ProfileContext';
@@ -147,6 +147,18 @@ export default function SettingsScreen() {
             <Txt v="bodyStrong">{tr('Подкрепи Azqm', 'Support Azqm')}</Txt>
             <Txt v="small" tone="textMuted">
               {isPro ? tr('Pro е отключен — благодаря! 💚', 'Pro is unlocked — thank you! 💚') : tr('Еднократна сума по избор отключва Pro', 'A one-time amount of your choice unlocks Pro')}
+            </Txt>
+          </View>
+          <ChevronRightIcon size={20} color={t.c.textMuted} />
+        </Row>
+      </Card>
+      <Card onPress={() => router.push('/reminders')}>
+        <Row gap={12}>
+          <BellIcon size={24} color={t.c.accent} />
+          <View style={{ flex: 1 }}>
+            <Txt v="bodyStrong">{tr('Напомняния', 'Reminders')}</Txt>
+            <Txt v="small" tone="textMuted">
+              {isPro ? tr('Претегляне, вода, храна и край на поста', 'Weigh-in, water, food and the end of a fast') : 'Pro'}
             </Txt>
           </View>
           <ChevronRightIcon size={20} color={t.c.textMuted} />

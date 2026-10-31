@@ -17,11 +17,14 @@ interface LineChartProps {
   unit?: string;
   /** optional dashed reference line (e.g. target weight) */
   target?: number | null;
+  /** optional second line without dots, one value per data point (e.g. the smoothed weight trend) */
+  overlay?: number[];
+  overlayColor?: string;
 }
 
 const PAD = { top: 22, bottom: 24, left: 38, right: 14 };
 
-export function LineChart({ data, color, height = 190, unit = '', target }: LineChartProps) {
+export function LineChart({ data, color, height = 190, unit = '', target, overlay, overlayColor }: LineChartProps) {
   const t = useTheme();
   const [width, setWidth] = useState(0);
   // Rises from the baseline on mount.
@@ -29,6 +32,7 @@ export function LineChart({ data, color, height = 190, unit = '', target }: Line
 
   const values = data.map((d) => d.value);
   if (target != null) values.push(target);
+  if (overlay) values.push(...overlay);
   const rawMin = Math.min(...values);
   const rawMax = Math.max(...values);
   const spread = Math.max(rawMax - rawMin, 1);
@@ -43,6 +47,7 @@ export function LineChart({ data, color, height = 190, unit = '', target }: Line
   const animY = (v: number) => baseY + (yOf(v) - baseY) * grow;
 
   const line = data.map((d, i) => `${i === 0 ? 'M' : 'L'} ${xOf(i)} ${animY(d.value)}`).join(' ');
+  const overlayLine = overlay && overlay.length === data.length ? overlay.map((v, i) => `${i === 0 ? 'M' : 'L'} ${xOf(i)} ${animY(v)}`).join(' ') : '';
   const area = data.length > 1 ? `${line} L ${xOf(data.length - 1)} ${baseY} L ${xOf(0)} ${baseY} Z` : '';
   const last = data[data.length - 1];
   const gridValues = [max - (max - min) * 0.15, (max + min) / 2, min + (max - min) * 0.15];
@@ -67,6 +72,7 @@ export function LineChart({ data, color, height = 190, unit = '', target }: Line
             )}
             {area ? <Path d={area} fill="url(#area)" /> : null}
             <Path d={line} stroke={color} strokeWidth={3} fill="none" strokeLinejoin="round" strokeLinecap="round" />
+            {overlayLine ? <Path d={overlayLine} stroke={overlayColor ?? t.c.accent} strokeWidth={2.5} fill="none" strokeLinejoin="round" strokeLinecap="round" strokeDasharray="7 5" /> : null}
             {data.map((d, i) => (
               <Circle
                 key={i}

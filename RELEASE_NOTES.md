@@ -1,3 +1,19 @@
+## Azqm 1.4.0
+
+**Инсталиране:** от Google Play. `Azqm.aab` е за качване в Play Console и не се инсталира на телефона.
+
+### Какво е новото (Pro)
+- **Тренд и прогноза:** изгладено тегло без дневните скокове (пунктир на графиката), темп в кг на седмица и кога ще стигнеш целевото тегло при този темп. Предупреждава, ако губиш над 1% от теглото си седмично.
+- **Обиколки и % мазнини:** талия, ханш, гърди, ръка, бедро и врат с подсказки как се мери, графики и история; % телесни мазнини по метода на американския флот. Влизат и в Excel експорта и в резервното копие.
+- **Мои ястия:** сглобяваш ястие от продукти с грамажи, брой порции и (по желание) теглото след готвене; виждаш калориите и макросите на порция. Ястието се появява в „Мои храни“ и се добавя като всяка храна. Чип „🍲 Мои ястия“ в „Добави“.
+- **Напомняния:** претегляне сутрин, вода на всеки 1–3 часа в избран интервал, записване на храната (до 4 часа на ден) и известие, когато пуснатият пост стигне целта си. Всичко е на самия телефон — без интернет и без акаунт. Настройки → Напомняния.
+
+### What's new (Pro)
+- **Trend and forecast:** your weight smoothed of the daily swings (the dashed line on the chart), your pace in kg a week and when you'll reach your goal weight at that pace. A warning when you lose more than 1% of your weight a week.
+- **Measurements and body fat:** waist, hips, chest, arm, thigh and neck with how-to-measure hints, charts and history; body fat % by the US Navy method. Also in the Excel export and the backup.
+- **My dishes:** build a dish from foods with their amounts, the number of servings and (optionally) the weight after cooking; see the calories and macros of a serving. The dish shows up in "My foods" and is logged like any food. A "🍲 My dishes" chip on Add.
+- **Reminders:** a morning weigh-in, water every 1–3 hours in a window you choose, logging food (up to 4 times a day) and a notification when the running fast reaches its goal. All from the phone itself — no internet, no account. Settings → Reminders.
+
 ## Azqm 1.3.1
 
 **Инсталиране:** от Google Play. `Azqm.aab` е за качване в Play Console и не се инсталира на телефона.

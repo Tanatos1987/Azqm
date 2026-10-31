@@ -3,7 +3,7 @@
  * these texts and the Help screen lists them all. Functions, not constants, so the texts follow a language switch.
  */
 import { tr } from '@/i18n';
-import { donationBenefits, proPerks, type Perk } from './pro';
+import { donationBenefits, PRO_FEATURES, type Perk } from './pro';
 
 /** Buttons the tour can point at; each is wrapped in <TourTarget id="…">. */
 export type TourTargetId =
@@ -79,7 +79,7 @@ const tabs = {
   progress: () => ({
     emoji: '⚖️',
     title: tr('Прогрес', 'Progress'),
-    text: tr('Тегло и индекс на телесна маса с графика, плюс снимки за прогрес (Pro).', 'Weight and body mass index with a chart, plus progress photos (Pro).'),
+    text: tr('Тегло и индекс на телесна маса с графика, плюс тренд, обиколки и снимки (Pro).', 'Weight and body mass index with a chart, plus trend, measurements and photos (Pro).'),
   }),
   fasting: () => ({
     emoji: '⏱️',
@@ -186,6 +186,7 @@ export function helpSections(): HelpSection[] {
             'Enter the values per 100 g yourself and save the food to “My foods” for next time.'
           ),
         },
+        PRO_FEATURES.recipes(),
       ],
     },
     { key: 'analysis', title: tr('Анализ', 'Analysis'), items: [tabs.analysis()] },
@@ -194,8 +195,10 @@ export function helpSections(): HelpSection[] {
       title: tr('Прогрес', 'Progress'),
       items: [
         { ...tabs.progress(), title: tr('Тегло', 'Weight') },
-        // Progress photos and before/after.
-        ...proPerks().slice(0, 2),
+        PRO_FEATURES.trend(),
+        PRO_FEATURES.measurements(),
+        PRO_FEATURES.photos(),
+        PRO_FEATURES.compare(),
       ],
     },
     { key: 'fasting', title: tr('Пост', 'Fasting'), items: [tabs.fasting()] },
@@ -224,6 +227,7 @@ export function helpSections(): HelpSection[] {
             'Export your diary to Excel or CSV, and a backup you can restore on a new phone.'
           ),
         },
+        PRO_FEATURES.reminders(),
       ],
     },
     { key: 'support', title: tr('Подкрепи Azqm', 'Support Azqm'), items: donationBenefits() },
