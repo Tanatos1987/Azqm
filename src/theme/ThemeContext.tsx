@@ -12,22 +12,25 @@ export type TextScaleKey = keyof typeof TEXT_SCALES;
 export type ThemePref = 'system' | 'dark' | 'light';
 
 /**
- * Text presets. Sizes are the "normal" scale; <Txt> multiplies them by `theme.scale`. Every preset asks for lining,
- * tabular figures, so numbers line up and don't jump as they change.
+ * Figures for numbers: lining (Playfair's default figures are old-style) and tabular, so totals line up and a
+ * ticking clock doesn't jump. Only for numbers — Inter's tabular set also widens the hyphen ("one - time").
  */
-const NUMS: TextStyle['fontVariant'] = ['lining-nums', 'tabular-nums'];
+export const TABULAR: TextStyle['fontVariant'] = ['lining-nums', 'tabular-nums'];
+const LINING: TextStyle['fontVariant'] = ['lining-nums'];
+
+/** Text presets. Sizes are the "normal" scale; <Txt> multiplies them by `theme.scale`. */
 export const TYPE = {
-  display: { fontSize: 36, fontWeight: '800', letterSpacing: -0.6, lineHeight: 42, fontVariant: NUMS },
-  h1: { fontSize: 27, fontWeight: '800', letterSpacing: -0.4, lineHeight: 34, fontVariant: NUMS },
-  h2: { fontSize: 21, fontWeight: '700', letterSpacing: -0.2, lineHeight: 27, fontVariant: NUMS },
-  h3: { fontSize: 17, fontWeight: '700', lineHeight: 23, fontVariant: NUMS },
-  body: { fontSize: 16, fontWeight: '400', lineHeight: 23, fontVariant: NUMS },
-  bodyStrong: { fontSize: 16, fontWeight: '600', lineHeight: 23, fontVariant: NUMS },
-  small: { fontSize: 14, fontWeight: '400', lineHeight: 20, fontVariant: NUMS },
-  smallStrong: { fontSize: 14, fontWeight: '600', lineHeight: 20, fontVariant: NUMS },
-  caption: { fontSize: 13, fontWeight: '500', lineHeight: 18, fontVariant: NUMS },
-  label: { fontSize: 12, fontWeight: '700', letterSpacing: 0.8, textTransform: 'uppercase', lineHeight: 16, fontVariant: NUMS },
-  num: { fontSize: 16, fontWeight: '700', fontVariant: NUMS },
+  display: { fontSize: 36, fontWeight: '800', letterSpacing: -0.6, lineHeight: 42, fontVariant: TABULAR },
+  h1: { fontSize: 27, fontWeight: '800', letterSpacing: -0.4, lineHeight: 34, fontVariant: LINING },
+  h2: { fontSize: 21, fontWeight: '700', letterSpacing: -0.2, lineHeight: 27, fontVariant: LINING },
+  h3: { fontSize: 17, fontWeight: '700', lineHeight: 23, fontVariant: LINING },
+  body: { fontSize: 16, fontWeight: '400', lineHeight: 23 },
+  bodyStrong: { fontSize: 16, fontWeight: '600', lineHeight: 23 },
+  small: { fontSize: 14, fontWeight: '400', lineHeight: 20 },
+  smallStrong: { fontSize: 14, fontWeight: '600', lineHeight: 20 },
+  caption: { fontSize: 13, fontWeight: '500', lineHeight: 18 },
+  label: { fontSize: 12, fontWeight: '700', letterSpacing: 0.8, textTransform: 'uppercase', lineHeight: 16 },
+  num: { fontSize: 16, fontWeight: '700', fontVariant: TABULAR },
 } satisfies Record<string, TextStyle>;
 
 export type TypeVariant = keyof typeof TYPE;

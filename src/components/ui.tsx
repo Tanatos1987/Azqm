@@ -23,7 +23,7 @@ import {
 } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import Svg, { Defs, LinearGradient, Rect, Stop } from 'react-native-svg';
-import { TYPE, makeStyles, useTheme, type TypeVariant } from '@/theme/ThemeContext';
+import { TABULAR, TYPE, makeStyles, useTheme, type TypeVariant } from '@/theme/ThemeContext';
 import { alpha, type Theme } from '@/theme/themes';
 import type { Palette } from '@/theme/palette';
 
@@ -39,7 +39,7 @@ interface TxtProps extends TextProps {
   tone?: Tone;
   color?: string;
   center?: boolean;
-  /** a big number: drawn in the theme's number font (`display` and `num` always are) */
+  /** a number: the theme's number font with tabular figures (`display` and `num` always are) */
   num?: boolean;
 }
 
@@ -60,7 +60,14 @@ export function Txt({ v = 'body', tone = 'text', color, center, num, style, ...r
     <Text
       maxFontSizeMultiplier={1.4}
       {...rest}
-      style={[{ fontFamily: family, color: t.c[tone] }, flat, { fontSize, lineHeight }, color ? { color } : null, center ? { textAlign: 'center' } : null]}
+      style={[
+        { fontFamily: family, color: t.c[tone] },
+        flat,
+        { fontSize, lineHeight },
+        num ? { fontVariant: TABULAR } : null,
+        color ? { color } : null,
+        center ? { textAlign: 'center' } : null,
+      ]}
     />
   );
 }

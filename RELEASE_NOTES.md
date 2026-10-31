@@ -1,3 +1,17 @@
+## Azqm 1.5.0
+
+**Инсталиране:** от Google Play. `Azqm.aab` е за качване в Play Console и не се инсталира на телефона.
+
+### Какво е новото
+- **Нов облик:** нови шрифтове с ясна кирилица (без „ръкописните“ български форми на буквите), числа, подравнени като в таблица, кръг за калориите с преливащ цвят, заоблени краища и сияние, отделни цветове за протеин, мазнини, въглехидрати, вода и пост. Нетните въглехидрати стават червени от 85% от лимита. Векторни икони вместо емоджи в празните „Днес“ и „Анализ“.
+- **Теми:** Настройки → Теми, с 10 теми. Безплатни са „Обсидиан и кехлибар“ (новата по подразбиране) и „Класическа“ (досегашният зелен вид, тъмна или светла). Ако досега беше избрал светлата тема, остава класическата светла.
+- **Премиум теми (Pro):** Полунощен корал, Дълбок океан, Титан и лайм, Нордическа матча (светла), Био натурал, Стъклена елегантност, Кибер техно и Неонов спорт. Всяка е със свои цветове, шрифтове и форми. Без Pro темата се пробва в цялото приложение, преди да решиш; без покупка се връща безплатната.
+
+### What's new
+- **A new look:** new fonts with clean Cyrillic (no hand-written-looking Bulgarian letter forms), numbers that line up like in a table, a calorie ring with a gradient, round ends and a glow, separate colours for protein, fat, carbs, water and fasting. Net carbs turn red from 85% of the limit. Vector icons instead of emoji on the empty "Today" and "Analysis".
+- **Themes:** Settings → Themes, with 10 themes. Free: "Obsidian Amber" (the new default) and "Classic" (the previous green look, dark or light). If you had picked the light theme, you keep Classic in light.
+- **Premium themes (Pro):** Midnight Coral, Deep Ocean, Titanium Lime, Nordic Matcha (light), Bio Natural, Glass Elegance, Cyber Tech and Neon Sport, each with its own colours, fonts and shapes. Without Pro you can try a theme on across the whole app before you decide; without a purchase the free one comes back.
+
 ## Azqm 1.4.0
 
 **Инсталиране:** от Google Play. `Azqm.aab` е за качване в Play Console и не се инсталира на телефона.

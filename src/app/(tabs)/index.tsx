@@ -254,7 +254,8 @@ export default function TodayScreen() {
                 {tr('Вода', 'Water')}
               </Txt>
             </Row>
-            <Txt v="h3" num style={{ marginTop: 6 }}>
+            {/* Three tiles share the width: values stay on one line and shrink instead of wrapping. */}
+            <Txt v="h3" num numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.7} style={{ marginTop: 6 }}>
               {formatNumber(water.waterMl / 1000, 2)} / {formatNumber(waterGoal / 1000, 1)} {tr('л', 'L')}
             </Txt>
             <Bar value={water.waterMl} max={waterGoal} color={t.c.water} height={6} style={{ marginVertical: 8 }} />
@@ -272,7 +273,7 @@ export default function TodayScreen() {
                 {tr('Пост', 'Fasting')}
               </Txt>
             </Row>
-            <Txt v="h3" num={fasting.isFasting} color={fasting.isFasting ? t.c.fast : undefined} style={{ marginTop: 6 }}>
+            <Txt v="h3" num={fasting.isFasting} color={fasting.isFasting ? t.c.fast : undefined} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.7} style={{ marginTop: 6 }}>
               {fasting.isFasting ? formatDuration(fasting.elapsedMs, false) : tr('не е пуснат', 'not started')}
             </Txt>
             <Txt v="caption" tone="textMuted" style={{ marginTop: 6 }}>
@@ -283,7 +284,7 @@ export default function TodayScreen() {
             <Txt v="caption" tone="textMuted">
               {tr('Средно 7 дни', '7-day average')}
             </Txt>
-            <Txt v="h3" num style={{ marginTop: 6 }}>
+            <Txt v="h3" num numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.7} style={{ marginTop: 6 }}>
               {avg7.days ? formatNumber(avg7.kcal) : '—'}
             </Txt>
             <Txt v="caption" tone="textMuted" style={{ marginTop: 6 }}>
