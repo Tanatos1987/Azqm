@@ -2,7 +2,7 @@
   "expo": {
     "name": "Azqm",
     "slug": "azqm",
-    "version": "1.5.0",
+    "version": "1.5.1",
     "scheme": "azqm",
     "orientation": "default",
     "icon": "./assets/icon.png",
@@ -162,7 +162,7 @@
         "expo-notifications",
         {
           "icon": "./assets/android-icon-monochrome.png",
-          "color": "#15A04A"
+          "color": "#FF3F6C"
         }
       ],
       "./plugins/withGradleMemory"
