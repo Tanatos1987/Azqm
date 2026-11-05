@@ -79,9 +79,11 @@ jobs:
         working-directory: android
         env:
           KS_PASS: ${{ secrets.AZQM_KEYSTORE_PASSWORD }}
+          # Preview also carries x86_64 so it runs on the CI emulator (store-screenshots.yml); Play builds stay ARM only.
+          ARCHS: ${{ inputs.preview && 'arm64-v8a,armeabi-v7a,x86_64' || 'arm64-v8a,armeabi-v7a' }}
         run: |
           ./gradlew assembleRelease bundleRelease --no-daemon \
-            -PreactNativeArchitectures=arm64-v8a,armeabi-v7a \
+            -PreactNativeArchitectures=$ARCHS \
             -Pandroid.injected.signing.store.file="$RUNNER_TEMP/azqm-release.p12" \
             -Pandroid.injected.signing.store.password="$KS_PASS" \
             -Pandroid.injected.signing.key.alias=azqm \
