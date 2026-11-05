@@ -56,7 +56,18 @@ shot() { # <route> <name> [wait]
 for LANG in en bg; do
   echo "== $LANG"
   adb shell pm clear $PKG >/dev/null
-  launch 14 # creates azqm.db and RKStorage
+  launch 5 # first start creates azqm.db and RKStorage; on the CI emulator this takes a while
+  for i in $(seq 1 60); do
+    if adb shell ls $D/files/SQLite/azqm.db >/dev/null 2>&1 && adb shell ls $D/databases/RKStorage >/dev/null 2>&1; then break; fi
+    if [ "$i" = 60 ]; then
+      adb exec-out screencap -p > "$OUT/debug-$LANG-first-start.png"
+      adb logcat -d | grep -iE "azqm|ReactNative|AndroidRuntime|FATAL" | tail -n 120 || true
+      adb shell ls -lR $D || true
+      exit 1
+    fi
+    sleep 2
+  done
+  sleep 6
   adb shell am force-stop $PKG
   sleep 2
   adb shell ls -l $D/files/SQLite $D/databases || true
