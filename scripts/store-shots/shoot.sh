@@ -59,7 +59,7 @@ for LANG in en bg; do
   launch 14 # creates azqm.db and RKStorage
   adb shell am force-stop $PKG
   sleep 2
-  adb shell find $D -maxdepth 3 \( -name 'azqm.db*' -o -name 'RKStorage*' \)
+  adb shell ls -l $D/files/SQLite $D/databases || true
   mkdir -p "$WORK/$LANG"
   node scripts/store-shots/seed.mjs $LANG "$WORK/$LANG"
   patch_db $D/files/SQLite/azqm.db "$WORK/$LANG/app.sql"
