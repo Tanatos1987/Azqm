@@ -17,6 +17,12 @@ sleep 3
 adb wait-for-device
 adb install -r "$APK"
 
+# the slow CI emulator makes the launcher "not respond": no error dialogs, and no launcher in the background at all
+adb shell settings put global hide_error_dialogs 1
+adb shell settings put global anr_show_background 0
+adb shell pm disable-user --user 0 com.google.android.apps.nexuslauncher >/dev/null 2>&1 || true
+adb shell am broadcast -a android.intent.action.CLOSE_SYSTEM_DIALOGS >/dev/null 2>&1 || true
+
 # clean status bar: 09:41, full battery and signal, no notification icons
 adb shell settings put global sysui_demo_allowed 1
 demo() { adb shell am broadcast -a com.android.systemui.demo -e command "$@" >/dev/null; }
@@ -49,6 +55,8 @@ patch_db() { # <device path> <sql file>
 shot() { # <route> <name> [wait]
   adb shell am start -W -a android.intent.action.VIEW -d "azqm-preview://$1" $PKG >/dev/null
   sleep "${3:-6}"
+  adb shell am broadcast -a android.intent.action.CLOSE_SYSTEM_DIALOGS >/dev/null 2>&1 || true
+  sleep 1
   adb exec-out screencap -p > "$OUT/$LANG-$2.png"
   echo "  $LANG-$2.png"
 }
