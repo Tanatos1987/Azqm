@@ -59,6 +59,9 @@ function saveState(state: ReviewState) {
 export async function maybeAskForReview(db: SQLiteDatabase) {
   // Preview builds aren't installed from Google Play, so the sheet can't work there.
   if (PREVIEW || askedThisStart) return;
+  // Set before the first await, so two foods added in quick succession can't both get through.
+  askedThisStart = true;
+  let asked = false;
   try {
     const state = await loadState();
     const today = todayKey();
@@ -67,13 +70,16 @@ export async function maybeAskForReview(db: SQLiteDatabase) {
     if (state.lastAsk && shiftDateKey(state.lastAsk, REVIEW_EVERY_DAYS) > today) return;
     if ((await getLoggedDayCount(db)) < REVIEW_MIN_DAYS) return;
     if (!(await StoreReview.isAvailableAsync())) return;
-    askedThisStart = true;
+    asked = true;
     await saveState({ ...state, asks: state.asks + 1, lastAsk: today });
     setTimeout(() => {
       StoreReview.requestReview().catch(() => {});
     }, REVIEW_DELAY_MS);
   } catch {
     // A rating prompt is never worth an error on screen.
+  } finally {
+    // Not asked (too early, too few days…): check again after the next food, still at most one ask per start.
+    if (!asked) askedThisStart = false;
   }
 }
 
