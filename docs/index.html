@@ -1,0 +1,229 @@
+<!doctype html>
+<html lang="bg" class="l-bg">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Azqm – брояч на калории, макроси и витамини</title>
+<meta name="description" content="Безплатен дневник на храненето на български: 1000+ храни, 14 режима (кето, Атанас Узунов, средиземноморска…), таймер за гладуване и анализ кои витамини ви липсват. Без реклами и без регистрация.">
+<link rel="canonical" href="https://tanatos1987.github.io/Azqm/">
+<link rel="icon" href="img/icon.png">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Azqm – калории, макроси и витамини">
+<meta property="og:description" content="Безплатен брояч на калории с 1000+ български храни, 14 режима, гладуване и анализ на витамините. Без реклами.">
+<meta property="og:image" content="https://tanatos1987.github.io/Azqm/img/feature.png">
+<meta property="og:url" content="https://tanatos1987.github.io/Azqm/">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Onest:wght@400;600;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0B0F1E; --bg2: #151A33; --card: #1A2040; --line: #2A3160;
+    --text: #F3F4FA; --muted: #A8AECB; --accent: #FF3F6C; --amber: #FFB020; --teal: #2FD3C1; --violet: #8B6CFF;
+  }
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body { margin: 0; background: var(--bg); color: var(--text); font: 17px/1.6 Onest, system-ui, sans-serif; }
+  /* No Bulgarian letter forms (locl BGR): the user doesn't like them, the app removed them too. */
+  body, button { font-feature-settings: "locl" 0; }
+  .l-bg [lang=en], .l-en [lang=bg] { display: none !important; }
+  a { color: inherit; }
+  .wrap { max-width: 1080px; margin: 0 auto; padding: 0 20px; }
+  header { position: sticky; top: 0; z-index: 5; background: rgba(11,15,30,.85); backdrop-filter: blur(10px); border-bottom: 1px solid var(--line); }
+  header .wrap { display: flex; align-items: center; gap: 12px; height: 60px; }
+  header img { width: 34px; height: 34px; border-radius: 9px; }
+  header b { font-size: 20px; flex: 1; }
+  .lang { background: none; border: 1px solid var(--line); color: var(--muted); border-radius: 99px; padding: 6px 12px; font: inherit; font-size: 14px; cursor: pointer; }
+  .lang:hover { color: var(--text); border-color: var(--muted); }
+  .hero { background: radial-gradient(900px 500px at 80% -10%, rgba(139,108,255,.35), transparent 60%), radial-gradient(700px 400px at 0% 20%, rgba(255,63,108,.22), transparent 60%); padding: 64px 0 40px; }
+  .hero .wrap { display: grid; grid-template-columns: 1.1fr .9fr; gap: 40px; align-items: center; }
+  h1 { font-size: clamp(34px, 6vw, 56px); line-height: 1.08; margin: 0 0 18px; font-weight: 800; letter-spacing: -.02em; }
+  h1 em { font-style: normal; background: linear-gradient(90deg, var(--accent), var(--amber)); -webkit-background-clip: text; background-clip: text; color: transparent; }
+  .lead { color: var(--muted); font-size: 19px; margin: 0 0 28px; max-width: 34em; }
+  .cta { display: inline-flex; align-items: center; gap: 12px; background: var(--accent); color: #fff; text-decoration: none; font-weight: 800; padding: 14px 24px; border-radius: 14px; box-shadow: 0 10px 30px rgba(255,63,108,.35); }
+  .cta:hover { filter: brightness(1.08); }
+  .cta svg { width: 22px; height: 22px; }
+  .tags { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 22px; }
+  .tags span { border: 1px solid var(--line); background: var(--bg2); color: var(--muted); border-radius: 99px; padding: 5px 12px; font-size: 14px; }
+  .hero-shot { justify-self: center; width: min(340px, 80vw); border-radius: 26px; box-shadow: 0 30px 80px rgba(0,0,0,.55); }
+  section { padding: 56px 0; }
+  h2 { font-size: clamp(26px, 4vw, 36px); margin: 0 0 8px; letter-spacing: -.01em; }
+  .sub { color: var(--muted); margin: 0 0 30px; }
+  .grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+  .card { background: var(--card); border: 1px solid var(--line); border-radius: 18px; padding: 22px; }
+  .card .ico { font-size: 28px; }
+  .card h3 { margin: 8px 0 6px; font-size: 19px; }
+  .card p { margin: 0; color: var(--muted); font-size: 16px; }
+  .shots { display: flex; gap: 14px; overflow-x: auto; scroll-snap-type: x mandatory; padding-bottom: 12px; }
+  .shots img { width: 240px; flex: 0 0 auto; border-radius: 18px; scroll-snap-align: start; border: 1px solid var(--line); }
+  .diets { display: flex; flex-wrap: wrap; gap: 10px; }
+  .diets span { background: var(--bg2); border: 1px solid var(--line); border-radius: 12px; padding: 8px 14px; }
+  .diets span.hl { border-color: var(--teal); color: var(--teal); }
+  details { background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 16px 20px; margin-bottom: 10px; }
+  summary { cursor: pointer; font-weight: 600; }
+  details p { color: var(--muted); margin: 10px 0 0; }
+  .final { text-align: center; background: linear-gradient(135deg, rgba(139,108,255,.25), rgba(255,63,108,.2)); border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); }
+  footer { padding: 28px 0 40px; color: var(--muted); font-size: 14px; }
+  footer .wrap { display: flex; flex-wrap: wrap; gap: 8px 24px; }
+  @media (max-width: 820px) {
+    .hero .wrap { grid-template-columns: 1fr; }
+    .hero { padding-top: 40px; }
+    .grid { grid-template-columns: 1fr; }
+    .shots img { width: 200px; }
+  }
+</style>
+</head>
+<body>
+<header>
+  <div class="wrap">
+    <img src="img/icon.png" alt="">
+    <b>Azqm</b>
+    <button class="lang" id="lang" type="button"><span lang="bg">English</span><span lang="en">Български</span></button>
+  </div>
+</header>
+
+<div class="hero">
+  <div class="wrap">
+    <div>
+      <h1>
+        <span lang="bg">Знайте какво <em>наистина</em> ядете</span>
+        <span lang="en">Know what you <em>really</em> eat</span>
+      </h1>
+      <p class="lead">
+        <span lang="bg">Безплатен брояч на калории, макроси и витамини с над 1000 храни на български, 14 хранителни режима и таймер за гладуване. Без реклами и без регистрация.</span>
+        <span lang="en">A free calorie, macro and vitamin tracker with 1,000+ foods, 14 diets and a fasting timer. No ads, no account.</span>
+      </p>
+      <a class="cta play" href="https://play.google.com/store/apps/details?id=com.tanatos.azqm">
+        <svg viewBox="0 0 24 24" fill="#fff" aria-hidden="true"><path d="M4 2.6v18.8c0 .5.5.8.9.6L21 12.6c.5-.3.5-.9 0-1.2L4.9 2c-.4-.2-.9.1-.9.6z"/></svg>
+        <span lang="bg">Изтеглете от Google Play</span><span lang="en">Get it on Google Play</span>
+      </a>
+      <div class="tags">
+        <span lang="bg">⭐ 5,0 в Google Play</span><span lang="en">⭐ 5.0 on Google Play</span>
+        <span lang="bg">🔒 дневникът остава на телефона</span><span lang="en">🔒 your diary stays on the phone</span>
+        <span lang="bg">🌍 8 езика</span><span lang="en">🌍 8 languages</span>
+      </div>
+    </div>
+    <img class="hero-shot" src="img/bg-1.jpg" data-bg="img/bg-1.jpg" data-en="img/en-1.jpg" alt="Azqm">
+  </div>
+</div>
+
+<section>
+  <div class="wrap">
+    <h2><span lang="bg">Всичко за храненето на едно място</span><span lang="en">Everything about your food in one place</span></h2>
+    <p class="sub"><span lang="bg">Направено за хора, които искат да знаят повече от калориите.</span><span lang="en">Made for people who want to know more than calories.</span></p>
+    <div class="grid">
+      <div class="card"><div class="ico">🍽️</div>
+        <h3><span lang="bg">1000+ храни</span><span lang="en">1,000+ foods</span></h3>
+        <p><span lang="bg">С подробни стойности по USDA, вкл. над 120 български ястия: баница, мусака, таратор, кебапчета.</span><span lang="en">Detailed values from USDA data, including 120+ Bulgarian dishes.</span></p></div>
+      <div class="card"><div class="ico">🧪</div>
+        <h3><span lang="bg">Кои витамини ви липсват</span><span lang="en">Which vitamins you lack</span></h3>
+        <p><span lang="bg">Анализ на 30 хранителни вещества: какво не достига, какво е в излишък и от кои храни да го набавите.</span><span lang="en">30 nutrients analysed: what's short, what's too much, and which foods fix it.</span></p></div>
+      <div class="card"><div class="ico">⏱️</div>
+        <h3><span lang="bg">Гладуване</span><span lang="en">Fasting</span></h3>
+        <p><span lang="bg">Таймер 16:8, 18:6, 20:4, OMAD 23:1 и до 72 часа, с етапите на гладуването и история.</span><span lang="en">Timer for 16:8, 18:6, 20:4, OMAD 23:1 and up to 72 hours, with stages and history.</span></p></div>
+      <div class="card"><div class="ico">📷</div>
+        <h3><span lang="bg">Бързо записване</span><span lang="en">Quick logging</span></h3>
+        <p><span lang="bg">Търсене, скенер на баркод, любими, „Мои ястия“ и копиране на вчерашния ден.</span><span lang="en">Search, barcode scanner, favourites, your own dishes and copy yesterday.</span></p></div>
+      <div class="card"><div class="ico">📊</div>
+        <h3><span lang="bg">Прогрес</span><span lang="en">Progress</span></h3>
+        <p><span lang="bg">Тегло, средни калории за 7/30/90 дни, вода и прогноза кога ще стигнете целта си.</span><span lang="en">Weight, 7/30/90-day averages, water and a forecast of when you'll reach your goal.</span></p></div>
+      <div class="card"><div class="ico">📁</div>
+        <h3><span lang="bg">Вашите данни</span><span lang="en">Your data</span></h3>
+        <p><span lang="bg">Без регистрация. Експорт в Excel и CSV, резервно копие и възстановяване.</span><span lang="en">No account. Export to Excel and CSV, backup and restore.</span></p></div>
+    </div>
+  </div>
+</section>
+
+<section style="padding-top:0">
+  <div class="wrap">
+    <h2><span lang="bg">Как изглежда</span><span lang="en">Take a look</span></h2>
+    <p class="sub"><span lang="bg">Плъзнете настрани →</span><span lang="en">Swipe sideways →</span></p>
+    <div class="shots" id="shots"></div>
+  </div>
+</section>
+
+<section style="padding-top:0">
+  <div class="wrap">
+    <h2><span lang="bg">14 хранителни режима</span><span lang="en">14 diets</span></h2>
+    <p class="sub"><span lang="bg">Всеки със свое разпределение на макросите и цветна точка до всяка храна: подхожда ли ви.</span><span lang="en">Each with its own macro split and a coloured dot on every food showing whether it fits.</span></p>
+    <div class="diets">
+      <span class="hl"><span lang="bg">Кето</span><span lang="en">Keto</span></span>
+      <span class="hl"><span lang="bg">Режимът на Атанас Узунов</span><span lang="en">Atanas Uzunov plan</span></span>
+      <span><span lang="bg">Нисковъглехидратна</span><span lang="en">Low-carb</span></span>
+      <span><span lang="bg">Нискомазнинна</span><span lang="en">Low-fat</span></span>
+      <span><span lang="bg">Балансирана</span><span lang="en">Balanced</span></span>
+      <span><span lang="bg">Средиземноморска</span><span lang="en">Mediterranean</span></span>
+      <span><span lang="bg">Зоната 40/30/30</span><span lang="en">Zone 40/30/30</span></span>
+      <span>DASH</span>
+      <span><span lang="bg">Високопротеинова</span><span lang="en">High-protein</span></span>
+      <span><span lang="bg">Палео</span><span lang="en">Paleo</span></span>
+      <span><span lang="bg">Вегетарианска</span><span lang="en">Vegetarian</span></span>
+      <span><span lang="bg">Веганска</span><span lang="en">Vegan</span></span>
+      <span><span lang="bg">Карнивор</span><span lang="en">Carnivore</span></span>
+      <span><span lang="bg">Лечебно гладуване</span><span lang="en">Therapeutic fasting</span></span>
+    </div>
+  </div>
+</section>
+
+<section style="padding-top:0">
+  <div class="wrap">
+    <h2><span lang="bg">Чести въпроси</span><span lang="en">FAQ</span></h2>
+    <details><summary><span lang="bg">Безплатно ли е?</span><span lang="en">Is it free?</span></summary>
+      <p><span lang="bg">Да. Всичко описано тук е безплатно и без реклами. Има еднократна доброволна подкрепа (Pro), която отключва допълнителни неща: снимки за прогрес, теми, обиколки, напомняния.</span><span lang="en">Yes. Everything above is free with no ads. An optional one-time support purchase (Pro) unlocks extras: progress photos, themes, body measurements, reminders.</span></p></details>
+    <details><summary><span lang="bg">Къде се пазят данните ми?</span><span lang="en">Where is my data kept?</span></summary>
+      <p><span lang="bg">Дневникът се пази само на телефона ви. Няма регистрация. Навън излизат само търсенето по баркод (в Open Food Facts) и снимките, ако сами включите разпознаване по снимка с ваш AI ключ.</span><span lang="en">Your diary is stored only on your phone, with no account. Only barcode lookups (Open Food Facts) and photos, if you turn on photo recognition with your own AI key, leave the device.</span></p></details>
+    <details><summary><span lang="bg">Има ли за iPhone?</span><span lang="en">Is there an iPhone version?</span></summary>
+      <p><span lang="bg">Засега само за Android.</span><span lang="en">Android only for now.</span></p></details>
+    <details><summary><span lang="bg">Липсва ми храна. Какво да правя?</span><span lang="en">A food is missing. What can I do?</span></summary>
+      <p><span lang="bg">Добавете я през „Ръчно“ или сканирайте баркода. Можете и да ни пишете, за да я включим в следващата версия.</span><span lang="en">Add it yourself under "Manual" or scan its barcode, or write to us and we'll add it in the next version.</span></p></details>
+  </div>
+</section>
+
+<section class="final">
+  <div class="wrap">
+    <h2><span lang="bg">Пробвайте Azqm днес</span><span lang="en">Try Azqm today</span></h2>
+    <p class="sub"><span lang="bg">Безплатно, на български, без реклами.</span><span lang="en">Free, ad-free, in 8 languages.</span></p>
+    <a class="cta play" href="https://play.google.com/store/apps/details?id=com.tanatos.azqm">
+      <svg viewBox="0 0 24 24" fill="#fff" aria-hidden="true"><path d="M4 2.6v18.8c0 .5.5.8.9.6L21 12.6c.5-.3.5-.9 0-1.2L4.9 2c-.4-.2-.9.1-.9.6z"/></svg>
+      <span lang="bg">Изтеглете от Google Play</span><span lang="en">Get it on Google Play</span>
+    </a>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap">
+    <span>© 2026 Azqm</span>
+    <a href="https://tanatos1987.github.io/azqm-privacy/"><span lang="bg">Политика за поверителност</span><span lang="en">Privacy policy</span></a>
+    <a href="mailto:toshko87@protonmail.com"><span lang="bg">Връзка с нас</span><span lang="en">Contact</span></a>
+    <span><span lang="bg">Google Play е търговска марка на Google LLC.</span><span lang="en">Google Play is a trademark of Google LLC.</span></span>
+  </div>
+</footer>
+
+<script>
+  (function () {
+    var root = document.documentElement;
+    var shots = document.getElementById('shots');
+    function set(l) {
+      root.className = 'l-' + l;
+      root.lang = l;
+      document.title = l === 'bg' ? 'Azqm – брояч на калории, макроси и витамини' : 'Azqm – calorie, macro & vitamin tracker';
+      var hero = document.querySelector('.hero-shot');
+      hero.src = hero.getAttribute('data-' + l);
+      var html = '';
+      for (var i = 2; i <= 7; i++) html += '<img loading="lazy" src="img/' + l + '-' + i + '.jpg" alt="">';
+      shots.innerHTML = html;
+      try { localStorage.setItem('azqm-lang', l); } catch (e) {}
+    }
+    var saved = null;
+    try { saved = localStorage.getItem('azqm-lang'); } catch (e) {}
+    var q = new URLSearchParams(location.search).get('lang');
+    var l = q === 'en' || q === 'bg' ? q : saved || ((navigator.language || '').toLowerCase().indexOf('bg') === 0 ? 'bg' : 'en');
+    set(l);
+    document.getElementById('lang').addEventListener('click', function () { set(root.className === 'l-bg' ? 'en' : 'bg'); });
+    // Tag Play links with the page as the source, so Play Console shows installs that came from this site.
+    var ref = '&referrer=utm_source%3Dazqm_site%26utm_medium%3Dlanding';
+    document.querySelectorAll('a.play').forEach(function (a) { a.href += ref; });
+  })();
+</script>
+</body>
+</html>
