@@ -9,6 +9,7 @@ import { scaleNutrients } from '@/data/nutrients';
 import { tr } from '@/i18n';
 import type { FoodItem, MealType, NewFoodEntry } from '@/types';
 import { entryTimeIso, formatDateLabel, formatNumber, todayKey } from '@/utils/date';
+import { maybeAskForReview } from '@/utils/storeReview';
 
 /** Writes diary entries for the selected day and shows "Добавено … · Отмени". */
 export function useLogFood() {
@@ -32,6 +33,8 @@ export function useLogFood() {
           bump();
         },
       });
+      // A food just went in: the moment Google's rating sheet may show (rarely, see storeReview.ts).
+      maybeAskForReview(db);
       return id;
     },
     [db, date, bump, toast]

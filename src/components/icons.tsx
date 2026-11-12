@@ -253,6 +253,18 @@ export function StarIcon({ size = D.size, color = D.color, strokeWidth = D.strok
   );
 }
 
+export function ShareIcon({ size = D.size, color = D.color, strokeWidth = D.strokeWidth }: IconProps) {
+  return (
+    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+      <Circle cx={18} cy={5.5} r={2.6} {...line(color, strokeWidth)} />
+      <Circle cx={6} cy={12} r={2.6} {...line(color, strokeWidth)} />
+      <Circle cx={18} cy={18.5} r={2.6} {...line(color, strokeWidth)} />
+      <Line x1={8.3} y1={10.8} x2={15.7} y2={6.7} {...line(color, strokeWidth)} />
+      <Line x1={8.3} y1={13.2} x2={15.7} y2={17.3} {...line(color, strokeWidth)} />
+    </Svg>
+  );
+}
+
 export function CopyIcon({ size = D.size, color = D.color, strokeWidth = D.strokeWidth }: IconProps) {
   return (
     <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">

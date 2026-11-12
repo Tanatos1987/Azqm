@@ -4,7 +4,8 @@ import { router } from 'expo-router';
 import { useSQLiteContext } from 'expo-sqlite';
 import Constants from 'expo-constants';
 import { Button, Card, IconButton, Input, Row, Screen, SectionHeader, Segmented, Txt } from '@/components/ui';
-import { BellIcon, ChevronLeftIcon, ChevronRightIcon, DownloadIcon, FileIcon, HeartIcon, HelpIcon, PaletteIcon, TrashIcon, UploadIcon, UserIcon } from '@/components/icons';
+import { BellIcon, ChevronLeftIcon, ChevronRightIcon, DownloadIcon, FileIcon, HeartIcon, HelpIcon, PaletteIcon, ShareIcon, StarIcon, TrashIcon, UploadIcon, UserIcon } from '@/components/icons';
+import { openStorePage, shareApp } from '@/utils/storeReview';
 import { defaultModelFor, useSettings } from '@/context/SettingsContext';
 import { usePro } from '@/context/ProContext';
 import { useProfile } from '@/context/ProfileContext';
@@ -190,6 +191,30 @@ export default function SettingsScreen() {
             <Txt v="bodyStrong">{tr('Помощ', 'Help')}</Txt>
             <Txt v="small" tone="textMuted">
               {tr('Какво прави всеки бутон', 'What each button does')}
+            </Txt>
+          </View>
+          <ChevronRightIcon size={20} color={t.c.textMuted} />
+        </Row>
+      </Card>
+      <Card onPress={openStorePage}>
+        <Row gap={12}>
+          <StarIcon size={24} color={t.c.accent} />
+          <View style={{ flex: 1 }}>
+            <Txt v="bodyStrong">{tr('Оцени Azqm', 'Rate Azqm')}</Txt>
+            <Txt v="small" tone="textMuted">
+              {tr('Вашият отзив в Google Play помага на други да намерят приложението', 'Your review in Google Play helps others find the app')}
+            </Txt>
+          </View>
+          <ChevronRightIcon size={20} color={t.c.textMuted} />
+        </Row>
+      </Card>
+      <Card onPress={shareApp}>
+        <Row gap={12}>
+          <ShareIcon size={24} color={t.c.accent} />
+          <View style={{ flex: 1 }}>
+            <Txt v="bodyStrong">{tr('Препоръчай на приятел', 'Recommend to a friend')}</Txt>
+            <Txt v="small" tone="textMuted">
+              {tr('Изпрати връзка към Azqm', 'Send a link to Azqm')}
             </Txt>
           </View>
           <ChevronRightIcon size={20} color={t.c.textMuted} />
