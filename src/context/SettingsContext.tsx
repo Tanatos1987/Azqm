@@ -5,6 +5,7 @@ import type { DailyGoals, VisionProvider } from '@/types';
 import type { DietId } from '@/data/diets';
 import type { TextScaleKey, ThemePref } from '@/theme/ThemeContext';
 import { DEFAULT_THEME_ID, isThemeId, type ThemeId } from '@/theme/themes';
+import { LOOK_VERSION, migrateLook } from '@/theme/lookMigration';
 import { deviceLang, isLang, type Lang } from '@/i18n';
 
 const SETTINGS_KEY = 'azqm_settings_v1';
@@ -23,6 +24,10 @@ export interface AppSettings {
   fastingGoalHours: number;
   visionProvider: VisionProvider;
   visionModel: string;
+  /** 2 = the 24.11.2026 redesign has been applied to these settings once (src/theme/lookMigration.ts) */
+  lookVersion: number;
+  /** the one-time "new look" note on Today, until the user keeps the new look or goes back */
+  showLookNote: boolean;
 }
 
 export function defaultModelFor(provider: VisionProvider): string {
@@ -39,6 +44,8 @@ const DEFAULTS: AppSettings = {
   fastingGoalHours: 16,
   visionProvider: 'gemini',
   visionModel: defaultModelFor('gemini'),
+  lookVersion: LOOK_VERSION,
+  showLookNote: false,
 };
 
 interface SettingsContextValue extends AppSettings {
@@ -71,8 +78,15 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
           // Before themes (1.5.0) there was only dark / light: whoever picked light keeps it in the Classic theme,
           // everyone else gets the new default.
           if (!isThemeId(saved.themeId)) next.themeId = next.themePref === 'light' ? 'classic' : DEFAULT_THEME_ID;
+          // The 24.11.2026 redesign: the old default moves to Deep Glass once, with a note on Today. Saved right away,
+          // so it never runs again and going back to the old look sticks.
+          const look = migrateLook(saved);
+          if (look.themeId) next.themeId = look.themeId;
+          next.lookVersion = look.lookVersion;
+          next.showLookNote = look.showLookNote || saved.showLookNote === true;
           latest.current = next;
           setSettings(next);
+          if (saved.lookVersion !== LOOK_VERSION) await AsyncStorage.setItem(SETTINGS_KEY, JSON.stringify(next)).catch(() => undefined);
         } else {
           const next = { ...DEFAULTS, language: deviceLang() };
           latest.current = next;

@@ -170,6 +170,23 @@ export default function TodayScreen() {
         </TourTarget>
       </Row>
 
+      {settings.showLookNote && (
+        // One-time note after the 24.11.2026 redesign (src/theme/lookMigration.ts): keep the new look or go back.
+        <Card style={{ marginBottom: 14 }}>
+          <Txt v="body">{tr('Azqm има нов вид. Старият е в Настройки → Теми.', 'Azqm has a new look. The old one is in Settings → Themes.')}</Txt>
+          <Row gap={10} style={{ marginTop: 12 }}>
+            <Button small flex label={tr('Остави новия', 'Keep the new one')} onPress={() => settings.update({ showLookNote: false })} />
+            <Button
+              small
+              flex
+              variant="secondary"
+              label={tr('Върни стария', 'Back to the old look')}
+              onPress={() => settings.update({ themeId: 'obsidian_amber', showLookNote: false })}
+            />
+          </Row>
+        </Card>
+      )}
+
       <SupportBanner />
 
       <TourTarget id="today-diet" style={{ marginBottom: 14 }}>
