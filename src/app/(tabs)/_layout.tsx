@@ -22,13 +22,32 @@ export default function TabsLayout() {
         freezeOnBlur: true,
         tabBarActiveTintColor: t.c.accent,
         tabBarInactiveTintColor: t.c.textMuted,
-        tabBarStyle: {
-          backgroundColor: t.c.surface,
-          borderTopColor: t.c.cardBorder,
-          height: 64 + insets.bottom,
-          paddingTop: 6,
-          paddingBottom: Math.max(insets.bottom, 8),
-        },
+        // Deep Glass: a rounded bar floating above the content; the screens leave room for it (Screen, lists).
+        tabBarStyle:
+          t.fx.tabBar === 'floating'
+            ? {
+                position: 'absolute',
+                left: 12,
+                right: 12,
+                bottom: Math.max(insets.bottom, 10),
+                height: 64,
+                borderRadius: 26,
+                backgroundColor: 'rgba(20,26,46,0.92)',
+                borderWidth: 1,
+                borderTopWidth: 1,
+                borderColor: 'rgba(255,255,255,0.14)',
+                borderTopColor: 'rgba(255,255,255,0.14)',
+                paddingTop: 6,
+                paddingBottom: 8,
+                elevation: 0,
+              }
+            : {
+                backgroundColor: t.c.surface,
+                borderTopColor: t.c.cardBorder,
+                height: 64 + insets.bottom,
+                paddingTop: 6,
+                paddingBottom: Math.max(insets.bottom, 8),
+              },
         // Five tabs share the width: a long translation ("Hinzufügen") shrinks instead of being cut off.
         tabBarLabel: ({ color, children }) => (
           <Text

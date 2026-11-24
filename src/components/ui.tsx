@@ -2,6 +2,7 @@
  * Shared UI building blocks. Everything reads the active theme (colours, fonts, shapes, text size), so screens only
  * describe layout. <Txt> applies the theme's fonts and the user's text-size setting to every label.
  */
+import * as Haptics from 'expo-haptics';
 import React from 'react';
 import {
   KeyboardAvoidingView,
@@ -110,7 +111,8 @@ export function Screen({ title, subtitle, right, left, children, scroll, scrollP
       keyboardShouldPersistTaps="handled"
       showsVerticalScrollIndicator={false}
       {...scrollProps}
-      contentContainerStyle={[padded && s.padX, s.column, { paddingBottom: 48 }, scrollProps?.contentContainerStyle]}
+      // A floating tab bar (Deep Glass) covers the bottom of the screen: leave room so the last row stays visible.
+      contentContainerStyle={[padded && s.padX, s.column, { paddingBottom: 48 + (t.fx.tabBar === 'floating' ? 88 : 0) }, scrollProps?.contentContainerStyle]}
     >
       {children}
     </ScrollView>
@@ -244,22 +246,31 @@ interface ButtonProps extends Omit<PressableProps, 'style' | 'children'> {
   flex?: boolean;
 }
 
-export function Button({ label, variant = 'primary', icon, small, style, flex, disabled, ...rest }: ButtonProps) {
+export function Button({ label, variant = 'primary', icon, small, style, flex, disabled, onPressIn, ...rest }: ButtonProps) {
   const t = useTheme();
   const s = useStyles();
-  const bg = { primary: t.c.accent, secondary: t.c.surfaceAlt, ghost: 'transparent', danger: t.c.dangerSoft }[variant];
-  const fg = { primary: t.c.onAccent, secondary: t.c.text, ghost: t.c.accent, danger: t.c.danger }[variant];
+  // Deep Glass: the main button is frosted glass with a light edge instead of a solid accent fill.
+  const glass = variant === 'primary' && t.fx.buttonStyle === 'glass';
+  const bg = glass ? 'rgba(255,255,255,0.14)' : { primary: t.c.accent, secondary: t.c.surfaceAlt, ghost: 'transparent', danger: t.c.dangerSoft }[variant];
+  const fg = glass ? t.c.text : { primary: t.c.onAccent, secondary: t.c.text, ghost: t.c.accent, danger: t.c.danger }[variant];
   return (
     <Pressable
       disabled={disabled}
       {...rest}
+      onPressIn={(e) => {
+        // a short tick under the finger for the main action, in every theme
+        if (variant === 'primary') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => undefined);
+        onPressIn?.(e);
+      }}
       style={({ pressed }) => [
         s.button,
         small && s.buttonSmall,
         { backgroundColor: bg },
-        variant === 'primary' && !disabled && s.buttonGlow,
+        glass && { borderWidth: 1, borderColor: 'rgba(255,255,255,0.35)' },
+        variant === 'primary' && !glass && !disabled && s.buttonGlow,
         flex && { flex: 1 },
-        (pressed || disabled) && { opacity: disabled ? 0.45 : 0.8 },
+        glass && pressed && !disabled && { transform: [{ scale: 0.97 }] },
+        ((pressed && !glass) || disabled) && { opacity: disabled ? 0.45 : 0.8 },
         style,
       ]}
     >
