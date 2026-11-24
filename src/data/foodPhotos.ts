@@ -8,6 +8,14 @@ import type { FoodCategory } from '@/types';
  */
 export const FOOD_PHOTOS: Partial<Record<FoodCategory, ImageSourcePropType>> = {
   meat: require('../../assets/food/meat.webp'),
+  deli: require('../../assets/food/deli.webp'),
+  fish: require('../../assets/food/fish.webp'),
+  eggs: require('../../assets/food/eggs.webp'),
+  dairy: require('../../assets/food/dairy.webp'),
+  cheese: require('../../assets/food/cheese.webp'),
+  fats: require('../../assets/food/fats.webp'),
+  vegetables: require('../../assets/food/vegetables.webp'),
+  fruits: require('../../assets/food/fruits.webp'),
 };
 
 export function foodPhoto(key: string): ImageSourcePropType | undefined {
