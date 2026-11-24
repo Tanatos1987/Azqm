@@ -29,9 +29,13 @@
     "react-native-svg": "15.15.4"
   },
   "devDependencies": {
+    "@react-native/jest-preset": "^0.86.3",
+    "@types/jest": "29.5.14",
     "@types/react": "~19.2.2",
     "eslint": "^9.0.0",
     "eslint-config-expo": "~57.0.2",
+    "jest": "~29.7.0",
+    "jest-expo": "~57.0.6",
     "typescript": "~6.0.3"
   },
   "scripts": {
@@ -43,7 +47,14 @@
     "typecheck": "tsc --noEmit",
     "foods:fetch": "node scripts/fetch-usda.mjs",
     "foods:build": "node scripts/build-foods.mjs",
-    "i18n:check": "node scripts/i18n.mjs check"
+    "i18n:check": "node scripts/i18n.mjs check",
+    "test": "jest"
   },
-  "private": true
+  "private": true,
+  "jest": {
+    "preset": "jest-expo",
+    "moduleNameMapper": {
+      "^@/(.*)$": "<rootDir>/src/$1"
+    }
+  }
 }
