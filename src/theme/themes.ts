@@ -70,6 +70,8 @@ export interface ThemeEffects {
   bgGradient?: readonly [string, string];
   /** the original Android elevation under cards (Classic, light) */
   elevation?: boolean;
+  /** body figure in Progress: frosted glass with a glow (Deep Glass), else a shaded volume */
+  figure?: 'glass';
 }
 
 /** The colour tokens of the spec. */
