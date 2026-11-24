@@ -70,7 +70,7 @@ export default function RecipeScreen() {
   if (!isPro) {
     return (
       <Screen title={tr('Ново ястие', 'New dish')} scroll left={back}>
-        <ProLock emoji="🍲" title={tr('Мои ястия', 'My dishes')} text={recipesTeaser()} />
+        <ProLock icon="soup" title={tr('Мои ястия', 'My dishes')} text={recipesTeaser()} />
       </Screen>
     );
   }

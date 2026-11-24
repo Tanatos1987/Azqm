@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Alert, Linking, Pressable, Switch, View } from 'react-native';
+import { LineIcon, type IconKey } from '@/components/LineIcon';
 import { router } from 'expo-router';
 import { useSQLiteContext } from 'expo-sqlite';
 import { Button, Card, Chip, IconButton, Row, Screen, Txt } from '@/components/ui';
@@ -50,7 +51,7 @@ export default function RemindersScreen() {
   if (!isPro) {
     return (
       <Screen title={tr('Напомняния', 'Reminders')} scroll left={back}>
-        <ProLock emoji="🔔" title={tr('Напомняния', 'Reminders')} text={remindersTeaser()} />
+        <ProLock icon="bell" title={tr('Напомняния', 'Reminders')} text={remindersTeaser()} />
       </Screen>
     );
   }
@@ -96,11 +97,11 @@ export default function RemindersScreen() {
         </Card>
       )}
 
-      <ReminderCard emoji="⚖️" title={tr('Претегляне', 'Weigh-in')} text={tr('Всеки ден сутрин, преди закуска.', 'Every morning, before breakfast.')} on={s.weighIn.on} onToggle={toggle('weighIn')}>
+      <ReminderCard icon="weight" title={tr('Претегляне', 'Weigh-in')} text={tr('Всеки ден сутрин, преди закуска.', 'Every morning, before breakfast.')} on={s.weighIn.on} onToggle={toggle('weighIn')}>
         <TimeRow label={tr('Час', 'Time')} value={s.weighIn.time} onChange={(time) => apply({ ...s, weighIn: { ...s.weighIn, time } })} />
       </ReminderCard>
 
-      <ReminderCard emoji="💧" title={tr('Вода', 'Water')} text={tr('Чаша вода на няколко часа през деня.', 'A glass of water every few hours during the day.')} on={s.water.on} onToggle={toggle('water')}>
+      <ReminderCard icon="droplet" title={tr('Вода', 'Water')} text={tr('Чаша вода на няколко часа през деня.', 'A glass of water every few hours during the day.')} on={s.water.on} onToggle={toggle('water')}>
         <TimeRow label={tr('От', 'From')} value={s.water.from} onChange={(from) => apply({ ...s, water: { ...s.water, from } })} />
         <TimeRow label={tr('До', 'To')} value={s.water.to} onChange={(to) => apply({ ...s, water: { ...s.water, to } })} />
         <Row gap={8}>
@@ -114,7 +115,7 @@ export default function RemindersScreen() {
         </Txt>
       </ReminderCard>
 
-      <ReminderCard emoji="🍽️" title={tr('Записване на храната', 'Logging food')} text={tr('Напомняне да запишеш храната.', 'A nudge to log what you’ve eaten.')} on={s.meals.on} onToggle={toggle('meals')}>
+      <ReminderCard icon="utensils" title={tr('Записване на храната', 'Logging food')} text={tr('Напомняне да запишеш храната.', 'A nudge to log what you’ve eaten.')} on={s.meals.on} onToggle={toggle('meals')}>
         {s.meals.times.map((time, i) => (
           <TimeRow
             key={i}
@@ -134,7 +135,7 @@ export default function RemindersScreen() {
       </ReminderCard>
 
       <ReminderCard
-        emoji="⏱️"
+        icon="timer"
         title={tr('Край на поста', 'End of a fast')}
         text={tr('Известие, когато пуснатият пост стигне целта си.', 'A notification when the running fast reaches its goal.')}
         on={s.fastEnd.on}
@@ -148,12 +149,12 @@ export default function RemindersScreen() {
   );
 }
 
-function ReminderCard({ emoji, title, text, on, onToggle, children }: { emoji: string; title: string; text: string; on: boolean; onToggle: (on: boolean) => void; children?: React.ReactNode }) {
+function ReminderCard({ icon, title, text, on, onToggle, children }: { icon: IconKey; title: string; text: string; on: boolean; onToggle: (on: boolean) => void; children?: React.ReactNode }) {
   const t = useTheme();
   return (
     <Card style={{ gap: 12 }}>
       <Row gap={12}>
-        <Txt style={{ fontSize: 24 }}>{emoji}</Txt>
+        <LineIcon name={icon} size={24} color={t.c.accent} />
         <View style={{ flex: 1 }}>
           <Txt v="bodyStrong">{title}</Txt>
           <Txt v="small" tone="textMuted">

@@ -41,7 +41,7 @@ export default function ProgressCameraScreen() {
   if (!isPro) {
     return (
       <Screen title={tr('Снимки за прогрес', 'Progress photos')} left={<CloseButton />}>
-        <ProLock emoji="📸" title={tr('Снимки за прогрес', 'Progress photos')} text={tr('Снимай се по време на режима и виж как се променя тялото ти.', 'Take photos during your diet and see how your body changes.')} />
+        <ProLock icon="camera" title={tr('Снимки за прогрес', 'Progress photos')} text={tr('Снимай се по време на режима и виж как се променя тялото ти.', 'Take photos during your diet and see how your body changes.')} />
       </Screen>
     );
   }

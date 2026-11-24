@@ -41,14 +41,14 @@ export default function RecipesScreen() {
       }
     >
       {!isPro ? (
-        <ProLock emoji="🍲" title={tr('Мои ястия', 'My dishes')} text={recipesTeaser()} />
+        <ProLock icon="soup" title={tr('Мои ястия', 'My dishes')} text={recipesTeaser()} />
       ) : (
         <>
           <Button label={tr('Ново ястие', 'New dish')} icon={<PlusIcon size={22} color={t.c.onAccent} />} onPress={() => router.push('/recipe')} style={{ marginBottom: 14 }} />
           {recipes.length === 0 ? (
             <Card>
               <EmptyState
-                emoji="🍲"
+                icon="soup"
                 title={tr('Още нямаш ястия', 'No dishes yet')}
                 text={tr(
                   'Добави продуктите на мусаката, супата или салатата с грамажите им и броя порции. После ястието е в „Мои храни“ и се добавя като всяка храна.',

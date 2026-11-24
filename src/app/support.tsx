@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { ActivityIndicator, Alert, View } from 'react-native';
+import { LineIcon } from '@/components/LineIcon';
 import { router } from 'expo-router';
 import { Button, Card, IconButton, Row, Screen, SectionHeader, Segmented, Txt } from '@/components/ui';
 import { ChevronLeftIcon, HeartIcon } from '@/components/icons';
@@ -81,7 +82,7 @@ export default function SupportScreen() {
           return (
             <Card key={p.id}>
               <Row gap={12}>
-                <Txt style={{ fontSize: 26 }}>{tier?.emoji ?? '💚'}</Txt>
+                <LineIcon name={tier?.icon ?? 'heart'} size={26} color={t.c.accent} />
                 <View style={{ flex: 1 }}>
                   <Txt v="bodyStrong">{tier?.name ?? p.title}</Txt>
                   <Txt v="h3" tone="accent">

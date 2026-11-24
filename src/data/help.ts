@@ -31,27 +31,27 @@ export interface TourStep {
 
 const today = {
   summary: () => ({
-    emoji: '📊',
+    icon: 'chart-pie',
     title: tr('Обобщение на деня', 'Your day at a glance'),
     text: tr('Изядени и оставащи калории, плюс протеин, мазнини и въглехидрати спрямо целите ти.', 'Calories eaten and left, plus protein, fat and carbs against your goals.'),
   }),
   diet: () => ({
-    emoji: '🥗',
+    icon: 'salad',
     title: tr('Хранителен режим', 'Diet'),
     text: tr('Докосни, за да смениш режима — целите се преизчисляват сами.', 'Tap to switch diets — your goals are recalculated automatically.'),
   }),
   date: () => ({
-    emoji: '📅',
+    icon: 'calendar',
     title: tr('Смяна на деня', 'Switch days'),
     text: tr('◀ ▶ отиват на предишния и следващия ден, а докосване на датата те връща на днес.', '◀ ▶ go to the previous and next day; tap the date to jump back to today.'),
   }),
   tiles: () => ({
-    emoji: '💧',
+    icon: 'droplet',
     title: tr('Вода, пост и средно за 7 дни', 'Water, fasting and 7-day average'),
     text: tr('„+ 250 мл“ добавя чаша вода. Докосни поста или средното, за да отвориш раздела им.', '“+ 250 ml” logs a glass of water. Tap the fast or the average to open its tab.'),
   }),
   add: () => ({
-    emoji: '➕',
+    icon: 'plus',
     title: tr('Добави храна', 'Add food'),
     text: tr(
       'Добавя храна в дневника. Докосни запис от списъка, за да промениш грамажа, да го повториш или изтриеш.',
@@ -59,30 +59,30 @@ const today = {
     ),
   }),
   settings: () => ({
-    emoji: '⚙️',
+    icon: 'settings',
     title: tr('Настройки', 'Settings'),
     text: tr('Профил и цели, език, тема и размер на текста, експорт в Excel и резервно копие.', 'Profile and goals, language, theme and text size, Excel export and backups.'),
   }),
-};
+} satisfies Record<string, () => Perk>;
 
 const tabs = {
   add: () => ({
-    emoji: '🔎',
+    icon: 'search',
     title: tr('Добави', 'Add'),
     text: tr('Търси сред над 1000 храни, сканирай баркод, снимай чинията или въведи храна ръчно.', 'Search 1000+ foods, scan a barcode, photograph your plate or enter food by hand.'),
   }),
   analysis: () => ({
-    emoji: '📈',
+    icon: 'chart-line',
     title: tr('Анализ', 'Analysis'),
     text: tr('Средни стойности за 7, 30 и 90 дни, витамини и минерали и какво ти липсва.', 'Averages over 7, 30 and 90 days, vitamins and minerals, and what you’re missing.'),
   }),
   progress: () => ({
-    emoji: '⚖️',
+    icon: 'weight',
     title: tr('Прогрес', 'Progress'),
     text: tr('Тегло и индекс на телесна маса с графика, плюс тренд, обиколки и снимки (Pro).', 'Weight and body mass index with a chart, plus trend, measurements and photos (Pro).'),
   }),
   fasting: () => ({
-    emoji: '⏱️',
+    icon: 'timer',
     title: tr('Пост', 'Fasting'),
     text: tr(
       'Таймер за интервално хранене и гладуване: цел в часове, етапите в тялото и история.',
@@ -90,14 +90,14 @@ const tabs = {
     ),
   }),
   pro: () => ({
-    emoji: '💚',
+    icon: 'heart',
     title: tr('Подкрепи', 'Support'),
     text: tr('Еднократно дарение по избор отключва Pro завинаги. След това разделът изчезва.', 'A one-time donation of your choice unlocks Pro for good. After that, this tab disappears.'),
   }),
-};
+} satisfies Record<string, () => Perk>;
 
 const help = () => ({
-  emoji: '❓',
+  icon: 'circle-help',
   title: tr('Помощ', 'Help'),
   text: tr('Тук е обяснено всичко в приложението. Оттук можеш да пуснеш обиколката отново.', 'Everything in the app is explained here. You can replay this tour from here.'),
 });
@@ -144,7 +144,7 @@ export function helpSections(): HelpSection[] {
         today.tiles(),
         today.add(),
         {
-          emoji: '📋',
+          icon: 'copy',
           title: tr('Копирай предишния ден', 'Copy the previous day'),
           text: tr('Когато денят е празен, един бутон добавя храните от предишния ден.', 'When a day is empty, one button adds the foods from the previous day.'),
         },
@@ -155,7 +155,7 @@ export function helpSections(): HelpSection[] {
       title: tr('Добави', 'Add'),
       items: [
         {
-          emoji: '🔎',
+          icon: 'search',
           title: tr('Търси', 'Search'),
           text: tr(
             'Търси по име; „Подходящи“, „Последни“ и „Любими“ са бързи списъци за режима ти.',
@@ -163,7 +163,7 @@ export function helpSections(): HelpSection[] {
           ),
         },
         {
-          emoji: '🏷️',
+          icon: 'scan-barcode',
           title: tr('Баркод', 'Barcode'),
           text: tr(
             'Сканирай баркода на опаковката — данните идват от Open Food Facts (нужен е интернет).',
@@ -171,7 +171,7 @@ export function helpSections(): HelpSection[] {
           ),
         },
         {
-          emoji: '📷',
+          icon: 'camera',
           title: tr('Снимка', 'Photo'),
           text: tr(
             'Снимай чинията и изкуственият интелект разпознава храната. Нужен е твой ключ за Gemini или OpenAI в Настройки.',
@@ -179,7 +179,7 @@ export function helpSections(): HelpSection[] {
           ),
         },
         {
-          emoji: '✍️',
+          icon: 'pencil',
           title: tr('Ръчно', 'Manual'),
           text: tr(
             'Въведи стойностите за 100 г сам и запази храната в „Мои храни“ за следващия път.',
@@ -207,7 +207,7 @@ export function helpSections(): HelpSection[] {
       title: tr('Настройки', 'Settings'),
       items: [
         {
-          emoji: '👤',
+          icon: 'user',
           title: tr('Профил и режим', 'Profile and diet'),
           text: tr(
             'Пол, възраст, ръст, тегло, активност и цел — от тях се смятат калориите ти.',
@@ -215,7 +215,7 @@ export function helpSections(): HelpSection[] {
           ),
         },
         {
-          emoji: '🎨',
+          icon: 'palette',
           title: tr('Изглед', 'Appearance'),
           text: tr(
             'Теми (цветове, шрифтове и форми), размер на текста и език. Класическата тема е и светла.',
@@ -224,7 +224,7 @@ export function helpSections(): HelpSection[] {
         },
         PRO_FEATURES.themes(),
         {
-          emoji: '💾',
+          icon: 'database',
           title: tr('Данни', 'Data'),
           text: tr(
             'Експорт на дневника в Excel или CSV и резервно копие, което възстановяваш на нов телефон.',

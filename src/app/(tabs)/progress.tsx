@@ -182,7 +182,7 @@ export default function ProgressScreen() {
         <TrendCard points={trend} targetKg={profile.targetWeightKg} />
       ) : (
         <ProLock
-          emoji="📉"
+          icon="trending-down"
           title={tr('Тренд и прогноза', 'Trend and forecast')}
           text={tr('Изгладено тегло без дневните скокове, темп в кг на седмица и кога ще стигнеш целевото тегло.', 'Your weight without the daily swings, your pace in kg a week and when you’ll reach your goal weight.')}
         />
@@ -196,7 +196,7 @@ export default function ProgressScreen() {
       {isPro ? (
         <MeasurementsCard rows={measurements} profile={profile} />
       ) : (
-        <ProLock emoji="📏" title={tr('Обиколки и % мазнини', 'Measurements and body fat')} text={measurementsTeaser()} />
+        <ProLock icon="ruler" title={tr('Обиколки и % мазнини', 'Measurements and body fat')} text={measurementsTeaser()} />
       )}
 
       <SectionHeader
@@ -207,7 +207,7 @@ export default function ProgressScreen() {
       {isPro ? (
         <PhotosCard photos={photos} />
       ) : (
-        <ProLock emoji="📸" title={tr('Снимки за прогрес', 'Progress photos')} text={tr('Снимай се по време на режима и виж как се променя тялото ти.', 'Take photos during your diet and see how your body changes.')} />
+        <ProLock icon="camera" title={tr('Снимки за прогрес', 'Progress photos')} text={tr('Снимай се по време на режима и виж как се променя тялото ти.', 'Take photos during your diet and see how your body changes.')} />
       )}
 
       {weights.length > 0 && (

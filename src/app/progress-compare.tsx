@@ -52,7 +52,7 @@ export default function ProgressCompareScreen() {
   if (!isPro) {
     return (
       <Screen title={tr('Сравнение', 'Compare')} left={back} scroll>
-        <ProLock emoji="↔️" title={tr('Сравнение преди и след', 'Before and after')} text={tr('Плъзгач върху две снимки, с датите и теглото.', 'A slider across two photos, with the dates and your weight.')} />
+        <ProLock icon="arrow-left-right" title={tr('Сравнение преди и след', 'Before and after')} text={tr('Плъзгач върху две снимки, с датите и теглото.', 'A slider across two photos, with the dates and your weight.')} />
       </Screen>
     );
   }
@@ -71,7 +71,7 @@ export default function ProgressCompareScreen() {
   return (
     <Screen title={tr('Сравнение', 'Compare')} left={back} scroll>
       {ofPose.length < 2 || !before || !after ? (
-        <EmptyState emoji="↔️" title={tr('Нужни са поне две снимки', 'You need at least two photos')} text={tr('Снимай се от една и съща поза в различни дни, за да ги сравниш.', 'Take photos of the same pose on different days to compare them.')} />
+        <EmptyState icon="arrow-left-right" title={tr('Нужни са поне две снимки', 'You need at least two photos')} text={tr('Снимай се от една и съща поза в различни дни, за да ги сравниш.', 'Take photos of the same pose on different days to compare them.')} />
       ) : (
         <>
           {poses.length > 1 ? <Segmented<PhotoPose> value={current!} onChange={choosePose} options={poses.map((p) => ({ label: poseLabel(p), value: p }))} style={{ marginBottom: 10 }} /> : null}

@@ -56,7 +56,7 @@ export default function MeasurementsScreen() {
   if (!isPro || !profile) {
     return (
       <Screen title={tr('Обиколки', 'Measurements')} scroll left={back}>
-        <ProLock emoji="📏" title={tr('Обиколки и % мазнини', 'Measurements and body fat')} text={measurementsTeaser()} />
+        <ProLock icon="ruler" title={tr('Обиколки и % мазнини', 'Measurements and body fat')} text={measurementsTeaser()} />
       </Screen>
     );
   }

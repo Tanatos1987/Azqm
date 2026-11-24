@@ -5,6 +5,7 @@
  */
 import React, { useEffect, useState } from 'react';
 import { ActivityIndicator, View } from 'react-native';
+import { LineIcon } from '@/components/LineIcon';
 import { router } from 'expo-router';
 import { Button, Row, Sheet, Txt } from '@/components/ui';
 import { PerkRow } from '@/components/PerkRow';
@@ -82,7 +83,7 @@ export function SupportWizard({ milestoneDays, initialStep = 0, onClose }: { mil
           {products.length > 0 ? (
             products.map((p) => (
               <Row key={p.id} gap={12} style={s.tier}>
-                <Txt style={{ fontSize: 24 }}>{tiers[p.id]?.emoji ?? '💚'}</Txt>
+                <LineIcon name={tiers[p.id]?.icon ?? 'heart'} size={24} color={t.c.accent} />
                 <View style={{ flex: 1 }}>
                   <Txt v="bodyStrong">{tiers[p.id]?.name ?? p.title}</Txt>
                   <Txt v="h3" tone="accent">

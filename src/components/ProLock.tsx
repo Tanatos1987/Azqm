@@ -1,5 +1,6 @@
 import React from 'react';
 import { View } from 'react-native';
+import { LineIcon, type IconKey } from '@/components/LineIcon';
 import { router } from 'expo-router';
 import { Badge, Button, Card, Row, Txt } from '@/components/ui';
 import { LockIcon } from '@/components/icons';
@@ -7,14 +8,14 @@ import { useTheme } from '@/theme/ThemeContext';
 import { useI18n } from '@/i18n';
 
 /** Shown in place of a Pro feature: what it does and the way to the support screen that unlocks it. */
-export function ProLock({ emoji, title, text }: { emoji: string; title: string; text: string }) {
+export function ProLock({ icon, title, text }: { icon: IconKey; title: string; text: string }) {
   const t = useTheme();
   const { tr } = useI18n();
   return (
     <Card style={{ gap: 12 }}>
       <Row gap={12}>
         <View style={{ width: 48, height: 48, borderRadius: 24, alignItems: 'center', justifyContent: 'center', backgroundColor: t.c.accentSoft }}>
-          <Txt style={{ fontSize: 24 }}>{emoji}</Txt>
+          <LineIcon name={icon} size={24} color={t.c.accent} />
         </View>
         <View style={{ flex: 1, gap: 4 }}>
           <Row gap={8}>

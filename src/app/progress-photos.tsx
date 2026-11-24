@@ -30,7 +30,7 @@ export default function ProgressPhotosScreen() {
   if (!isPro) {
     return (
       <Screen title={tr('Снимки за прогрес', 'Progress photos')} left={back} scroll>
-        <ProLock emoji="📸" title={tr('Снимки за прогрес', 'Progress photos')} text={tr('Снимай се по време на режима и виж как се променя тялото ти.', 'Take photos during your diet and see how your body changes.')} />
+        <ProLock icon="camera" title={tr('Снимки за прогрес', 'Progress photos')} text={tr('Снимай се по време на режима и виж как се променя тялото ти.', 'Take photos during your diet and see how your body changes.')} />
       </Screen>
     );
   }
@@ -120,7 +120,7 @@ function Gallery({ back }: { back: React.ReactNode }) {
 
       {photos.length === 0 ? (
         <EmptyState
-          emoji="📸"
+          icon="camera"
           title={tr('Още няма снимки', 'No photos yet')}
           text={tr(
             'Снимай се отпред, отстрани и отзад в началото на режима и после веднъж седмично — на едно и също място и светлина. Така ще видиш промяната, която кантарът не показва.',

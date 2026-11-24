@@ -4,6 +4,7 @@
  */
 import * as Haptics from 'expo-haptics';
 import { withIconColor } from './iconColor';
+import { LineIcon, type IconKey } from './LineIcon';
 import React from 'react';
 import {
   KeyboardAvoidingView,
@@ -362,16 +363,15 @@ export function Badge({ label, color, soft }: { label: string; color: string; so
   );
 }
 
-/** `icon` (a vector icon) sits in a soft circle of `tint` (default: the accent); `emoji` is the old style. */
-export function EmptyState({ emoji, icon, tint, title, text, children }: { emoji?: string; icon?: React.ReactNode; tint?: string; title: string; text?: string; children?: React.ReactNode }) {
+/** `icon` — a line icon by name (drawn in `tint`) or an icon element — sits in a soft circle of `tint` (default: the accent). */
+export function EmptyState({ icon, tint, title, text, children }: { icon?: IconKey | React.ReactElement; tint?: string; title: string; text?: string; children?: React.ReactNode }) {
   const t = useTheme();
+  const glyph = typeof icon === 'string' ? <LineIcon name={icon} size={34} color={tint ?? t.c.accent} /> : icon;
   return (
     <View style={{ alignItems: 'center', paddingVertical: 28, paddingHorizontal: 16, gap: 6 }}>
-      {icon ? (
-        <View style={{ width: 76, height: 76, borderRadius: 38, alignItems: 'center', justifyContent: 'center', marginBottom: 8, backgroundColor: alpha(tint ?? t.c.accent, 0.12) }}>{icon}</View>
-      ) : (
-        <Text style={{ fontSize: 40 }}>{emoji}</Text>
-      )}
+      {glyph ? (
+        <View style={{ width: 76, height: 76, borderRadius: 38, alignItems: 'center', justifyContent: 'center', marginBottom: 8, backgroundColor: alpha(tint ?? t.c.accent, 0.12) }}>{glyph}</View>
+      ) : null}
       <Txt v="h3" center>
         {title}
       </Txt>
