@@ -5,6 +5,7 @@ import { useSQLiteContext } from 'expo-sqlite';
 import { Button, Card, Chip, Input, Row, Txt } from '@/components/ui';
 import { CheckIcon } from '@/components/icons';
 import { useLogFood } from '@/hooks/useLogFood';
+import { useBottomRoom } from '@/hooks/useBottomRoom';
 import { saveCustomFood } from '@/db/queries';
 import { useDataRefresh } from '@/context/DataRefreshContext';
 import { makeStyles, useTheme } from '@/theme/ThemeContext';
@@ -50,6 +51,7 @@ const EMPTY: Record<FieldKey, string> = { kcal: '', protein: '', fat: '', carbs:
 
 export function ManualEntryForm() {
   const t = useTheme();
+  const room = useBottomRoom();
   const s = useStyles();
   useI18n();
   const db = useSQLiteContext();
@@ -89,7 +91,7 @@ export function ManualEntryForm() {
   };
 
   return (
-    <ScrollView contentContainerStyle={{ paddingBottom: 140, paddingTop: 12 }} keyboardShouldPersistTaps="handled">
+    <ScrollView contentContainerStyle={{ paddingBottom: 140 + room, paddingTop: 12 }} keyboardShouldPersistTaps="handled">
       <Card>
         <Txt v="label" tone="textMuted" style={s.label}>
           {tr('Име на храната', 'Food name')}

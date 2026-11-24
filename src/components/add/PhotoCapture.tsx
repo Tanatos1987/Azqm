@@ -7,6 +7,7 @@ import { CameraIcon } from '@/components/icons';
 import { AmountEditor } from '@/components/food/AmountEditor';
 import { useSettings } from '@/context/SettingsContext';
 import { useLogFood } from '@/hooks/useLogFood';
+import { useBottomRoom } from '@/hooks/useBottomRoom';
 import { analyzeFoodPhoto } from '@/api/visionClient';
 import { fillNutrients } from '@/data/nutrients';
 import { useTheme } from '@/theme/ThemeContext';
@@ -16,6 +17,7 @@ import { useI18n } from '@/i18n';
 
 export function PhotoCapture() {
   const t = useTheme();
+  const room = useBottomRoom();
   const { tr } = useI18n();
   const { apiKey, visionProvider, visionModel, hasApiKey } = useSettings();
   const { logEntry } = useLogFood();
@@ -81,7 +83,7 @@ export function PhotoCapture() {
 
   if (result) {
     return (
-      <ScrollView contentContainerStyle={{ paddingBottom: 120 }} keyboardShouldPersistTaps="handled">
+      <ScrollView contentContainerStyle={{ paddingBottom: 120 + room }} keyboardShouldPersistTaps="handled">
         <Card>
           <AmountEditor
             food={result.food}
@@ -105,7 +107,7 @@ export function PhotoCapture() {
   }
 
   return (
-    <View style={styles.cameraWrap}>
+    <View style={[styles.cameraWrap, { marginBottom: 100 + room }]}>
       <CameraView ref={cameraRef} style={StyleSheet.absoluteFill} facing="back" />
       {analyzing ? (
         <View style={[styles.overlay, { backgroundColor: t.c.overlay }]}>

@@ -8,6 +8,7 @@ import { lookupBarcode } from '@/api/openFoodFacts';
 import { getCustomFoods, saveCustomFood } from '@/db/queries';
 import { fillNutrients } from '@/data/nutrients';
 import { useLogFood } from '@/hooks/useLogFood';
+import { useBottomRoom } from '@/hooks/useBottomRoom';
 import { useTheme } from '@/theme/ThemeContext';
 import type { FoodItem } from '@/types';
 import { mealForNow } from '@/utils/date';
@@ -15,6 +16,7 @@ import { useI18n } from '@/i18n';
 
 export function BarcodeScan() {
   const t = useTheme();
+  const room = useBottomRoom();
   const { tr } = useI18n();
   const db = useSQLiteContext();
   const { logEntry } = useLogFood();
@@ -83,7 +85,7 @@ export function BarcodeScan() {
 
   if (product) {
     return (
-      <ScrollView contentContainerStyle={{ paddingBottom: 120 }} keyboardShouldPersistTaps="handled">
+      <ScrollView contentContainerStyle={{ paddingBottom: 120 + room }} keyboardShouldPersistTaps="handled">
         <Card>
           <AmountEditor
             food={product}
@@ -111,7 +113,7 @@ export function BarcodeScan() {
   }
 
   return (
-    <View style={styles.cameraWrap}>
+    <View style={[styles.cameraWrap, { marginBottom: 100 + room }]}>
       <CameraView
         style={StyleSheet.absoluteFill}
         facing="back"

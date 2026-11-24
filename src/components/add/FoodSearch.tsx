@@ -13,6 +13,7 @@ import { FOOD_CATEGORIES, defaultPortion, searchFoods } from '@/data/foods';
 import { LineIcon, type IconKey } from '@/components/LineIcon';
 import { categoryColor, categoryIconKey } from '@/data/foodIcons';
 import { foodPhoto } from '@/data/foodPhotos';
+import { useBottomRoom } from '@/hooks/useBottomRoom';
 import { makeStyles, useTheme } from '@/theme/ThemeContext';
 import type { FoodCategory, FoodItem } from '@/types';
 import { mealForNow } from '@/utils/date';
@@ -24,6 +25,7 @@ const isCategory = (m: ListMode): m is FoodCategory => m !== 'all' && m !== 'fav
 
 export function FoodSearch({ onManual }: { onManual: () => void }) {
   const t = useTheme();
+  const room = useBottomRoom();
   const s = useStyles();
   const { lang, tr } = useI18n();
   const lib = useFoodLibrary();
@@ -133,7 +135,7 @@ export function FoodSearch({ onManual }: { onManual: () => void }) {
         keyboardDismissMode="on-drag"
         initialNumToRender={12}
         windowSize={9}
-        contentContainerStyle={{ paddingBottom: 120 }}
+        contentContainerStyle={{ paddingBottom: 120 + room }}
         renderItem={renderItem}
         ListHeaderComponent={
           !query && mode === 'all' ? (

@@ -5,6 +5,7 @@
 import * as Haptics from 'expo-haptics';
 import { withIconColor } from './iconColor';
 import { LineIcon, type IconKey } from './LineIcon';
+import { useBottomRoom } from '@/hooks/useBottomRoom';
 import React from 'react';
 import {
   KeyboardAvoidingView,
@@ -107,14 +108,15 @@ interface ScreenProps {
 export function Screen({ title, subtitle, right, left, children, scroll, scrollProps, scrollRef, padded = true }: ScreenProps) {
   const t = useTheme();
   const s = useStyles();
+  const room = useBottomRoom();
   const body = scroll ? (
     <ScrollView
       ref={scrollRef}
       keyboardShouldPersistTaps="handled"
       showsVerticalScrollIndicator={false}
       {...scrollProps}
-      // A floating tab bar (Deep Glass) covers the bottom of the screen: leave room so the last row stays visible.
-      contentContainerStyle={[padded && s.padX, s.column, { paddingBottom: 48 + (t.fx.tabBar === 'floating' ? 88 : 0) }, scrollProps?.contentContainerStyle]}
+      // A floating tab bar (Deep Glass) covers the bottom of tab screens: leave room so the last row stays visible.
+      contentContainerStyle={[padded && s.padX, s.column, { paddingBottom: 48 + room }, scrollProps?.contentContainerStyle]}
     >
       {children}
     </ScrollView>

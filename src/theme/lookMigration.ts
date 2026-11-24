@@ -20,3 +20,8 @@ export function migrateLook(saved: { themeId?: unknown; themePref?: unknown; loo
   const due = saved.lookVersion !== LOOK_VERSION && onOldDefault;
   return { themeId: due ? 'deep_glass' : undefined, lookVersion: LOOK_VERSION, showLookNote: due };
 }
+
+/** A theme picked in Settings → Themes ends the one-time note, so its "Back to the old look" cannot undo the pick. */
+export function pickTheme(id: ThemeId): { themeId: ThemeId; showLookNote: boolean } {
+  return { themeId: id, showLookNote: false };
+}

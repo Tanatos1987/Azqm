@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useMemo, useState } from 'react';
 import { StyleSheet, useColorScheme, type TextStyle } from 'react-native';
+import { pickTheme } from './lookMigration';
 import { useSettings } from '@/context/SettingsContext';
 import { usePro } from '@/context/ProContext';
 import { DEFAULT_THEME_ID, THEMES, getThemeDef, resolveTheme, type Theme, type ThemeId } from './themes';
@@ -64,7 +65,7 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
   const activeId = previewId ?? (saved.isPro && !isPro ? DEFAULT_THEME_ID : saved.id);
   const theme = useMemo(() => resolveTheme(getThemeDef(activeId), autoDark, TEXT_SCALES[textScale]), [activeId, autoDark, textScale]);
   const control = useMemo<ThemeControl>(
-    () => ({ themeId, activeId, previewId, autoDark, setTheme: (id) => update({ themeId: id }), setPreview }),
+    () => ({ themeId, activeId, previewId, autoDark, setTheme: (id) => update(pickTheme(id)), setPreview }),
     [themeId, activeId, previewId, autoDark, update]
   );
   return (

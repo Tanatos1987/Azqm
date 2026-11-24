@@ -6,6 +6,7 @@ import { AddIcon, AnalysisIcon, FastingIcon, HeartIcon, ProgressIcon, TodayIcon 
 import { usePro } from '@/context/ProContext';
 import { TourTarget } from '@/context/TourContext';
 import { useTheme } from '@/theme/ThemeContext';
+import { FLOATING_BAR, InTabsContext } from '@/theme/floatingBar';
 import { useI18n } from '@/i18n';
 
 export default function TabsLayout() {
@@ -14,121 +15,124 @@ export default function TabsLayout() {
   const { tr } = useI18n();
   const { isPro, loaded } = usePro();
   return (
-    <Tabs
-      screenOptions={{
-        headerShown: false,
-        // Hidden tabs stay mounted; freezing them stops background re-renders (the fasting clock ticks every second,
-        // and every data change would otherwise refetch and redraw all visited tabs), which made switching feel sluggish.
-        freezeOnBlur: true,
-        tabBarActiveTintColor: t.c.accent,
-        tabBarInactiveTintColor: t.c.textMuted,
-        // Deep Glass: a rounded bar floating above the content; the screens leave room for it (Screen, lists).
-        tabBarStyle:
-          t.fx.tabBar === 'floating'
-            ? {
-                position: 'absolute',
-                left: 12,
-                right: 12,
-                bottom: Math.max(insets.bottom, 10),
-                height: 64,
-                borderRadius: 26,
-                backgroundColor: 'rgba(20,26,46,0.92)',
-                borderWidth: 1,
-                borderTopWidth: 1,
-                borderColor: 'rgba(255,255,255,0.14)',
-                borderTopColor: 'rgba(255,255,255,0.14)',
-                paddingTop: 6,
-                paddingBottom: 8,
-                elevation: 0,
-              }
-            : {
-                backgroundColor: t.c.surface,
-                borderTopColor: t.c.cardBorder,
-                height: 64 + insets.bottom,
-                paddingTop: 6,
-                paddingBottom: Math.max(insets.bottom, 8),
-              },
-        // Five tabs share the width: a long translation ("Hinzufügen") shrinks instead of being cut off.
-        tabBarLabel: ({ color, children }) => (
-          <Text
-            numberOfLines={1}
-            adjustsFontSizeToFit
-            minimumFontScale={0.7}
-            maxFontSizeMultiplier={1.4}
-            style={{ fontFamily: t.font.body, fontSize: 12 * Math.min(t.scale, 1.15), fontWeight: '600', color }}
-          >
-            {children}
-          </Text>
-        ),
-        sceneStyle: { backgroundColor: t.c.bg },
-      }}
-    >
-      <Tabs.Screen name="index" options={{ title: tr('Днес', 'Today'), tabBarIcon: ({ color }) => <TodayIcon size={26} color={color} /> }} />
-      {/* TourTarget: the first-run tour points at these tabs. */}
-      <Tabs.Screen
-        name="add"
-        options={{
-          title: tr('Добави', 'Add'),
-          tabBarIcon: ({ color }) => (
-            <TourTarget id="tab-add">
-              <AddIcon size={26} color={color} />
-            </TourTarget>
+    // Tab screens know they sit above the (floating) tab bar: see useBottomRoom.
+    <InTabsContext.Provider value>
+      <Tabs
+        screenOptions={{
+          headerShown: false,
+          // Hidden tabs stay mounted; freezing them stops background re-renders (the fasting clock ticks every second,
+          // and every data change would otherwise refetch and redraw all visited tabs), which made switching feel sluggish.
+          freezeOnBlur: true,
+          tabBarActiveTintColor: t.c.accent,
+          tabBarInactiveTintColor: t.c.textMuted,
+          // Deep Glass: a rounded bar floating above the content; the screens leave room for it (Screen, lists).
+          tabBarStyle:
+            t.fx.tabBar === 'floating'
+              ? {
+                  position: 'absolute',
+                  left: FLOATING_BAR.side,
+                  right: FLOATING_BAR.side,
+                  bottom: Math.max(insets.bottom, FLOATING_BAR.minBottom),
+                  height: FLOATING_BAR.height,
+                  borderRadius: FLOATING_BAR.radius,
+                  backgroundColor: 'rgba(20,26,46,0.92)',
+                  borderWidth: 1,
+                  borderTopWidth: 1,
+                  borderColor: 'rgba(255,255,255,0.14)',
+                  borderTopColor: 'rgba(255,255,255,0.14)',
+                  paddingTop: 6,
+                  paddingBottom: 8,
+                  elevation: 0,
+                }
+              : {
+                  backgroundColor: t.c.surface,
+                  borderTopColor: t.c.cardBorder,
+                  height: 64 + insets.bottom,
+                  paddingTop: 6,
+                  paddingBottom: Math.max(insets.bottom, 8),
+                },
+          // Five tabs share the width: a long translation ("Hinzufügen") shrinks instead of being cut off.
+          tabBarLabel: ({ color, children }) => (
+            <Text
+              numberOfLines={1}
+              adjustsFontSizeToFit
+              minimumFontScale={0.7}
+              maxFontSizeMultiplier={1.4}
+              style={{ fontFamily: t.font.body, fontSize: 12 * Math.min(t.scale, 1.15), fontWeight: '600', color }}
+            >
+              {children}
+            </Text>
           ),
+          sceneStyle: { backgroundColor: t.c.bg },
         }}
-      />
-      <Tabs.Screen
-        name="analysis"
-        options={{
-          title: tr('Анализ', 'Analysis'),
-          tabBarIcon: ({ color }) => (
-            <TourTarget id="tab-analysis">
-              <AnalysisIcon size={26} color={color} />
-            </TourTarget>
-          ),
-        }}
-      />
-      <Tabs.Screen
-        name="progress"
-        options={{
-          title: tr('Прогрес', 'Progress'),
-          tabBarIcon: ({ color }) => (
-            <TourTarget id="tab-progress">
-              <ProgressIcon size={26} color={color} />
-            </TourTarget>
-          ),
-        }}
-      />
-      <Tabs.Screen
-        name="fasting"
-        options={{
-          title: tr('Пост', 'Fasting'),
-          tabBarIcon: ({ color }) => (
-            <TourTarget id="tab-fasting">
-              <FastingIcon size={26} color={color} />
-            </TourTarget>
-          ),
-        }}
-      />
-      {/* Until the user has Pro: a sixth tab, always in the accent colour, that opens the support screen. */}
-      <Tabs.Screen
-        name="pro"
-        options={{
-          title: tr('Подкрепи', 'Support'),
-          href: loaded && !isPro ? undefined : null,
-          tabBarInactiveTintColor: t.c.accent,
-          tabBarIcon: () => (
-            <TourTarget id="tab-pro">
-              <HeartIcon size={26} color={t.c.accent} filled />
-            </TourTarget>
-          ),
-        }}
-        listeners={{
-          tabPress: (e) => {
-            e.preventDefault();
-            router.push('/support');
-          },
-        }}
-      />
-    </Tabs>
+      >
+        <Tabs.Screen name="index" options={{ title: tr('Днес', 'Today'), tabBarIcon: ({ color }) => <TodayIcon size={26} color={color} /> }} />
+        {/* TourTarget: the first-run tour points at these tabs. */}
+        <Tabs.Screen
+          name="add"
+          options={{
+            title: tr('Добави', 'Add'),
+            tabBarIcon: ({ color }) => (
+              <TourTarget id="tab-add">
+                <AddIcon size={26} color={color} />
+              </TourTarget>
+            ),
+          }}
+        />
+        <Tabs.Screen
+          name="analysis"
+          options={{
+            title: tr('Анализ', 'Analysis'),
+            tabBarIcon: ({ color }) => (
+              <TourTarget id="tab-analysis">
+                <AnalysisIcon size={26} color={color} />
+              </TourTarget>
+            ),
+          }}
+        />
+        <Tabs.Screen
+          name="progress"
+          options={{
+            title: tr('Прогрес', 'Progress'),
+            tabBarIcon: ({ color }) => (
+              <TourTarget id="tab-progress">
+                <ProgressIcon size={26} color={color} />
+              </TourTarget>
+            ),
+          }}
+        />
+        <Tabs.Screen
+          name="fasting"
+          options={{
+            title: tr('Пост', 'Fasting'),
+            tabBarIcon: ({ color }) => (
+              <TourTarget id="tab-fasting">
+                <FastingIcon size={26} color={color} />
+              </TourTarget>
+            ),
+          }}
+        />
+        {/* Until the user has Pro: a sixth tab, always in the accent colour, that opens the support screen. */}
+        <Tabs.Screen
+          name="pro"
+          options={{
+            title: tr('Подкрепи', 'Support'),
+            href: loaded && !isPro ? undefined : null,
+            tabBarInactiveTintColor: t.c.accent,
+            tabBarIcon: () => (
+              <TourTarget id="tab-pro">
+                <HeartIcon size={26} color={t.c.accent} filled />
+              </TourTarget>
+            ),
+          }}
+          listeners={{
+            tabPress: (e) => {
+              e.preventDefault();
+              router.push('/support');
+            },
+          }}
+        />
+      </Tabs>
+    </InTabsContext.Provider>
   );
 }
