@@ -22,7 +22,7 @@ import {
   type ViewStyle,
 } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
-import Svg, { Defs, LinearGradient, Rect, Stop } from 'react-native-svg';
+import Svg, { Defs, LinearGradient, RadialGradient, Rect, Stop } from 'react-native-svg';
 import { TABULAR, TYPE, makeStyles, useTheme, type TypeVariant } from '@/theme/ThemeContext';
 import { alpha, type Theme } from '@/theme/themes';
 import type { Palette } from '@/theme/palette';
@@ -121,6 +121,7 @@ export function Screen({ title, subtitle, right, left, children, scroll, scrollP
   return (
     <SafeAreaView style={s.safe} edges={['top', 'left', 'right']}>
       {t.fx.bgGradient && <GradientFill colors={t.fx.bgGradient} />}
+      {t.fx.backdrop === 'glows' && <GlassBackdrop />}
       <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
         {(title || right || left) && (
           <View style={[s.header, s.padX, s.column]}>
@@ -158,6 +159,30 @@ export function GradientFill({ colors, style }: { colors: readonly [string, stri
         </LinearGradient>
       </Defs>
       <Rect x="0" y="0" width="100%" height="100%" fill="url(#screen-bg)" />
+    </Svg>
+  );
+}
+
+/** Soft colour glows behind every screen (Deep Glass): static, drawn once, no animation and no blur. */
+export function GlassBackdrop() {
+  const glows: [string, string, string, string, string, number][] = [
+    ['glow-a', '15%', '10%', '60%', '#6366F1', 0.55],
+    ['glow-b', '90%', '30%', '50%', '#0EA5E9', 0.45],
+    ['glow-c', '60%', '95%', '60%', '#EC4899', 0.35],
+  ];
+  return (
+    <Svg style={StyleSheet.absoluteFill} pointerEvents="none">
+      <Defs>
+        {glows.map(([id, cx, cy, r, color, opacity]) => (
+          <RadialGradient key={id} id={id} cx={cx} cy={cy} rx={r} ry="40%" fx={cx} fy={cy}>
+            <Stop offset="0" stopColor={color} stopOpacity={opacity} />
+            <Stop offset="1" stopColor={color} stopOpacity={0} />
+          </RadialGradient>
+        ))}
+      </Defs>
+      {glows.map(([id]) => (
+        <Rect key={id} x="0" y="0" width="100%" height="100%" fill={`url(#${id})`} />
+      ))}
     </Svg>
   );
 }

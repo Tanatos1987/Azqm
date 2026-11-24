@@ -1,8 +1,9 @@
 /**
  * Azqm themes: colours, fonts and shapes in one place.
  *
- * Two themes are free — Obsidian Amber (the default) and Classic (the original green look, the only one that still
- * follows Settings → dark / light / system) — and the rest come with Pro. A theme gives the design tokens of the
+ * Three themes are free — Deep Glass (the default since the 24.11.2026 redesign), Obsidian Amber (the default
+ * before it) and Classic (the original green look, the only one that still follows Settings → dark / light /
+ * system) — and the rest come with Pro. A theme gives the design tokens of the
  * spec (background, surface, card border, accents, ring gradient, text); the rest of the palette is derived from
  * them, and the macro, water and fasting colours are one shared semantic set (darker shades on a light theme).
  *
@@ -16,6 +17,7 @@ import { tr } from '@/i18n';
 import { darkPalette, lightPalette, type Palette } from './palette';
 
 export type ThemeId =
+  | 'deep_glass'
   | 'obsidian_amber'
   | 'classic'
   | 'midnight_coral'
@@ -27,7 +29,7 @@ export type ThemeId =
   | 'cyber_tech'
   | 'neon_sport';
 
-export const DEFAULT_THEME_ID: ThemeId = 'obsidian_amber';
+export const DEFAULT_THEME_ID: ThemeId = 'deep_glass';
 
 export interface ThemeFonts {
   /** headings (h1–h3) */
@@ -72,6 +74,12 @@ export interface ThemeEffects {
   elevation?: boolean;
   /** body figure in Progress: frosted glass with a glow (Deep Glass), else a shaded volume */
   figure?: 'glass';
+  /** soft colour glows drawn behind every screen (Deep Glass) */
+  backdrop?: 'glows';
+  /** primary buttons as frosted glass instead of a solid accent fill */
+  buttonStyle?: 'glass';
+  /** the tab bar floats above the content as a rounded bar */
+  tabBar?: 'floating';
 }
 
 /** The colour tokens of the spec. */
@@ -220,6 +228,29 @@ const SPEC_FONTS: ThemeFonts = { display: 'Onest', body: 'Inter', num: 'Onest', 
 const SPEC_SHAPE: ThemeShape = { radius: 18, border: 1, padding: 18, gap: 14, screen: 16, control: 14, chip: 20, bar: 7 };
 
 export const THEMES: readonly ThemeDef[] = [
+  // "Deep Glass" (owner's choice, 24.11.2026): frosted see-through cards over a deep navy-violet background with soft
+  // colour glows, white Inter type, cyan → violet ring. No real-time blur: translucent fills over a static backdrop.
+  tokenTheme({
+    id: 'deep_glass',
+    isPro: false,
+    name: () => tr('Стъкло и дълбочина', 'Deep Glass'),
+    scheme: 'dark',
+    tokens: {
+      bgPrimary: '#0A0F1F',
+      bgSurface: '#141A2E',
+      cardBorder: 'rgba(255,255,255,0.16)',
+      accentPrimary: '#7DD3FC',
+      accentTextOnPrimary: '#0A0F1F',
+      accentSecondary: '#C084FC',
+      calorieRingGradient: ['#7DD3FC', '#C084FC'],
+      textPrimary: '#FFFFFF',
+      textSecondary: '#A9B1C7',
+    },
+    extra: { card: 'rgba(255,255,255,0.08)' },
+    fonts: { display: 'Inter', body: 'Inter', num: 'Inter', displayScale: 1, numScale: 1 },
+    shape: { radius: 22, border: 1, padding: 18, gap: 14, screen: 16, control: 16, chip: 20, bar: 8 },
+    fx: { glow: 1, bgGradient: ['#0A0F1F', '#120A26'], backdrop: 'glows', buttonStyle: 'glass', tabBar: 'floating', figure: 'glass' },
+  }),
   tokenTheme({
     id: 'obsidian_amber',
     isPro: false,
