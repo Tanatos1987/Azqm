@@ -133,6 +133,12 @@ function rgb(hex: string): [number, number, number] {
   return [parseInt(h.slice(0, 2), 16), parseInt(h.slice(2, 4), 16), parseInt(h.slice(4, 6), 16)];
 }
 
+/** Chips and segmented controls: frosted glass (the card's see-through fill and light edge) when the theme draws the
+ * glow backdrop (Deep Glass), else the opaque surfaceAlt. */
+export function controlSurface(fx: ThemeEffects, c: Palette): { backgroundColor: string; borderColor: string } {
+  return fx.backdrop === 'glows' ? { backgroundColor: c.card, borderColor: c.cardBorder } : { backgroundColor: c.surfaceAlt, borderColor: c.border };
+}
+
 /** `a` moved towards `b` by `amount` (0…1); both #RRGGBB. */
 export function mix(a: string, b: string, amount: number): string {
   const x = rgb(a);

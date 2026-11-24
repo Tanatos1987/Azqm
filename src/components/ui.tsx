@@ -27,7 +27,7 @@ import {
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import Svg, { Defs, LinearGradient, RadialGradient, Rect, Stop } from 'react-native-svg';
 import { TABULAR, TYPE, makeStyles, useTheme, type TypeVariant } from '@/theme/ThemeContext';
-import { alpha, type Theme } from '@/theme/themes';
+import { alpha, controlSurface, type Theme } from '@/theme/themes';
 import type { Palette } from '@/theme/palette';
 
 /** Widest the content column gets on tablets and in landscape. */
@@ -268,7 +268,8 @@ export function Button({ label, variant = 'primary', icon, small, style, flex, d
         s.button,
         small && s.buttonSmall,
         { backgroundColor: bg },
-        glass && { borderWidth: 1, borderColor: 'rgba(255,255,255,0.35)' },
+        // a light edge, a little brighter on top like light catching the glass
+        glass && { borderWidth: 1, borderColor: 'rgba(255,255,255,0.35)', borderTopColor: 'rgba(255,255,255,0.6)' },
         variant === 'primary' && !glass && !disabled && s.buttonGlow,
         flex && { flex: 1 },
         glass && pressed && !disabled && { transform: [{ scale: 0.97 }] },
@@ -465,11 +466,17 @@ const useStyles = makeStyles((t) => ({
     paddingHorizontal: 14,
     paddingVertical: 9,
     borderRadius: t.shape.chip,
-    backgroundColor: t.c.surfaceAlt,
     borderWidth: 1,
-    borderColor: t.c.border,
+    ...controlSurface(t.fx, t.c),
   },
-  segmented: { flexDirection: 'row', backgroundColor: t.c.surfaceAlt, borderRadius: t.shape.control, padding: 4, gap: 4 },
+  segmented: {
+    flexDirection: 'row',
+    borderRadius: t.shape.control,
+    padding: 4,
+    gap: 4,
+    backgroundColor: controlSurface(t.fx, t.c).backgroundColor,
+    ...(t.fx.backdrop === 'glows' ? { borderWidth: 1, borderColor: t.c.cardBorder } : null),
+  },
   segment: { flex: 1, paddingVertical: 10, paddingHorizontal: 6, borderRadius: Math.max(t.shape.control - 3, 3), alignItems: 'center', justifyContent: 'center' },
   backdrop: { flex: 1, backgroundColor: t.c.overlay },
   sheet: {

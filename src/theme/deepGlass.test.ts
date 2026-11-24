@@ -1,5 +1,5 @@
 import { describe, expect, test } from '@jest/globals';
-import { DEFAULT_THEME_ID, THEMES, getThemeDef } from './themes';
+import { DEFAULT_THEME_ID, THEMES, controlSurface, getThemeDef } from './themes';
 import { contrast, luminance } from './contrast.testutil';
 
 // Deep Glass (owner, 24.11.2026): the free default look, readable on its see-through cards.
@@ -19,5 +19,13 @@ describe('Deep Glass', () => {
     const card = bg.map((v) => a * 255 + (1 - a) * v) as [number, number, number]; // the white veil over the background
     expect(contrast(luminance(c.text), luminance(card))).toBeGreaterThanOrEqual(4.5);
     expect(contrast(luminance(c.textMuted), luminance(card))).toBeGreaterThanOrEqual(4.5);
+  });
+
+  // The spec's "glass segmented controls/chips": see-through in Deep Glass, unchanged elsewhere.
+  test('chips and segmented controls are frosted glass in Deep Glass only', () => {
+    const dg = getThemeDef('deep_glass');
+    expect(controlSurface(dg.fx, dg.palette.dark!).backgroundColor).toMatch(/^rgba\(255,\s*255,\s*255,/);
+    const oa = getThemeDef('obsidian_amber');
+    expect(controlSurface(oa.fx, oa.palette.dark!)).toEqual({ backgroundColor: oa.palette.dark!.surfaceAlt, borderColor: oa.palette.dark!.border });
   });
 });
