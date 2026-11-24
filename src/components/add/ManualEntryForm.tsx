@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Alert, Pressable, ScrollView, View } from 'react-native';
+import { MealIcon } from '@/components/LineIcon';
 import { useSQLiteContext } from 'expo-sqlite';
 import { Button, Card, Chip, Input, Row, Txt } from '@/components/ui';
 import { CheckIcon } from '@/components/icons';
@@ -124,7 +125,7 @@ export function ManualEntryForm() {
         </Txt>
         <Row gap={8} style={{ flexWrap: 'wrap' }}>
           {MEALS.map((m) => (
-            <Chip key={m.key} label={`${m.emoji} ${m.label}`} active={meal === m.key} onPress={() => setMeal(m.key)} />
+            <Chip key={m.key} label={m.label} icon={<MealIcon meal={m.key} size={16} color={meal === m.key ? t.c.onAccent : t.c.text} />} active={meal === m.key} onPress={() => setMeal(m.key)} />
           ))}
         </Row>
 

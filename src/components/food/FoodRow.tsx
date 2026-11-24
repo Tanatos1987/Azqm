@@ -1,10 +1,11 @@
 import React from 'react';
-import { Pressable, Text, View } from 'react-native';
+import { Pressable, View } from 'react-native';
 import { Dot, Txt } from '@/components/ui';
 import { PlusIcon, StarIcon } from '@/components/icons';
+import { CategoryIcon } from '@/components/LineIcon';
 import { MacroLine, useFitColor } from './FoodBits';
 import type { Diet } from '@/data/diets';
-import { categoryEmoji, defaultPortion } from '@/data/foods';
+import { defaultPortion } from '@/data/foods';
 import { scaleNutrients } from '@/data/nutrients';
 import { makeStyles, useTheme } from '@/theme/ThemeContext';
 import type { FoodItem } from '@/types';
@@ -34,7 +35,7 @@ export const FoodRow = React.memo(function FoodRow({ food, diet, favorite, onPre
   return (
     <Pressable onPress={() => onPress(food)} style={({ pressed }) => [s.row, pressed && { opacity: 0.85 }]}>
       <View style={s.emoji}>
-        <Text style={{ fontSize: 22 }}>{categoryEmoji(food.category)}</Text>
+        <CategoryIcon category={food.category} size={22} color={t.c.text} />
       </View>
       <View style={{ flex: 1, gap: 3 }}>
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
@@ -72,7 +73,11 @@ const useStyles = makeStyles((t) => ({
     borderWidth: t.shape.border ? 1 : 0,
     borderColor: t.c.cardBorder,
   },
-  emoji: { width: 44, height: 44, borderRadius: 22, backgroundColor: t.c.surfaceAlt, alignItems: 'center', justifyContent: 'center' },
+  // Deep Glass: the icon sits in a glass circle (the card's see-through fill and light edge).
+  emoji:
+    t.fx.backdrop === 'glows'
+      ? { width: 44, height: 44, borderRadius: 22, backgroundColor: t.c.card, borderWidth: 1, borderColor: t.c.cardBorder, alignItems: 'center', justifyContent: 'center' }
+      : { width: 44, height: 44, borderRadius: 22, backgroundColor: t.c.surfaceAlt, alignItems: 'center', justifyContent: 'center' },
   star: { padding: 4 },
   add: { width: 42, height: 42, borderRadius: 21, backgroundColor: t.c.accent, alignItems: 'center', justifyContent: 'center' },
 }));

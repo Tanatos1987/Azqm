@@ -4,6 +4,7 @@ import { router, useIsFocused } from 'expo-router';
 import { useSQLiteContext } from 'expo-sqlite';
 import { Bar, Button, Card, EmptyState, IconButton, Row, Screen, Txt } from '@/components/ui';
 import { ProgressRing } from '@/components/ProgressRing';
+import { MealIcon } from '@/components/LineIcon';
 import { DateSwitcher } from '@/components/DateSwitcher';
 import { FoodEntryRow } from '@/components/FoodEntryRow';
 import { EntrySheet } from '@/components/EntrySheet';
@@ -350,8 +351,9 @@ export default function TodayScreen() {
         byMeal.map((m) => (
           <Card key={m.key}>
             <Row style={{ marginBottom: 4 }}>
+              <MealIcon meal={m.key} size={20} color={t.c.textMuted} />
               <Txt v="h3" style={{ flex: 1 }}>
-                {m.emoji} {m.label}
+                {m.label}
               </Txt>
               <Txt v="smallStrong" tone="textMuted">
                 {formatNumber(m.items.reduce((sum, e) => sum + e.n.kcal, 0))} {tr('ккал', 'kcal')}

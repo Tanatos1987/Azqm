@@ -1,5 +1,6 @@
 import React, { useMemo, useState } from 'react';
 import { Pressable, ScrollView, View } from 'react-native';
+import { MealIcon } from '@/components/LineIcon';
 import { Bar, Button, Chip, Input, Row, Txt } from '@/components/ui';
 import { MinusIcon, PlusIcon } from '@/components/icons';
 import { FitBadge } from './FoodBits';
@@ -111,7 +112,7 @@ export function AmountEditor({ food, initialGrams, initialMeal, primaryLabel, on
       </Txt>
       <Row gap={8} style={{ flexWrap: 'wrap', marginBottom: 18 }}>
         {MEALS.map((m) => (
-          <Chip key={m.key} label={`${m.emoji} ${m.label}`} active={meal === m.key} onPress={() => setMeal(m.key)} />
+          <Chip key={m.key} label={m.label} icon={<MealIcon meal={m.key} size={16} color={meal === m.key ? t.c.onAccent : t.c.text} />} active={meal === m.key} onPress={() => setMeal(m.key)} />
         ))}
       </Row>
 

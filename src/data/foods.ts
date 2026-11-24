@@ -43,10 +43,6 @@ export function categoryLabel(key: FoodCategory): string {
   return CATEGORY_BY_KEY.get(key)?.label ?? key;
 }
 
-export function categoryEmoji(key: FoodCategory): string {
-  return CATEGORY_BY_KEY.get(key)?.emoji ?? '🍽️';
-}
-
 function parsePortions(raw: string, rawEn: string): Portion[] {
   if (!raw) return [];
   const en = rawEn.split('|');

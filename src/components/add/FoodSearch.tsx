@@ -10,6 +10,8 @@ import { useFoodLibrary } from '@/hooks/useFoodLibrary';
 import { useLogFood } from '@/hooks/useLogFood';
 import { getDiet } from '@/data/diets';
 import { FOOD_CATEGORIES, defaultPortion, searchFoods } from '@/data/foods';
+import { LineIcon, type IconKey } from '@/components/LineIcon';
+import { categoryColor, categoryIconKey } from '@/data/foodIcons';
 import { makeStyles, useTheme } from '@/theme/ThemeContext';
 import type { FoodCategory, FoodItem } from '@/types';
 import { mealForNow } from '@/utils/date';
@@ -64,11 +66,17 @@ export function FoodSearch({ onManual }: { onManual: () => void }) {
     [diet, favorites, quickAdd, toggleFavorite]
   );
 
-  const modes: { key: ListMode; label: string }[] = [
-    { key: 'recent', label: `🕑 ${tr('Последни', 'Recent')}` },
-    { key: 'favorites', label: `⭐ ${tr('Любими', 'Favorites')}` },
+  // Food groups carry their colour (owner's pick: line icons, coloured only here) to help scanning the row.
+  const modes: { key: ListMode; label: string; icon?: IconKey; tint?: string }[] = [
+    { key: 'recent', label: tr('Последни', 'Recent'), icon: 'clock' },
+    { key: 'favorites', label: tr('Любими', 'Favorites'), icon: 'star' },
     { key: 'all', label: tr('Всички', 'All') },
-    ...FOOD_CATEGORIES.filter((c) => c.key !== 'custom' || lib.custom.length > 0).map((c) => ({ key: c.key as ListMode, label: `${c.emoji} ${c.label}` })),
+    ...FOOD_CATEGORIES.filter((c) => c.key !== 'custom' || lib.custom.length > 0).map((c) => ({
+      key: c.key as ListMode,
+      label: c.label,
+      icon: categoryIconKey(c.key),
+      tint: categoryColor(c.key, t.dark ? 'dark' : 'light'),
+    })),
   ];
 
   return (
@@ -94,10 +102,19 @@ export function FoodSearch({ onManual }: { onManual: () => void }) {
       <ScrollView horizontal showsHorizontalScrollIndicator={false} style={s.chipRow} contentContainerStyle={s.chips} keyboardShouldPersistTaps="handled">
         <Chip label={onlyFit ? `✓ ${tr('Подходящи', 'Suitable')}` : tr('Подходящи', 'Suitable')} active={onlyFit} onPress={() => setOnlyFit((v) => !v)} color={t.c.success} />
         {/* Opens "My dishes" (Pro); the saved dishes themselves are in the "My foods" list like any custom food. */}
-        <Chip label={`🍲 ${tr('Мои ястия', 'My dishes')}`} onPress={() => router.push('/recipes')} />
-        {modes.map((m) => (
-          <Chip key={m.key} label={m.label} active={mode === m.key} onPress={() => setMode(m.key)} />
-        ))}
+        <Chip label={tr('Мои ястия', 'My dishes')} icon={<LineIcon name="soup" size={16} color={t.c.text} />} onPress={() => router.push('/recipes')} />
+        {modes.map((m) => {
+          const active = mode === m.key;
+          return (
+            <Chip
+              key={m.key}
+              label={m.label}
+              active={active}
+              onPress={() => setMode(m.key)}
+              icon={m.icon ? <LineIcon name={m.icon} size={16} color={active ? t.c.onAccent : (m.tint ?? t.c.text)} /> : undefined}
+            />
+          );
+        })}
       </ScrollView>
 
       <FlatList
@@ -122,7 +139,7 @@ export function FoodSearch({ onManual }: { onManual: () => void }) {
         }
         ListEmptyComponent={
           <EmptyState
-            emoji={mode === 'favorites' ? '⭐' : mode === 'recent' ? '🕑' : '🔎'}
+            icon={<LineIcon name={mode === 'favorites' ? 'star' : mode === 'recent' ? 'clock' : 'search'} size={34} color={t.c.accent} />}
             title={
               mode === 'favorites' && !query
                 ? tr('Още нямаш любими храни', 'No favorite foods yet')
