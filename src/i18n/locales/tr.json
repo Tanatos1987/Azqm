@@ -1195,5 +1195,8 @@
  "Deep Glass": "Derin Cam",
  "Azqm has a new look. The old one is in Settings → Themes.": "Azqm'in görünümü yenilendi. Eskisi Ayarlar → Temalar bölümünde.",
  "Keep the new one": "Yeniyi koru",
- "Back to the old look": "Eskisine dön"
+ "Back to the old look": "Eskisine dön",
+ "A new version of Azqm is available.": "Azqm'in yeni bir sürümü var.",
+ "Update": "Güncelle",
+ "The new version is downloading. Azqm restarts by itself when it is ready.": "Yeni sürüm indiriliyor. Hazır olduğunda Azqm kendiliğinden yeniden başlar."
 }

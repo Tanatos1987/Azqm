@@ -1195,5 +1195,8 @@
  "Deep Glass": "Verre profond",
  "Azqm has a new look. The old one is in Settings → Themes.": "Azqm a un nouveau look. L'ancien se trouve dans Paramètres → Thèmes.",
  "Keep the new one": "Garder le nouveau",
- "Back to the old look": "Revenir à l'ancien"
+ "Back to the old look": "Revenir à l'ancien",
+ "A new version of Azqm is available.": "Une nouvelle version d'Azqm est disponible.",
+ "Update": "Mettre à jour",
+ "The new version is downloading. Azqm restarts by itself when it is ready.": "La nouvelle version est en cours de téléchargement. Azqm redémarrera tout seul une fois prêt."
 }

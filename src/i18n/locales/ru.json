@@ -1195,5 +1195,8 @@
  "Deep Glass": "Стекло и глубина",
  "Azqm has a new look. The old one is in Settings → Themes.": "У Azqm новый вид. Прежний — в Настройки → Темы.",
  "Keep the new one": "Оставить новый",
- "Back to the old look": "Вернуть прежний"
+ "Back to the old look": "Вернуть прежний",
+ "A new version of Azqm is available.": "Доступна новая версия Azqm.",
+ "Update": "Обновить",
+ "The new version is downloading. Azqm restarts by itself when it is ready.": "Новая версия загружается. Azqm перезапустится сам, когда она будет готова."
 }

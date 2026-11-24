@@ -101,3 +101,16 @@
 - [ ] **Step 1:** Push the branch `feature/deep-glass`; run the CI preview build (`com.tanatos.azqm.preview`) on it with `gh workflow run`.
 - [ ] **Step 2:** Send the APK to the owner (SendUserFile) with what to check: Today, Add food (search list end above the tab bar), Progress figure at BMI from their profile, Settings → Themes (old look back), a long list scroll.
 - [ ] **Step 3:** Fixes from the owner's check; release (version 1.6.0, tag) only on their OK.
+
+---
+
+## Added on 24.11.2026 after the owner's new requests
+
+### Task 8: In-app update card (owner: „добави и известие за актуализация вътре в приложението“)
+Spec: `docs/superpowers/specs/2026-11-24-azqm-in-app-update-design.md`. `updateBanner()` (src/utils/updateBanner.ts,
+tested first), `useAppUpdate()` (src/hooks), card on Today, texts in 8 languages, `expo-in-app-updates` 0.13.0 pinned.
+
+### Task 9: Food photos instead of food line icons (owner: „искам снимки на храненето като икони“, „вариант В“)
+One photo per food group (18), one style (top-down, dark navy stone, soft light; Qwen-Image, Apache-2.0), 160 px WebP in
+`assets/food/`. Food rows: the photo in the 44 px circle; group chips: a small photo; a group without a photo yet falls
+back to its line icon. Meals and the other UI icons stay line icons.

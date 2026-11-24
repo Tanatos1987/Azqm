@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Pressable, ScrollView, View } from 'react-native';
+import { ActivityIndicator, Pressable, ScrollView, View } from 'react-native';
 import { router, useIsFocused } from 'expo-router';
 import { useSQLiteContext } from 'expo-sqlite';
 import { Bar, Button, Card, EmptyState, IconButton, Row, Screen, Txt } from '@/components/ui';
@@ -12,6 +12,7 @@ import { SupportBanner } from '@/components/SupportNudge';
 import { ChevronRightIcon, CopyIcon, DropletIcon, FastingIcon, HelpIcon, PlusIcon, SettingsIcon, UtensilsIcon, WarningIcon } from '@/components/icons';
 import { TourTarget, useTour, useTourScroller } from '@/context/TourContext';
 import { useSettings } from '@/context/SettingsContext';
+import { useAppUpdate } from '@/hooks/useAppUpdate';
 import { useProfile } from '@/context/ProfileContext';
 import { useDataRefresh } from '@/context/DataRefreshContext';
 import { useSelectedDate } from '@/context/SelectedDateContext';
@@ -34,6 +35,7 @@ export default function TodayScreen() {
   const s = useStyles();
   const db = useSQLiteContext();
   const settings = useSettings();
+  const update = useAppUpdate();
   const { goals } = settings;
   const { profile } = useProfile();
   const { version, bump } = useDataRefresh();
@@ -170,6 +172,27 @@ export default function TodayScreen() {
           </Pressable>
         </TourTarget>
       </Row>
+
+      {update.banner === 'available' && (
+        // A new version on Google Play (owner, 24.11.2026): download it in the background or later.
+        <Card style={{ marginBottom: 14 }}>
+          <Txt v="bodyStrong">{tr('Има нова версия на Azqm.', 'A new version of Azqm is available.')}</Txt>
+          <Row gap={10} style={{ marginTop: 12 }}>
+            <Button small flex label={tr('Обнови', 'Update')} onPress={update.start} />
+            <Button small flex variant="secondary" label={tr('По-късно', 'Later')} onPress={update.dismiss} />
+          </Row>
+        </Card>
+      )}
+      {update.banner === 'downloading' && (
+        <Card style={{ marginBottom: 14 }}>
+          <Row gap={12}>
+            <ActivityIndicator color={t.c.accent} />
+            <Txt v="small" style={{ flex: 1 }}>
+              {tr('Новата версия се изтегля. Azqm ще се рестартира сам, когато е готова.', 'The new version is downloading. Azqm restarts by itself when it is ready.')}
+            </Txt>
+          </Row>
+        </Card>
+      )}
 
       {settings.showLookNote && (
         // One-time note after the 24.11.2026 redesign (src/theme/lookMigration.ts): keep the new look or go back.
