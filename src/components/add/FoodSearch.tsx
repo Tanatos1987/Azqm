@@ -1,5 +1,5 @@
 import React, { useCallback, useMemo, useState } from 'react';
-import { FlatList, Pressable, ScrollView, View } from 'react-native';
+import { FlatList, Image, Pressable, ScrollView, View, type ImageSourcePropType } from 'react-native';
 import { router } from 'expo-router';
 import { Chip, EmptyState, Input, Sheet, Txt } from '@/components/ui';
 import { CloseIcon, SearchIcon } from '@/components/icons';
@@ -12,6 +12,7 @@ import { getDiet } from '@/data/diets';
 import { FOOD_CATEGORIES, defaultPortion, searchFoods } from '@/data/foods';
 import { LineIcon, type IconKey } from '@/components/LineIcon';
 import { categoryColor, categoryIconKey } from '@/data/foodIcons';
+import { foodPhoto } from '@/data/foodPhotos';
 import { makeStyles, useTheme } from '@/theme/ThemeContext';
 import type { FoodCategory, FoodItem } from '@/types';
 import { mealForNow } from '@/utils/date';
@@ -66,8 +67,8 @@ export function FoodSearch({ onManual }: { onManual: () => void }) {
     [diet, favorites, quickAdd, toggleFavorite]
   );
 
-  // Food groups carry their colour (owner's pick: line icons, coloured only here) to help scanning the row.
-  const modes: { key: ListMode; label: string; icon?: IconKey; tint?: string }[] = [
+  // Food groups show their photo (owner's pick, option В); a group without one shows its line icon in the group colour.
+  const modes: { key: ListMode; label: string; icon?: IconKey; tint?: string; photo?: ImageSourcePropType }[] = [
     { key: 'recent', label: tr('Последни', 'Recent'), icon: 'clock' },
     { key: 'favorites', label: tr('Любими', 'Favorites'), icon: 'star' },
     { key: 'all', label: tr('Всички', 'All') },
@@ -76,6 +77,7 @@ export function FoodSearch({ onManual }: { onManual: () => void }) {
       label: c.label,
       icon: categoryIconKey(c.key),
       tint: categoryColor(c.key, t.dark ? 'dark' : 'light'),
+      photo: foodPhoto(c.key),
     })),
   ];
 
@@ -111,7 +113,14 @@ export function FoodSearch({ onManual }: { onManual: () => void }) {
               label={m.label}
               active={active}
               onPress={() => setMode(m.key)}
-              icon={m.icon ? <LineIcon name={m.icon} size={16} color={active ? t.c.onAccent : (m.tint ?? t.c.text)} /> : undefined}
+              icon={
+                m.photo ? (
+                  // a small round photo, kept to the icon's height so every chip in the row is as tall
+                  <Image source={m.photo} style={{ width: 22, height: 22, borderRadius: 11, marginVertical: -3 }} />
+                ) : m.icon ? (
+                  <LineIcon name={m.icon} size={16} color={active ? t.c.onAccent : (m.tint ?? t.c.text)} />
+                ) : undefined
+              }
             />
           );
         })}

@@ -1,11 +1,12 @@
 import React from 'react';
-import { Pressable, View } from 'react-native';
+import { Image, Pressable, View } from 'react-native';
 import { Dot, Txt } from '@/components/ui';
 import { PlusIcon, StarIcon } from '@/components/icons';
 import { CategoryIcon } from '@/components/LineIcon';
 import { MacroLine, useFitColor } from './FoodBits';
 import type { Diet } from '@/data/diets';
 import { defaultPortion } from '@/data/foods';
+import { foodPhoto } from '@/data/foodPhotos';
 import { scaleNutrients } from '@/data/nutrients';
 import { makeStyles, useTheme } from '@/theme/ThemeContext';
 import type { FoodItem } from '@/types';
@@ -31,11 +32,12 @@ export const FoodRow = React.memo(function FoodRow({ food, diet, favorite, onPre
   const portion = defaultPortion(food);
   const n = scaleNutrients(food.per100, portion.grams);
   const fit = diet.fit(food);
+  const photo = foodPhoto(food.category);
 
   return (
     <Pressable onPress={() => onPress(food)} style={({ pressed }) => [s.row, pressed && { opacity: 0.85 }]}>
       <View style={s.emoji}>
-        <CategoryIcon category={food.category} size={22} color={t.c.text} />
+        {photo ? <Image source={photo} style={s.photo} /> : <CategoryIcon category={food.category} size={22} color={t.c.text} />}
       </View>
       <View style={{ flex: 1, gap: 3 }}>
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
@@ -73,11 +75,12 @@ const useStyles = makeStyles((t) => ({
     borderWidth: t.shape.border ? 1 : 0,
     borderColor: t.c.cardBorder,
   },
-  // Deep Glass: the icon sits in a glass circle (the card's see-through fill and light edge).
+  // The food group's photo (or its line icon) in a circle; Deep Glass gives the circle a glass fill and light edge.
   emoji:
     t.fx.backdrop === 'glows'
-      ? { width: 44, height: 44, borderRadius: 22, backgroundColor: t.c.card, borderWidth: 1, borderColor: t.c.cardBorder, alignItems: 'center', justifyContent: 'center' }
-      : { width: 44, height: 44, borderRadius: 22, backgroundColor: t.c.surfaceAlt, alignItems: 'center', justifyContent: 'center' },
+      ? { width: 44, height: 44, borderRadius: 22, overflow: 'hidden', backgroundColor: t.c.card, borderWidth: 1, borderColor: t.c.cardBorder, alignItems: 'center', justifyContent: 'center' }
+      : { width: 44, height: 44, borderRadius: 22, overflow: 'hidden', backgroundColor: t.c.surfaceAlt, alignItems: 'center', justifyContent: 'center' },
+  photo: { width: '100%', height: '100%' },
   star: { padding: 4 },
   add: { width: 42, height: 42, borderRadius: 21, backgroundColor: t.c.accent, alignItems: 'center', justifyContent: 'center' },
 }));
