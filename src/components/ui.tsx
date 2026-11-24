@@ -3,6 +3,7 @@
  * describe layout. <Txt> applies the theme's fonts and the user's text-size setting to every label.
  */
 import * as Haptics from 'expo-haptics';
+import { withIconColor } from './iconColor';
 import React from 'react';
 import {
   KeyboardAvoidingView,
@@ -274,7 +275,7 @@ export function Button({ label, variant = 'primary', icon, small, style, flex, d
         style,
       ]}
     >
-      {icon}
+      {glass ? withIconColor(icon, fg) : icon}
       <Txt v={small ? 'smallStrong' : 'bodyStrong'} color={fg} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.75}>
         {label}
       </Txt>
